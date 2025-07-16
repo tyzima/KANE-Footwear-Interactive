@@ -8,71 +8,71 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 210 30% 8%;
-    --foreground: 213 31% 91%;
+    /* Nike-inspired light theme */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
 
-    --card: 210 30% 8%;
-    --card-foreground: 213 31% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
 
-    --popover: 210 30% 12%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
 
-    --primary: 200 100% 50%;
-    --primary-foreground: 210 30% 8%;
-    --primary-glow: 200 100% 70%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 0 0% 45%;
 
-    --secondary: 210 30% 18%;
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 210 30% 15%;
-    --muted-foreground: 213 31% 65%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
 
-    --accent: 280 100% 70%;
-    --accent-foreground: 210 30% 8%;
+    --accent: 35 100% 50%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 213 31% 91%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 210 30% 18%;
-    --input: 210 30% 18%;
-    --ring: 200 100% 50%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
+    /* KANE brand colors */
+    --kane-primary: 0 0% 0%;
+    --kane-secondary: 0 0% 20%;
+    --kane-accent: 35 100% 50%;
+    
     /* 3D Viewer specific colors */
-    --viewer-bg: 210 30% 6%;
-    --control-bg: 210 30% 12%;
-    --control-hover: 210 30% 20%;
-    --loading-primary: 200 100% 50%;
-    --loading-secondary: 280 100% 70%;
+    --viewer-bg: 0 0% 98%;
+    --control-bg: 0 0% 100%;
+    --control-hover: 0 0% 96%;
+    --loading-primary: 0 0% 9%;
+    --loading-secondary: 35 100% 50%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-accent: linear-gradient(45deg, hsl(var(--primary)), hsl(var(--accent)));
-    --gradient-viewer: radial-gradient(circle at center, hsl(var(--viewer-bg)), hsl(var(--background)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--kane-primary)), hsl(var(--kane-secondary)));
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    --gradient-viewer: linear-gradient(145deg, hsl(0 0% 100%), hsl(0 0% 96%));
 
     /* Shadows */
-    --shadow-glow: 0 0 30px hsl(var(--primary) / 0.3);
-    --shadow-control: 0 4px 20px hsl(var(--background) / 0.3);
+    --shadow-glow: 0 20px 40px -12px hsl(0 0% 0% / 0.1);
+    --shadow-control: 0 4px 20px hsl(0 0% 0% / 0.1);
+    --shadow-elegant: 0 10px 30px -10px hsl(0 0% 0% / 0.15);
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 

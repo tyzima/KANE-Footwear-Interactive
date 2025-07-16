@@ -14,7 +14,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [zoom, setZoom] = useState(2.5); // Start zoomed in at 250%
+  const [zoom, setZoom] = useState(0.8); // Start at 80% zoom as requested
+  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -30,7 +31,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const handleReset = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      setZoom(2.5); // Reset to 250% zoom
+      setZoom(0.8); // Reset to 80% zoom
       setAutoRotate(true);
     }
   };
@@ -41,6 +42,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
       controlsRef.current.object.zoom = newZoom;
       controlsRef.current.object.updateProjectionMatrix();
     }
+  };
+
+  const handleHotspotSelect = (hotspot: string) => {
+    setActiveHotspot(activeHotspot === hotspot ? null : hotspot);
+    // In a real app, this would trigger highlighting of specific shoe parts
+    console.log('Selected hotspot:', hotspot);
   };
 
   return (
@@ -153,15 +160,19 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           </div>
         )}
 
-        {/* Controls UI */}
-        <ViewerControls
-          autoRotate={autoRotate}
-          onAutoRotateChange={setAutoRotate}
-          zoom={zoom}
-          onZoomChange={handleZoomChange}
-          onReset={handleReset}
-          disabled={isLoading || !!error}
-        />
+        {/* Controls UI - Now positioned absolutely at bottom */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <ViewerControls
+            autoRotate={autoRotate}
+            onAutoRotateChange={setAutoRotate}
+            zoom={zoom}
+            onZoomChange={handleZoomChange}
+            onReset={handleReset}
+            onHotspotSelect={handleHotspotSelect}
+            activeHotspot={activeHotspot}
+            disabled={isLoading || !!error}
+          />
+        </div>
       </ErrorBoundary>
     </div>
   );
