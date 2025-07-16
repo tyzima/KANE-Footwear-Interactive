@@ -23,6 +23,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [soleHasSplatter, setSoleHasSplatter] = useState(false);
   const [upperSplatterColor, setUpperSplatterColor] = useState('#f8f8ff'); // Glacier White
   const [soleSplatterColor, setSoleSplatterColor] = useState('#f8f8ff'); // Glacier White
+  const [upperPaintDensity, setUpperPaintDensity] = useState(50); // 50% default
+  const [solePaintDensity, setSolePaintDensity] = useState(50); // 50% default
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -127,6 +129,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
               soleHasSplatter={soleHasSplatter}
               upperSplatterColor={upperSplatterColor}
               soleSplatterColor={soleSplatterColor}
+              upperPaintDensity={upperPaintDensity}
+              solePaintDensity={solePaintDensity}
             />
           </Suspense>
 
@@ -172,10 +176,14 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           soleHasSplatter={soleHasSplatter}
           upperSplatterColor={upperSplatterColor}
           soleSplatterColor={soleSplatterColor}
+          upperPaintDensity={upperPaintDensity}
+          solePaintDensity={solePaintDensity}
           onUpperSplatterToggle={setUpperHasSplatter}
           onSoleSplatterToggle={setSoleHasSplatter}
           onUpperSplatterColorChange={setUpperSplatterColor}
           onSoleSplatterColorChange={setSoleSplatterColor}
+          onUpperPaintDensityChange={setUpperPaintDensity}
+          onSolePaintDensityChange={setSolePaintDensity}
         />
 
         {/* Controls UI - Now positioned absolutely at bottom */}

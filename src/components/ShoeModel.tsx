@@ -16,6 +16,8 @@ interface ShoeModelProps {
   soleHasSplatter?: boolean;
   upperSplatterColor?: string;
   soleSplatterColor?: string;
+  upperPaintDensity?: number;
+  solePaintDensity?: number;
 }
 
 const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4foxLh8y6DeirLamH7Y1SBOW8l6CycoPdFvg4';
@@ -33,7 +35,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   upperHasSplatter = false,
   soleHasSplatter = false,
   upperSplatterColor = '#f8f8ff',
-  soleSplatterColor = '#f8f8ff'
+  soleSplatterColor = '#f8f8ff',
+  upperPaintDensity = 50,
+  solePaintDensity = 50
 }) => {
   const groupRef = useRef<Group>(null);
   const mixerRef = useRef<AnimationMixer | null>(null);
@@ -112,29 +116,32 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     };
   }, [onLoad, onError]);
 
-  // Create ultra-dense splatter texture
-  const createSplatterTexture = (baseColor: string, splatterColor: string, isUpper: boolean = false): Texture => {
+  // Create ultra-dense, high-resolution splatter texture
+  const createSplatterTexture = (baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 50): Texture => {
     const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = 1024; // Doubled resolution for sharper detail
+    canvas.height = 1024;
     const ctx = canvas.getContext('2d')!;
     
     // Fill base color
     ctx.fillStyle = baseColor;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, 1024, 1024);
     
-    // Different density and size for upper vs sole
-    const numSplatters = isUpper ? 5000 : 3000; // More dots for upper, lots for sole
-    const minRadius = isUpper ? 0.2 : 0.5; // Smaller dots for upper
-    const maxRadius = isUpper ? 0.8 : 1.5; // Different max sizes
+    // Calculate number of splatters based on density (10% = 1000, 100% = 10000, 200% = 20000)
+    const baseSplatters = isUpper ? 5000 : 3000;
+    const numSplatters = Math.floor((baseSplatters * paintDensity) / 50); // 50% = base amount
+    
+    // Sharper, smaller dots for higher resolution
+    const minRadius = isUpper ? 0.4 : 1.0; // Doubled for higher res canvas
+    const maxRadius = isUpper ? 1.6 : 3.0; // Doubled for higher res canvas
     
     // Use source-over blend mode and full opacity for splatter to ensure visibility
     ctx.globalCompositeOperation = 'source-over';
     
     for (let i = 0; i < numSplatters; i++) {
       // Random position across entire canvas
-      const x = Math.random() * 512;
-      const y = Math.random() * 512;
+      const x = Math.random() * 1024;
+      const y = Math.random() * 1024;
       
       // Size variation based on part type
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
@@ -143,12 +150,20 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       ctx.globalAlpha = 0.8 + Math.random() * 0.2; // High opacity (80-100%)
       ctx.fillStyle = splatterColor; // Set color for each dot to ensure consistency
       
+      // Create sharper edges with no anti-aliasing
+      ctx.imageSmoothingEnabled = false;
+      
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
     }
     
-    return new CanvasTexture(canvas);
+    const texture = new CanvasTexture(canvas);
+    texture.generateMipmaps = false; // Disable mipmaps for sharper texture
+    texture.minFilter = 1003; // NearestFilter for sharp pixels
+    texture.magFilter = 1003; // NearestFilter for sharp pixels
+    
+    return texture;
   };
 
   // Update colors when they change
@@ -168,7 +183,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           });
           
           if (soleHasSplatter) {
-            material.map = createSplatterTexture(bottomColor, soleSplatterColor, false);
+            material.map = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
             material.roughness = 0.95; // Even higher roughness for splatter
           } else {
             material.color.set(bottomColor);
@@ -183,7 +198,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           });
           
           if (upperHasSplatter) {
-            material.map = createSplatterTexture(topColor, upperSplatterColor, true);
+            material.map = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
             material.roughness = 0.95; // Even higher roughness for splatter
           } else {
             material.color.set(topColor);
@@ -193,7 +208,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         }
       }
     });
-  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor]);
+  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity]);
 
   // Animation frame loop
   useFrame((state, delta) => {

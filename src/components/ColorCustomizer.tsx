@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Palette } from 'lucide-react';
+import { Palette, Droplets } from 'lucide-react';
 import { Button } from './ui/button';
+import { Slider } from './ui/slider';
 
 interface ColorCustomizerProps {
   topColor: string;
@@ -11,10 +12,14 @@ interface ColorCustomizerProps {
   soleHasSplatter: boolean;
   upperSplatterColor: string;
   soleSplatterColor: string;
+  upperPaintDensity: number;
+  solePaintDensity: number;
   onUpperSplatterToggle: (enabled: boolean) => void;
   onSoleSplatterToggle: (enabled: boolean) => void;
   onUpperSplatterColorChange: (color: string) => void;
   onSoleSplatterColorChange: (color: string) => void;
+  onUpperPaintDensityChange: (density: number) => void;
+  onSolePaintDensityChange: (density: number) => void;
 }
 
 // National Park inspired color palette
@@ -42,10 +47,14 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   soleHasSplatter,
   upperSplatterColor,
   soleSplatterColor,
+  upperPaintDensity,
+  solePaintDensity,
   onUpperSplatterToggle,
   onSoleSplatterToggle,
   onUpperSplatterColorChange,
-  onSoleSplatterColorChange
+  onSoleSplatterColorChange,
+  onUpperPaintDensityChange,
+  onSolePaintDensityChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'upper' | 'sole'>('upper');
@@ -56,6 +65,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const getCurrentSplatterColor = () => activeTab === 'upper' ? upperSplatterColor : soleSplatterColor;
   const getCurrentSplatterToggle = () => activeTab === 'upper' ? onUpperSplatterToggle : onSoleSplatterToggle;
   const getCurrentSplatterColorChanger = () => activeTab === 'upper' ? onUpperSplatterColorChange : onSoleSplatterColorChange;
+  const getCurrentPaintDensity = () => activeTab === 'upper' ? upperPaintDensity : solePaintDensity;
+  const getCurrentPaintDensityChanger = () => activeTab === 'upper' ? onUpperPaintDensityChange : onSolePaintDensityChange;
 
   return (
     <div className="absolute top-4 right-4 z-20">
@@ -161,7 +172,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
               </div>
               
               {getCurrentSplatter() && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-xs text-muted-foreground">Splatter Color:</p>
                   <div className="flex gap-2 flex-wrap">
                     {NATIONAL_PARK_COLORS.slice(0, 8).map((color) => (
@@ -179,6 +190,31 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         title={`Splatter: ${color.name}`}
                       />
                     ))}
+                  </div>
+                  
+                  {/* Paint Density Control */}
+                  <div className="pt-2 border-t border-border/30">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Droplets className="w-3 h-3 text-muted-foreground" />
+                        <label className="text-xs font-medium">Paint Amount</label>
+                      </div>
+                      <span className="text-xs font-mono bg-secondary px-2 py-1 rounded">
+                        {getCurrentPaintDensity()}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[getCurrentPaintDensity()]}
+                      onValueChange={(value) => getCurrentPaintDensityChanger()(value[0])}
+                      min={10}
+                      max={200}
+                      step={10}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Light</span>
+                      <span>Heavy</span>
+                    </div>
                   </div>
                 </div>
               )}
