@@ -3,7 +3,7 @@ import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
-import { ColorPicker } from './ColorPicker';
+import { CompactColorPicker } from './ColorPicker';
 
 interface ViewerControlsProps {
   autoRotate: boolean;
@@ -140,16 +140,12 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       </div>
 
       {/* Color Customization Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2 border-t border-border">
-        <ColorPicker
-          selectedColor={bottomColor}
-          onColorChange={onBottomColorChange}
-          label="Sole Color"
-        />
-        <ColorPicker
-          selectedColor={topColor}
-          onColorChange={onTopColorChange}
-          label="Upper Color"
+      <div className="pt-2 border-t border-border">
+        <CompactColorPicker
+          topColor={topColor}
+          bottomColor={bottomColor}
+          onTopColorChange={onTopColorChange}
+          onBottomColorChange={onBottomColorChange}
         />
       </div>
     </div>

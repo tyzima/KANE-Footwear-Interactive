@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from './ui/button';
+import { ChevronDown } from 'lucide-react';
 
-interface ColorPickerProps {
-  selectedColor: string;
-  onColorChange: (color: string) => void;
-  label: string;
+interface CompactColorPickerProps {
+  topColor: string;
+  bottomColor: string;
+  onTopColorChange: (color: string) => void;
+  onBottomColorChange: (color: string) => void;
 }
 
 // National Park inspired color palette
@@ -23,31 +25,65 @@ const NATIONAL_PARK_COLORS = [
   { name: 'Meadow Green', value: '#7cba00' },
 ];
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({
-  selectedColor,
-  onColorChange,
-  label
+export const CompactColorPicker: React.FC<CompactColorPickerProps> = ({
+  topColor,
+  bottomColor,
+  onTopColorChange,
+  onBottomColorChange
 }) => {
+  const [activeSection, setActiveSection] = useState<'upper' | 'sole' | null>(null);
+
+  const ColorSwatches = ({ selectedColor, onColorChange }: { selectedColor: string, onColorChange: (color: string) => void }) => (
+    <div className="flex gap-1 mt-2">
+      {NATIONAL_PARK_COLORS.map((color) => (
+        <Button
+          key={color.value}
+          variant="outline"
+          size="sm"
+          className={`w-6 h-6 p-0 border rounded-full transition-all ${
+            selectedColor === color.value 
+              ? 'border-primary ring-2 ring-primary/20' 
+              : 'border-border hover:border-primary/50'
+          }`}
+          style={{ backgroundColor: color.value }}
+          onClick={() => onColorChange(color.value)}
+          title={color.name}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">{label}</label>
-      <div className="grid grid-cols-6 gap-2">
-        {NATIONAL_PARK_COLORS.map((color) => (
-          <Button
-            key={color.value}
-            variant="outline"
-            size="sm"
-            className={`w-8 h-8 p-0 border-2 rounded-full transition-all ${
-              selectedColor === color.value 
-                ? 'border-primary scale-110 shadow-md' 
-                : 'border-border hover:border-primary/50'
-            }`}
-            style={{ backgroundColor: color.value }}
-            onClick={() => onColorChange(color.value)}
-            title={color.name}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Upper</span>
+          <div 
+            className="w-8 h-8 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
+            style={{ backgroundColor: topColor }}
+            onClick={() => setActiveSection(activeSection === 'upper' ? null : 'upper')}
           />
-        ))}
+        </div>
+        
+        <div className="text-muted-foreground">|</div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Sole</span>
+          <div 
+            className="w-8 h-8 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
+            style={{ backgroundColor: bottomColor }}
+            onClick={() => setActiveSection(activeSection === 'sole' ? null : 'sole')}
+          />
+        </div>
       </div>
+
+      {activeSection === 'upper' && (
+        <ColorSwatches selectedColor={topColor} onColorChange={onTopColorChange} />
+      )}
+      
+      {activeSection === 'sole' && (
+        <ColorSwatches selectedColor={bottomColor} onColorChange={onBottomColorChange} />
+      )}
     </div>
   );
 };
