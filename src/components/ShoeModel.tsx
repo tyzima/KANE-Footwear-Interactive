@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture, Material } from 'three';
+import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture } from 'three';
 import { useGLTF, useBounds } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -27,6 +27,63 @@ const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4wM9tSdrXd4TzClS20xUyG
 const dracoLoader = new DRACOLoader();
 dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
 
+// Global preloaded model cache to prevent stuttering
+let preloadedModel: GLTF | null = null;
+let preloadPromise: Promise<GLTF> | null = null;
+
+// Preload function that ensures model is ready before use
+const preloadModel = (): Promise<GLTF> => {
+  if (preloadedModel) {
+    return Promise.resolve(preloadedModel);
+  }
+
+  if (preloadPromise) {
+    return preloadPromise;
+  }
+
+  preloadPromise = new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    loader.load(
+      MODEL_URL,
+      (gltf) => {
+        // Process the model immediately upon loading
+        const box = new Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new Vector3());
+        const size = box.getSize(new Vector3());
+
+        // Scale to fit in view
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scaleFactor = 2 / maxDim;
+
+        gltf.scene.scale.setScalar(scaleFactor);
+        gltf.scene.position.set(0, 0.1, 0);
+        gltf.scene.position.sub(center.multiplyScalar(scaleFactor));
+
+        // Enable shadows and prepare for interaction
+        gltf.scene.traverse((child) => {
+          if (child instanceof Mesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.userData = {
+              name: child.name || 'shoe-part',
+              interactive: true
+            };
+          }
+        });
+
+        preloadedModel = gltf;
+        resolve(gltf);
+      },
+      undefined,
+      reject
+    );
+  });
+
+  return preloadPromise;
+};
+
 export const ShoeModel: React.FC<ShoeModelProps> = ({
   onLoad,
   onError,
@@ -49,51 +106,28 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   const currentMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
   const textureCache = useRef<Map<string, Texture>>(new Map());
 
-  // Load the model with DRACO compression support
+  // Use preloaded model to prevent stuttering during animations
   useEffect(() => {
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-
-    loader.load(
-      MODEL_URL,
-      (loadedGltf) => {
+    preloadModel()
+      .then((loadedGltf) => {
         try {
-          // Center and scale the model
-          const box = new Box3().setFromObject(loadedGltf.scene);
-          const center = box.getCenter(new Vector3());
-          const size = box.getSize(new Vector3());
+          // Clone the preloaded model to avoid conflicts between instances
+          const clonedGltf = {
+            ...loadedGltf,
+            scene: loadedGltf.scene.clone()
+          };
 
-          // Scale to fit in view
-          const maxDim = Math.max(size.x, size.y, size.z);
-          const scaleFactor = 2 / maxDim;
-
-          loadedGltf.scene.scale.setScalar(scaleFactor);
-          loadedGltf.scene.position.set(0, 0.1, 0); // Place on ground
-          loadedGltf.scene.position.sub(center.multiplyScalar(scaleFactor));
-
-          // Enable shadows and store original materials for color changes
-          loadedGltf.scene.traverse((child) => {
-            if (child instanceof Mesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-
-              // Store original material for texture preservation
-              if (child.material && child.name) {
-                const originalMaterial = child.material.clone();
-                originalMaterialsRef.current.set(child.name, originalMaterial);
-              }
-
-              // Add interaction data
-              child.userData = {
-                name: child.name || 'shoe-part',
-                interactive: true
-              };
+          // Store original materials for color changes
+          clonedGltf.scene.traverse((child) => {
+            if (child instanceof Mesh && child.material && child.name) {
+              const originalMaterial = child.material.clone();
+              originalMaterialsRef.current.set(child.name, originalMaterial);
             }
           });
 
           // Setup animations if available
           if (loadedGltf.animations && loadedGltf.animations.length > 0) {
-            const mixer = new AnimationMixer(loadedGltf.scene);
+            const mixer = new AnimationMixer(clonedGltf.scene);
             loadedGltf.animations.forEach((clip) => {
               const action = mixer.clipAction(clip);
               action.play();
@@ -101,21 +135,15 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             mixerRef.current = mixer;
           }
 
-          setGltf(loadedGltf);
+          setGltf(clonedGltf);
           onLoad?.();
         } catch (error) {
           onError?.(error instanceof Error ? error : new Error('Failed to process model'));
         }
-      },
-      (progress) => {
-        // Loading progress - could be used for progress bar
-        const percentComplete = (progress.loaded / progress.total) * 100;
-        console.log(`Loading progress: ${percentComplete.toFixed(2)}%`);
-      },
-      (error) => {
+      })
+      .catch((error) => {
         onError?.(error instanceof Error ? error : new Error('Failed to load model'));
-      }
-    );
+      });
 
     return () => {
       // Cleanup
@@ -123,18 +151,18 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         mixerRef.current.stopAllAction();
         mixerRef.current = null;
       }
-      
+
       // Clean up current materials and textures
       currentMaterialsRef.current.forEach((material) => {
         if (material.map) material.map.dispose();
         material.dispose();
       });
       currentMaterialsRef.current.clear();
-      
+
       // Clear texture cache
       textureCache.current.forEach((texture) => texture.dispose());
       textureCache.current.clear();
-      
+
       // Clear original materials
       originalMaterialsRef.current.forEach((material) => {
         if (material.map) material.map.dispose();
@@ -148,7 +176,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 50): Texture => {
     // Create cache key
     const cacheKey = `${baseColor}-${splatterColor}-${isUpper}-${paintDensity}`;
-    
+
     // Check cache first
     if (textureCache.current.has(cacheKey)) {
       return textureCache.current.get(cacheKey)!;
@@ -193,7 +221,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Cache the texture
     textureCache.current.set(cacheKey, texture);
-    
+
     return texture;
   }, []);
 
@@ -278,7 +306,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             }
             material.map = originalMaterial?.map || null;
             material.color.set(topColor);
-            
+
             // Ensure original texture is properly linked
             if (originalMaterial?.map) {
               material.map = originalMaterial.map;
@@ -383,5 +411,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   );
 };
 
-// Preload the model for better performance
+// Preload the model for better performance using both methods
 useGLTF.preload(MODEL_URL);
+
+// Start preloading immediately when module loads to prevent any stuttering
+preloadModel().catch(console.error);
