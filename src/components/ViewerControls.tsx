@@ -3,7 +3,7 @@ import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
-import { CompactColorPicker } from './ColorPicker';
+
 
 interface ViewerControlsProps {
   autoRotate: boolean;
@@ -14,10 +14,6 @@ interface ViewerControlsProps {
   onHotspotSelect: (hotspot: string) => void;
   activeHotspot: string | null;
   disabled?: boolean;
-  bottomColor: string;
-  topColor: string;
-  onBottomColorChange: (color: string) => void;
-  onTopColorChange: (color: string) => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -28,11 +24,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   onReset,
   onHotspotSelect,
   activeHotspot,
-  disabled = false,
-  bottomColor,
-  topColor,
-  onBottomColorChange,
-  onTopColorChange
+  disabled = false
 }) => {
   const handleZoomIn = () => {
     const newZoom = Math.min(zoom + 0.1, 2);
@@ -57,10 +49,6 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
             onHotspotSelect={onHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={disabled}
-            topColor={topColor}
-            bottomColor={bottomColor}
-            onTopColorChange={onTopColorChange}
-            onBottomColorChange={onBottomColorChange}
           />
         </div>
 

@@ -5,6 +5,7 @@ import { ShoeModel } from './ShoeModel';
 import { ViewerControls } from './ViewerControls';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ErrorBoundary } from './ErrorBoundary';
+import { ColorCustomizer } from './ColorCustomizer';
 
 interface ShoeViewerProps {
   className?: string;
@@ -153,6 +154,14 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           </div>
         )}
 
+        {/* Color Customizer - Top Right */}
+        <ColorCustomizer
+          topColor={topColor}
+          bottomColor={bottomColor}
+          onTopColorChange={setTopColor}
+          onBottomColorChange={setBottomColor}
+        />
+
         {/* Controls UI - Now positioned absolutely at bottom */}
         <div className="absolute bottom-4 left-4 right-4">
           <ViewerControls
@@ -164,10 +173,6 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             onHotspotSelect={handleHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={isLoading || !!error}
-            bottomColor={bottomColor}
-            topColor={topColor}
-            onBottomColorChange={setBottomColor}
-            onTopColorChange={setTopColor}
           />
         </div>
       </ErrorBoundary>
