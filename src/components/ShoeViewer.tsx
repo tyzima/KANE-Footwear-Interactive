@@ -1,11 +1,15 @@
 import React, { Suspense, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls, PresentationControls } from '@react-three/drei';
+import * as THREE from 'three';
 import { ShoeModel } from './ShoeModel';
 import { ViewerControls } from './ViewerControls';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ColorCustomizer } from './ColorCustomizer';
+import { LightingControls, LightingPreset } from './LightingControls';
+import { LightingSystem } from './LightingSystem';
+import { DebugMenu, DebugDataCollector } from './DebugMenu';
 
 interface ShoeViewerProps {
   className?: string;
@@ -25,6 +29,17 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [soleSplatterColor, setSoleSplatterColor] = useState('#f8f8ff'); // Glacier White
   const [upperPaintDensity, setUpperPaintDensity] = useState(50); // 50% default
   const [solePaintDensity, setSolePaintDensity] = useState(50); // 50% default
+  const [activeColorTab, setActiveColorTab] = useState<'upper' | 'sole'>('upper');
+  const [lightingIntensity, setLightingIntensity] = useState(1.0);
+  const [shadowIntensity, setShadowIntensity] = useState(0.5);
+  const [debugVisible, setDebugVisible] = useState(false);
+  const [hotspots, setHotspots] = useState<any[]>([]);
+  const [cameraInfo, setCameraInfo] = useState({
+    position: [0, 0, 0] as [number, number, number],
+    target: [0, 0, 0] as [number, number, number],
+    rotation: [0, 0, 0] as [number, number, number],
+    zoom: 1
+  });
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -59,15 +74,103 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
     console.log('Selected hotspot:', hotspot);
   };
 
+  const handleCameraMove = (position: [number, number, number], target: [number, number, number], zoom?: number) => {
+    // Convert camera move request to hotspot format for smooth animation
+    const hotspotData = {
+      position,
+      target,
+      zoom: zoom || 1
+    };
+    handleGoToHotspot(hotspotData);
+  };
+
+  const handlePartClick = (partType: 'upper' | 'sole') => {
+    setActiveColorTab(partType);
+  };
+
+  const handleHotspotAdd = (hotspot: any) => {
+    setHotspots(prev => [...prev, hotspot]);
+    console.log('Added hotspot:', hotspot);
+  };
+
+  const handleCameraPositionSet = (position: [number, number, number], target: [number, number, number]) => {
+    console.log('Camera position set:', { position, target });
+  };
+
+  const handleCameraReset = () => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+      setZoom(0.8);
+      setAutoRotate(true);
+    }
+  };
+
+  const handleGoToHotspot = (hotspot: any) => {
+    if (controlsRef.current) {
+      // Smooth camera transition using three.js animation
+      const controls = controlsRef.current;
+      const camera = controls.object;
+      
+      // Get current positions
+      const startPosition = camera.position.clone();
+      const startTarget = controls.target.clone();
+      const startZoom = camera.zoom;
+      
+      // Target positions
+      const endPosition = new THREE.Vector3(...hotspot.position);
+      const endTarget = new THREE.Vector3(...hotspot.target);
+      const endZoom = hotspot.zoom || 1;
+      
+      // Animation duration in milliseconds
+      const duration = 1500;
+      const startTime = Date.now();
+      
+      // Disable controls during animation
+      controls.enabled = false;
+      
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Smooth easing function (ease-in-out)
+        const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        const easedProgress = easeInOut(progress);
+        
+        // Interpolate position
+        camera.position.lerpVectors(startPosition, endPosition, easedProgress);
+        
+        // Interpolate target
+        controls.target.lerpVectors(startTarget, endTarget, easedProgress);
+        
+        // Interpolate zoom
+        camera.zoom = startZoom + (endZoom - startZoom) * easedProgress;
+        camera.updateProjectionMatrix();
+        
+        // Update controls
+        controls.update();
+        
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          // Re-enable controls after animation
+          controls.enabled = true;
+        }
+      };
+      
+      animate();
+    }
+  };
+
   return (
     <div className={`relative w-full h-full bg-gradient-viewer rounded-lg overflow-hidden ${className}`}>
       <ErrorBoundary onError={handleModelError}>
         <Canvas
           camera={{ 
-            position: [0, -0.5, 3], 
+            position: [2.863, 0.461, 1.44], 
             fov: 45,
             near: 0.1,
-            far: 1000
+            far: 1000,
+            zoom: 1
           }}
           shadows
           className="w-full h-full"
@@ -79,26 +182,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           }}
           dpr={[1, 2]}
         >
-          {/* Lighting Setup */}
-          <ambientLight intensity={0.3} color="#ffffff" />
-          <directionalLight
-            position={[5, 8, 5]}
-            intensity={1}
-            color="#ffffff"
-            castShadow
-            shadow-mapSize-width={512}
-            shadow-mapSize-height={512}
-            shadow-camera-far={50}
-            shadow-camera-left={-5}
-            shadow-camera-right={5}
-            shadow-camera-top={5}
-            shadow-camera-bottom={-5}
+          {/* Dynamic Lighting System */}
+          <LightingSystem 
+            preset={'photorealistic'}
+            intensity={lightingIntensity}
+            shadowIntensity={shadowIntensity}
           />
-          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4A90E2" />
-          <pointLight position={[10, -10, 10]} intensity={0.5} color="#E94B3C" />
-
-          {/* Environment */}
-          <Environment preset="studio" />
           
           {/* Controls */}
           <OrbitControls
@@ -109,7 +198,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             dampingFactor={0.05}
             minDistance={1.5}
             maxDistance={6}
-            maxPolarAngle={Math.PI / 1.5}
+            maxPolarAngle={Math.PI / 2.2}
             minPolarAngle={Math.PI / 6}
             enableZoom
             enablePan={false}
@@ -117,11 +206,17 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             makeDefault
           />
 
+          {/* Debug Data Collector */}
+          {debugVisible && (
+            <DebugDataCollector onCameraUpdate={setCameraInfo} />
+          )}
+
           {/* 3D Model */}
           <Suspense fallback={null}>
             <ShoeModel
               onLoad={handleModelLoad}
               onError={handleModelError}
+              onPartClick={handlePartClick}
               scale={zoom}
               bottomColor={bottomColor}
               topColor={topColor}
@@ -134,15 +229,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             />
           </Suspense>
 
-          {/* Ground plane for shadows */}
-          <mesh
-            rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, 0.05, 0]}
-            receiveShadow
-          >
-            <planeGeometry args={[10, 10]} />
-            <shadowMaterial opacity={0.1} />
-          </mesh>
+
         </Canvas>
 
         {/* Loading Overlay */}
@@ -184,10 +271,22 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           onSoleSplatterColorChange={setSoleSplatterColor}
           onUpperPaintDensityChange={setUpperPaintDensity}
           onSolePaintDensityChange={setSolePaintDensity}
+          activeTab={activeColorTab}
+          onTabChange={setActiveColorTab}
         />
 
-        {/* Controls UI - Now positioned absolutely at bottom */}
-        <div className="absolute bottom-4 left-4 right-4">
+        {/* Lighting Controls - Bottom Left */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <LightingControls
+            intensity={lightingIntensity}
+            onIntensityChange={setLightingIntensity}
+            shadowIntensity={shadowIntensity}
+            onShadowIntensityChange={setShadowIntensity}
+          />
+        </div>
+
+        {/* Controls UI - Now positioned absolutely at bottom with higher z-index */}
+        <div className="absolute bottom-4 left-4 right-4 z-20">
           <ViewerControls
             autoRotate={autoRotate}
             onAutoRotateChange={setAutoRotate}
@@ -197,8 +296,20 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             onHotspotSelect={handleHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={isLoading || !!error}
+            onCameraMove={handleCameraMove}
           />
         </div>
+
+        {/* Debug Menu */}
+        <DebugMenu
+          visible={debugVisible}
+          onToggleVisibility={() => setDebugVisible(!debugVisible)}
+          onHotspotAdd={handleHotspotAdd}
+          onCameraPositionSet={handleCameraPositionSet}
+          cameraInfo={cameraInfo}
+          onCameraReset={handleCameraReset}
+          onGoToHotspot={handleGoToHotspot}
+        />
       </ErrorBoundary>
     </div>
   );

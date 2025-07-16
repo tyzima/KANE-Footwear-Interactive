@@ -20,6 +20,8 @@ interface ColorCustomizerProps {
   onSoleSplatterColorChange: (color: string) => void;
   onUpperPaintDensityChange: (density: number) => void;
   onSolePaintDensityChange: (density: number) => void;
+  activeTab?: 'upper' | 'sole';
+  onTabChange?: (tab: 'upper' | 'sole') => void;
 }
 
 // National Park inspired color palette
@@ -54,10 +56,22 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   onUpperSplatterColorChange,
   onSoleSplatterColorChange,
   onUpperPaintDensityChange,
-  onSolePaintDensityChange
+  onSolePaintDensityChange,
+  activeTab: externalActiveTab,
+  onTabChange
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'upper' | 'sole'>('upper');
+  const [isOpen, setIsOpen] = useState(true);
+  const [internalActiveTab, setInternalActiveTab] = useState<'upper' | 'sole'>('upper');
+  
+  // Use external activeTab if provided, otherwise use internal state
+  const activeTab = externalActiveTab || internalActiveTab;
+  const handleTabChange = (tab: 'upper' | 'sole') => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
 
   const getCurrentColor = () => activeTab === 'upper' ? topColor : bottomColor;
   const getCurrentColorChanger = () => activeTab === 'upper' ? onTopColorChange : onBottomColorChange;
@@ -70,25 +84,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
   return (
     <div className="absolute top-4 right-4 z-20">
-      {/* Toggle Button */}
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`transition-all duration-300 shadow-lg hover:shadow-xl mb-3 ${
-          isOpen ? 'bg-primary text-primary-foreground' : 'bg-white/90 backdrop-blur-sm'
-        }`}
-      >
-        <Palette className="w-4 h-4 mr-2" />
-        Customize Colors
-      </Button>
-
-      {/* Color Customizer Panel with Tabs */}
-      <div className={`transition-all duration-500 ease-out overflow-hidden ${
-        isOpen 
-          ? 'max-h-[450px] opacity-100 translate-y-0' 
-          : 'max-h-0 opacity-0 -translate-y-4'
-      }`}>
+      {/* Color Customizer Panel with Tabs - Always Open */}
+      <div className="max-h-[450px] opacity-100 translate-y-0">
         <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl max-h-[420px] overflow-y-auto">
           {/* Tab Header */}
           <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 p-4 pb-0 border-b border-border/20">
@@ -102,7 +99,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
               
               {/* Tab Buttons */}
               <button
-                onClick={() => setActiveTab('upper')}
+                onClick={() => handleTabChange('upper')}
                 className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
                   activeTab === 'upper' 
                     ? 'text-primary' 
@@ -112,7 +109,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 Upper
               </button>
               <button
-                onClick={() => setActiveTab('sole')}
+                onClick={() => handleTabChange('sole')}
                 className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
                   activeTab === 'sole' 
                     ? 'text-primary' 

@@ -14,6 +14,7 @@ interface ViewerControlsProps {
   onHotspotSelect: (hotspot: string) => void;
   activeHotspot: string | null;
   disabled?: boolean;
+  onCameraMove?: (position: [number, number, number], target: [number, number, number], zoom?: number) => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -24,7 +25,8 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   onReset,
   onHotspotSelect,
   activeHotspot,
-  disabled = false
+  disabled = false,
+  onCameraMove
 }) => {
   const handleZoomIn = () => {
     const newZoom = Math.min(zoom + 0.1, 2);
@@ -49,6 +51,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
             onHotspotSelect={onHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={disabled}
+            onCameraMove={onCameraMove}
           />
         </div>
 
