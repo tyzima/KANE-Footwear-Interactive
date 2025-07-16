@@ -119,29 +119,27 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, 512, 512);
     
-    // Add random splatter dots
+    // Add dense splatter pattern
     ctx.fillStyle = splatterColor;
-    const splatters = [
-      { x: 100, y: 150, radius: 8 },
-      { x: 300, y: 80, radius: 6 },
-      { x: 450, y: 200, radius: 12 },
-      { x: 200, y: 350, radius: 5 },
-      { x: 380, y: 420, radius: 10 },
-      { x: 80, y: 400, radius: 7 },
-      { x: 350, y: 300, radius: 9 },
-      { x: 150, y: 250, radius: 4 },
-      { x: 420, y: 120, radius: 11 },
-      { x: 50, y: 300, radius: 6 },
-      { x: 250, y: 180, radius: 8 },
-      { x: 480, y: 350, radius: 5 },
-    ];
     
-    splatters.forEach(splatter => {
-      ctx.globalAlpha = 0.6 + Math.random() * 0.4; // Random opacity
+    // Generate many small random splatters
+    const numSplatters = 150; // Much more splatters for dense coverage
+    
+    for (let i = 0; i < numSplatters; i++) {
+      // Random position across entire canvas
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      
+      // Small radius variation (1-4px for small dense dots)
+      const radius = 1 + Math.random() * 3;
+      
+      // Random opacity for variation
+      ctx.globalAlpha = 0.4 + Math.random() * 0.6;
+      
       ctx.beginPath();
-      ctx.arc(splatter.x, splatter.y, splatter.radius, 0, Math.PI * 2);
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
-    });
+    }
     
     return new CanvasTexture(canvas);
   };

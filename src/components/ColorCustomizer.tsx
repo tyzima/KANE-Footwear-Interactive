@@ -112,12 +112,22 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 {/* Show splatter preview for sole */}
                 {activeTab === 'sole' && soleHasSplatter && (
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 40">
-                    <circle cx="8" cy="12" r="1.5" fill={splatterColor} opacity="0.8" />
-                    <circle cx="28" cy="18" r="1" fill={splatterColor} opacity="0.6" />
-                    <circle cx="15" cy="25" r="2" fill={splatterColor} opacity="0.7" />
-                    <circle cx="32" cy="8" r="1.2" fill={splatterColor} opacity="0.9" />
-                    <circle cx="20" cy="35" r="1.8" fill={splatterColor} opacity="0.5" />
-                    <circle cx="35" cy="30" r="1" fill={splatterColor} opacity="0.8" />
+                    {/* Dense small splatter dots for preview */}
+                    <circle cx="8" cy="12" r="0.8" fill={splatterColor} opacity="0.7" />
+                    <circle cx="28" cy="18" r="0.6" fill={splatterColor} opacity="0.5" />
+                    <circle cx="15" cy="25" r="1" fill={splatterColor} opacity="0.8" />
+                    <circle cx="32" cy="8" r="0.7" fill={splatterColor} opacity="0.6" />
+                    <circle cx="20" cy="35" r="0.9" fill={splatterColor} opacity="0.7" />
+                    <circle cx="35" cy="30" r="0.5" fill={splatterColor} opacity="0.8" />
+                    <circle cx="12" cy="6" r="0.6" fill={splatterColor} opacity="0.5" />
+                    <circle cx="25" cy="12" r="0.8" fill={splatterColor} opacity="0.7" />
+                    <circle cx="6" cy="22" r="0.7" fill={splatterColor} opacity="0.6" />
+                    <circle cx="38" cy="15" r="0.5" fill={splatterColor} opacity="0.8" />
+                    <circle cx="18" cy="38" r="0.6" fill={splatterColor} opacity="0.7" />
+                    <circle cx="30" cy="28" r="0.8" fill={splatterColor} opacity="0.5" />
+                    <circle cx="10" cy="32" r="0.7" fill={splatterColor} opacity="0.6" />
+                    <circle cx="24" cy="5" r="0.5" fill={splatterColor} opacity="0.8" />
+                    <circle cx="36" cy="35" r="0.9" fill={splatterColor} opacity="0.7" />
                   </svg>
                 )}
               </div>
