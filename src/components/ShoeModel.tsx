@@ -139,8 +139,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       // Size variation based on part type
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
       
-      // Lower opacity to prevent color dulling
-      ctx.globalAlpha = 0.15 + Math.random() * 0.25; // Much lower opacity (15-40%)
+      // Higher opacity to make splatter really visible
+      ctx.globalAlpha = 0.6 + Math.random() * 0.3; // Much higher opacity (60-90%)
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
