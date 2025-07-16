@@ -13,8 +13,8 @@ interface ShoeViewerProps {
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoRotate, setAutoRotate] = useState(false); // Don't auto rotate by default
-  const [zoom, setZoom] = useState(1.2); // More zoomed in by default
+  const [autoRotate, setAutoRotate] = useState(true);
+  const [zoom, setZoom] = useState(0.8); // Start at 80% zoom as requested
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const controlsRef = useRef<any>(null);
 
@@ -31,8 +31,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const handleReset = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      setZoom(1.2); // Reset to more zoomed in view
-      setAutoRotate(false); // Don't auto rotate by default
+      setZoom(0.8); // Reset to 80% zoom
+      setAutoRotate(true);
     }
   };
 
@@ -55,7 +55,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
       <ErrorBoundary onError={handleModelError}>
         <Canvas
           camera={{ 
-            position: [0, 1, 3], // Slightly elevated camera to look down at shoe on ground
+            position: [0, 0, 2], 
             fov: 45,
             near: 0.1,
             far: 1000
@@ -70,11 +70,11 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           }}
           dpr={[1, 2]}
         >
-          {/* Lighting Setup for ground-based shoe */}
-          <ambientLight intensity={0.4} color="#ffffff" />
+          {/* Lighting Setup */}
+          <ambientLight intensity={0.3} color="#ffffff" />
           <directionalLight
-            position={[5, 8, 5]}
-            intensity={1.2}
+            position={[10, 10, 5]}
+            intensity={1}
             color="#ffffff"
             castShadow
             shadow-mapSize-width={2048}
@@ -85,8 +85,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             shadow-camera-top={10}
             shadow-camera-bottom={-10}
           />
-          <pointLight position={[-5, 3, -5]} intensity={0.3} color="#4A90E2" />
-          <pointLight position={[5, 3, 5]} intensity={0.3} color="#E94B3C" />
+          <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4A90E2" />
+          <pointLight position={[10, -10, 10]} intensity={0.5} color="#E94B3C" />
 
           {/* Environment */}
           <Environment preset="studio" />
@@ -98,47 +98,44 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             autoRotateSpeed={0.5}
             enableDamping
             dampingFactor={0.05}
-            minDistance={1.5}
-            maxDistance={8}
-            maxPolarAngle={Math.PI / 2.2} // Limit how low you can look (prevents going under ground)
+            minDistance={1}
+            maxDistance={6}
+            maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 6}
             enableZoom
             enablePan={false}
-            target={[0, 0.2, 0]} // Look at the shoe slightly above ground
             makeDefault
           />
 
-          {/* 3D Model positioned on ground */}
+          {/* 3D Model */}
           <Suspense fallback={null}>
-            <group position={[0, 0, 0]}> {/* Position shoe at ground level */}
-              <PresentationControls
-                enabled={true}
-                global={false}
-                cursor={true}
-                snap={false}
-                speed={1}
-                zoom={1}
-                rotation={[0, 0, 0]}
-                polar={[-Math.PI / 6, Math.PI / 6]} // Reduce vertical rotation range
-                azimuth={[-Math.PI / 1.4, Math.PI / 1.4]}
-              >
-                <ShoeModel
-                  onLoad={handleModelLoad}
-                  onError={handleModelError}
-                  scale={zoom}
-                />
-              </PresentationControls>
-            </group>
+            <PresentationControls
+              enabled={true}
+              global={false}
+              cursor={true}
+              snap={false}
+              speed={1}
+              zoom={1}
+              rotation={[0, 0, 0]}
+              polar={[-Math.PI / 3, Math.PI / 3]}
+              azimuth={[-Math.PI / 1.4, Math.PI / 1.4]}
+            >
+              <ShoeModel
+                onLoad={handleModelLoad}
+                onError={handleModelError}
+                scale={zoom}
+              />
+            </PresentationControls>
           </Suspense>
 
-          {/* Ground plane with realistic shadow */}
+          {/* Ground plane for shadows */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, -0.05, 0]} // Just slightly below shoe
+            position={[0, -1.5, 0]}
             receiveShadow
           >
-            <planeGeometry args={[20, 20]} />
-            <shadowMaterial opacity={0.3} color="#000000" />
+            <planeGeometry args={[10, 10]} />
+            <shadowMaterial opacity={0.2} />
           </mesh>
         </Canvas>
 
