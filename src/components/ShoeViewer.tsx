@@ -73,17 +73,17 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           {/* Lighting Setup */}
           <ambientLight intensity={0.3} color="#ffffff" />
           <directionalLight
-            position={[10, 10, 5]}
+            position={[5, 8, 5]}
             intensity={1}
             color="#ffffff"
             castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
+            shadow-mapSize-width={512}
+            shadow-mapSize-height={512}
             shadow-camera-far={50}
-            shadow-camera-left={-10}
-            shadow-camera-right={10}
-            shadow-camera-top={10}
-            shadow-camera-bottom={-10}
+            shadow-camera-left={-5}
+            shadow-camera-right={5}
+            shadow-camera-top={5}
+            shadow-camera-bottom={-5}
           />
           <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4A90E2" />
           <pointLight position={[10, -10, 10]} intensity={0.5} color="#E94B3C" />
@@ -120,11 +120,11 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           {/* Ground plane for shadows */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, -0.5, 0]}
+            position={[0, 0.05, 0]}
             receiveShadow
           >
             <planeGeometry args={[10, 10]} />
-            <shadowMaterial opacity={0.25} />
+            <shadowMaterial opacity={0.1} />
           </mesh>
         </Canvas>
 
