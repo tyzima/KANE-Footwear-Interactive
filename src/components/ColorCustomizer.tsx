@@ -86,12 +86,12 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       {/* Color Customizer Panel with Tabs */}
       <div className={`transition-all duration-500 ease-out overflow-hidden ${
         isOpen 
-          ? 'max-h-[400px] opacity-100 translate-y-0' 
+          ? 'max-h-[450px] opacity-100 translate-y-0' 
           : 'max-h-0 opacity-0 -translate-y-4'
       }`}>
-        <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl">
+        <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl max-h-[420px] overflow-y-auto">
           {/* Tab Header */}
-          <div className="relative p-4 pb-0">
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 p-4 pb-0 border-b border-border/20">
             <div className="flex rounded-lg bg-secondary/50 p-1 relative">
               {/* Animated Tab Indicator */}
               <div 
@@ -124,8 +124,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="p-4">
+          {/* Tab Content - Scrollable */}
+          <div className="p-4 space-y-4">
             {/* Current Color Preview */}
             <div className="flex items-center gap-3 mb-4 p-3 bg-secondary/30 rounded-lg">
               <div 
@@ -158,8 +158,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             </div>
 
             {/* Splatter Option for Both Upper and Sole */}
-            <div className="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/50">
-              <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-secondary/20 rounded-lg border border-border/50">
+              <div className="flex items-center justify-between mb-2">
                 <label className="text-sm font-medium">Paint Splatter</label>
                 <Button
                   variant={getCurrentSplatter() ? "default" : "outline"}
@@ -172,17 +172,17 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
               </div>
               
               {getCurrentSplatter() && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Splatter Color:</p>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-1 flex-wrap">
                     {NATIONAL_PARK_COLORS.slice(0, 8).map((color) => (
                       <Button
                         key={color.value}
                         variant="outline"
                         size="sm"
-                        className={`w-6 h-6 p-0 border-2 rounded-full transition-all hover:scale-110 ${
+                        className={`w-5 h-5 p-0 border rounded-full transition-all hover:scale-110 ${
                           getCurrentSplatterColor() === color.value 
-                            ? 'border-primary ring-2 ring-primary/20 scale-110' 
+                            ? 'border-primary ring-1 ring-primary/20 scale-110' 
                             : 'border-border hover:border-primary/50'
                         }`}
                         style={{ backgroundColor: color.value }}
@@ -192,14 +192,14 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     ))}
                   </div>
                   
-                  {/* Paint Density Control */}
+                  {/* Paint Density Control - Compact */}
                   <div className="pt-2 border-t border-border/30">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
                         <Droplets className="w-3 h-3 text-muted-foreground" />
-                        <label className="text-xs font-medium">Paint Amount</label>
+                        <label className="text-xs font-medium">Amount</label>
                       </div>
-                      <span className="text-xs font-mono bg-secondary px-2 py-1 rounded">
+                      <span className="text-xs font-mono bg-secondary px-1.5 py-0.5 rounded text-[10px]">
                         {getCurrentPaintDensity()}%
                       </span>
                     </div>
@@ -209,9 +209,9 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       min={10}
                       max={200}
                       step={10}
-                      className="w-full"
+                      className="w-full h-1"
                     />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
                       <span>Light</span>
                       <span>Heavy</span>
                     </div>
@@ -220,14 +220,14 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
               )}
             </div>
 
-            {/* Color Grid with Animation */}
-            <div className="grid grid-cols-6 gap-2 animate-fade-in">
+            {/* Color Grid with Animation - Compact */}
+            <div className="grid grid-cols-6 gap-1.5 animate-fade-in">
               {NATIONAL_PARK_COLORS.map((colorOption, index) => (
                 <Button
                   key={colorOption.value}
                   variant="outline"
                   size="sm"
-                  className={`w-10 h-10 p-0 border-2 rounded-full transition-all hover:scale-110 ${
+                  className={`w-8 h-8 p-0 border-2 rounded-full transition-all hover:scale-110 ${
                     getCurrentColor() === colorOption.value 
                       ? 'border-primary ring-2 ring-primary/20 scale-110' 
                       : 'border-border hover:border-primary/50'
