@@ -19,8 +19,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [bottomColor, setBottomColor] = useState('#2d5016'); // Forest Green
   const [topColor, setTopColor] = useState('#8b4513'); // Redwood
+  const [upperHasSplatter, setUpperHasSplatter] = useState(false);
   const [soleHasSplatter, setSoleHasSplatter] = useState(false);
-  const [splatterColor, setSplatterColor] = useState('#f8f8ff'); // Glacier White
+  const [upperSplatterColor, setUpperSplatterColor] = useState('#f8f8ff'); // Glacier White
+  const [soleSplatterColor, setSoleSplatterColor] = useState('#f8f8ff'); // Glacier White
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -121,8 +123,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
               scale={zoom}
               bottomColor={bottomColor}
               topColor={topColor}
+              upperHasSplatter={upperHasSplatter}
               soleHasSplatter={soleHasSplatter}
-              splatterColor={splatterColor}
+              upperSplatterColor={upperSplatterColor}
+              soleSplatterColor={soleSplatterColor}
             />
           </Suspense>
 
@@ -164,10 +168,14 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           bottomColor={bottomColor}
           onTopColorChange={setTopColor}
           onBottomColorChange={setBottomColor}
+          upperHasSplatter={upperHasSplatter}
           soleHasSplatter={soleHasSplatter}
-          splatterColor={splatterColor}
-          onSplatterToggle={setSoleHasSplatter}
-          onSplatterColorChange={setSplatterColor}
+          upperSplatterColor={upperSplatterColor}
+          soleSplatterColor={soleSplatterColor}
+          onUpperSplatterToggle={setUpperHasSplatter}
+          onSoleSplatterToggle={setSoleHasSplatter}
+          onUpperSplatterColorChange={setUpperSplatterColor}
+          onSoleSplatterColorChange={setSoleSplatterColor}
         />
 
         {/* Controls UI - Now positioned absolutely at bottom */}

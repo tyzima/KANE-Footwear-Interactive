@@ -12,8 +12,10 @@ interface ShoeModelProps {
   scale?: number;
   bottomColor?: string;
   topColor?: string;
+  upperHasSplatter?: boolean;
   soleHasSplatter?: boolean;
-  splatterColor?: string;
+  upperSplatterColor?: string;
+  soleSplatterColor?: string;
 }
 
 const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4foxLh8y6DeirLamH7Y1SBOW8l6CycoPdFvg4';
@@ -28,8 +30,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   scale = 1,
   bottomColor = '#2d5016',
   topColor = '#8b4513',
+  upperHasSplatter = false,
   soleHasSplatter = false,
-  splatterColor = '#f8f8ff'
+  upperSplatterColor = '#f8f8ff',
+  soleSplatterColor = '#f8f8ff'
 }) => {
   const groupRef = useRef<Group>(null);
   const mixerRef = useRef<AnimationMixer | null>(null);
@@ -108,7 +112,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     };
   }, [onLoad, onError]);
 
-  // Create splatter texture
+  // Create ultra-dense splatter texture
   const createSplatterTexture = (baseColor: string, splatterColor: string): Texture => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -119,22 +123,22 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, 512, 512);
     
-    // Add dense splatter pattern
+    // Add ULTRA dense splatter pattern
     ctx.fillStyle = splatterColor;
     
-    // Generate many small random splatters
-    const numSplatters = 150; // Much more splatters for dense coverage
+    // Generate thousands of tiny splatters for dense coverage
+    const numSplatters = 2000; // Massive increase for ultra-dense coverage
     
     for (let i = 0; i < numSplatters; i++) {
       // Random position across entire canvas
       const x = Math.random() * 512;
       const y = Math.random() * 512;
       
-      // Small radius variation (1-4px for small dense dots)
-      const radius = 1 + Math.random() * 3;
+      // Very small radius variation (0.5-2px for tiny dense dots)
+      const radius = 0.5 + Math.random() * 1.5;
       
       // Random opacity for variation
-      ctx.globalAlpha = 0.4 + Math.random() * 0.6;
+      ctx.globalAlpha = 0.3 + Math.random() * 0.5;
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -161,24 +165,30 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           });
           
           if (soleHasSplatter) {
-            material.map = createSplatterTexture(bottomColor, splatterColor);
+            material.map = createSplatterTexture(bottomColor, soleSplatterColor);
           } else {
             material.color.set(bottomColor);
           }
           
           child.material = material;
         } else if (isTopPart) {
-          // Standard material for top parts
+          // Create material with or without splatter for top parts
           const material = new MeshStandardMaterial({
-            color: topColor,
             roughness: 0.8,
             metalness: 0.1,
           });
+          
+          if (upperHasSplatter) {
+            material.map = createSplatterTexture(topColor, upperSplatterColor);
+          } else {
+            material.color.set(topColor);
+          }
+          
           child.material = material;
         }
       }
     });
-  }, [gltf, bottomColor, topColor, soleHasSplatter, splatterColor]);
+  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor]);
 
   // Animation frame loop
   useFrame((state, delta) => {

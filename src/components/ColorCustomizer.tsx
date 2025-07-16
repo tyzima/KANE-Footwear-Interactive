@@ -7,10 +7,14 @@ interface ColorCustomizerProps {
   bottomColor: string;
   onTopColorChange: (color: string) => void;
   onBottomColorChange: (color: string) => void;
+  upperHasSplatter: boolean;
   soleHasSplatter: boolean;
-  splatterColor: string;
-  onSplatterToggle: (enabled: boolean) => void;
-  onSplatterColorChange: (color: string) => void;
+  upperSplatterColor: string;
+  soleSplatterColor: string;
+  onUpperSplatterToggle: (enabled: boolean) => void;
+  onSoleSplatterToggle: (enabled: boolean) => void;
+  onUpperSplatterColorChange: (color: string) => void;
+  onSoleSplatterColorChange: (color: string) => void;
 }
 
 // National Park inspired color palette
@@ -34,16 +38,24 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   bottomColor,
   onTopColorChange,
   onBottomColorChange,
+  upperHasSplatter,
   soleHasSplatter,
-  splatterColor,
-  onSplatterToggle,
-  onSplatterColorChange
+  upperSplatterColor,
+  soleSplatterColor,
+  onUpperSplatterToggle,
+  onSoleSplatterToggle,
+  onUpperSplatterColorChange,
+  onSoleSplatterColorChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'upper' | 'sole'>('upper');
 
   const getCurrentColor = () => activeTab === 'upper' ? topColor : bottomColor;
   const getCurrentColorChanger = () => activeTab === 'upper' ? onTopColorChange : onBottomColorChange;
+  const getCurrentSplatter = () => activeTab === 'upper' ? upperHasSplatter : soleHasSplatter;
+  const getCurrentSplatterColor = () => activeTab === 'upper' ? upperSplatterColor : soleSplatterColor;
+  const getCurrentSplatterToggle = () => activeTab === 'upper' ? onUpperSplatterToggle : onSoleSplatterToggle;
+  const getCurrentSplatterColorChanger = () => activeTab === 'upper' ? onUpperSplatterColorChange : onSoleSplatterColorChange;
 
   return (
     <div className="absolute top-4 right-4 z-20">
@@ -109,25 +121,20 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 className="w-10 h-10 rounded-full border-2 border-white shadow-md relative overflow-hidden"
                 style={{ backgroundColor: getCurrentColor() }}
               >
-                {/* Show splatter preview for sole */}
-                {activeTab === 'sole' && soleHasSplatter && (
+                {/* Show splatter preview */}
+                {getCurrentSplatter() && (
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 40">
-                    {/* Dense small splatter dots for preview */}
-                    <circle cx="8" cy="12" r="0.8" fill={splatterColor} opacity="0.7" />
-                    <circle cx="28" cy="18" r="0.6" fill={splatterColor} opacity="0.5" />
-                    <circle cx="15" cy="25" r="1" fill={splatterColor} opacity="0.8" />
-                    <circle cx="32" cy="8" r="0.7" fill={splatterColor} opacity="0.6" />
-                    <circle cx="20" cy="35" r="0.9" fill={splatterColor} opacity="0.7" />
-                    <circle cx="35" cy="30" r="0.5" fill={splatterColor} opacity="0.8" />
-                    <circle cx="12" cy="6" r="0.6" fill={splatterColor} opacity="0.5" />
-                    <circle cx="25" cy="12" r="0.8" fill={splatterColor} opacity="0.7" />
-                    <circle cx="6" cy="22" r="0.7" fill={splatterColor} opacity="0.6" />
-                    <circle cx="38" cy="15" r="0.5" fill={splatterColor} opacity="0.8" />
-                    <circle cx="18" cy="38" r="0.6" fill={splatterColor} opacity="0.7" />
-                    <circle cx="30" cy="28" r="0.8" fill={splatterColor} opacity="0.5" />
-                    <circle cx="10" cy="32" r="0.7" fill={splatterColor} opacity="0.6" />
-                    <circle cx="24" cy="5" r="0.5" fill={splatterColor} opacity="0.8" />
-                    <circle cx="36" cy="35" r="0.9" fill={splatterColor} opacity="0.7" />
+                    {/* Ultra dense small splatter dots for preview */}
+                    {Array.from({ length: 25 }, (_, i) => (
+                      <circle 
+                        key={i}
+                        cx={2 + (i % 5) * 8 + Math.random() * 4} 
+                        cy={2 + Math.floor(i / 5) * 8 + Math.random() * 4} 
+                        r={0.3 + Math.random() * 0.4} 
+                        fill={getCurrentSplatterColor()} 
+                        opacity={0.4 + Math.random() * 0.4} 
+                      />
+                    ))}
                   </svg>
                 )}
               </div>
@@ -139,45 +146,43 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
               </div>
             </div>
 
-            {/* Splatter Option for Sole */}
-            {activeTab === 'sole' && (
-              <div className="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/50">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-medium">Paint Splatter</label>
-                  <Button
-                    variant={soleHasSplatter ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onSplatterToggle(!soleHasSplatter)}
-                    className="h-6 px-3 text-xs"
-                  >
-                    {soleHasSplatter ? 'ON' : 'OFF'}
-                  </Button>
-                </div>
-                
-                {soleHasSplatter && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Splatter Color:</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {NATIONAL_PARK_COLORS.slice(0, 8).map((color) => (
-                        <Button
-                          key={color.value}
-                          variant="outline"
-                          size="sm"
-                          className={`w-6 h-6 p-0 border-2 rounded-full transition-all hover:scale-110 ${
-                            splatterColor === color.value 
-                              ? 'border-primary ring-2 ring-primary/20 scale-110' 
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                          style={{ backgroundColor: color.value }}
-                          onClick={() => onSplatterColorChange(color.value)}
-                          title={`Splatter: ${color.name}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+            {/* Splatter Option for Both Upper and Sole */}
+            <div className="mb-4 p-3 bg-secondary/20 rounded-lg border border-border/50">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-medium">Paint Splatter</label>
+                <Button
+                  variant={getCurrentSplatter() ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => getCurrentSplatterToggle()(!getCurrentSplatter())}
+                  className="h-6 px-3 text-xs"
+                >
+                  {getCurrentSplatter() ? 'ON' : 'OFF'}
+                </Button>
               </div>
-            )}
+              
+              {getCurrentSplatter() && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Splatter Color:</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {NATIONAL_PARK_COLORS.slice(0, 8).map((color) => (
+                      <Button
+                        key={color.value}
+                        variant="outline"
+                        size="sm"
+                        className={`w-6 h-6 p-0 border-2 rounded-full transition-all hover:scale-110 ${
+                          getCurrentSplatterColor() === color.value 
+                            ? 'border-primary ring-2 ring-primary/20 scale-110' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        onClick={() => getCurrentSplatterColorChanger()(color.value)}
+                        title={`Splatter: ${color.name}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Color Grid with Animation */}
             <div className="grid grid-cols-6 gap-2 animate-fade-in">
