@@ -55,7 +55,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
       <ErrorBoundary onError={handleModelError}>
         <Canvas
           camera={{ 
-            position: [0, 0, 2], 
+            position: [0, -0.5, 2], 
             fov: 45,
             near: 0.1,
             far: 1000

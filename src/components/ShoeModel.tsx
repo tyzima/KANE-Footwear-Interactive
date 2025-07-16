@@ -49,7 +49,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           const scaleFactor = 2 / maxDim;
           
           loadedGltf.scene.scale.setScalar(scaleFactor);
-          loadedGltf.scene.position.set(0, -0.5, 0); // Place on ground
+          loadedGltf.scene.position.set(0, -0.2, 0); // Place on ground
           loadedGltf.scene.position.sub(center.multiplyScalar(scaleFactor));
           
           // Enable shadows
