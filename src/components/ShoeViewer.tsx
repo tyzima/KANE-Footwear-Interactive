@@ -13,7 +13,7 @@ interface ShoeViewerProps {
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
   const [zoom, setZoom] = useState(0.8); // Start at 80% zoom as requested
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const controlsRef = useRef<any>(null);

@@ -106,12 +106,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     }
 
     if (groupRef.current) {
-      // Gentle floating animation when not interacting
-      if (!isHovered && !clickedPart) {
-        groupRef.current.rotation.y += delta * 0.1;
-        groupRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.05;
-      }
-
       // Apply scale
       groupRef.current.scale.setScalar(scale);
     }
