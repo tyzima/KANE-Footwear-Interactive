@@ -57,6 +57,10 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
             onHotspotSelect={onHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={disabled}
+            topColor={topColor}
+            bottomColor={bottomColor}
+            onTopColorChange={onTopColorChange}
+            onBottomColorChange={onBottomColorChange}
           />
         </div>
 
@@ -139,15 +143,6 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
         </div>
       </div>
 
-      {/* Color Customization Row */}
-      <div className="pt-2 border-t border-border">
-        <CompactColorPicker
-          topColor={topColor}
-          bottomColor={bottomColor}
-          onTopColorChange={onTopColorChange}
-          onBottomColorChange={onBottomColorChange}
-        />
-      </div>
     </div>
   );
 };
