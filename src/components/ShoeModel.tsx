@@ -113,7 +113,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   }, [onLoad, onError]);
 
   // Create ultra-dense splatter texture
-  const createSplatterTexture = (baseColor: string, splatterColor: string): Texture => {
+  const createSplatterTexture = (baseColor: string, splatterColor: string, isUpper: boolean = false): Texture => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
@@ -126,19 +126,21 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     // Add ULTRA dense splatter pattern
     ctx.fillStyle = splatterColor;
     
-    // Generate thousands of tiny splatters for dense coverage
-    const numSplatters = 2000; // Massive increase for ultra-dense coverage
+    // Different density and size for upper vs sole
+    const numSplatters = isUpper ? 5000 : 3000; // More dots for upper, lots for sole
+    const minRadius = isUpper ? 0.2 : 0.5; // Smaller dots for upper
+    const maxRadius = isUpper ? 0.8 : 1.5; // Different max sizes
     
     for (let i = 0; i < numSplatters; i++) {
       // Random position across entire canvas
       const x = Math.random() * 512;
       const y = Math.random() * 512;
       
-      // Very small radius variation (0.5-2px for tiny dense dots)
-      const radius = 0.5 + Math.random() * 1.5;
+      // Size variation based on part type
+      const radius = minRadius + Math.random() * (maxRadius - minRadius);
       
-      // Random opacity for variation
-      ctx.globalAlpha = 0.3 + Math.random() * 0.5;
+      // Lower opacity to prevent color dulling
+      ctx.globalAlpha = 0.15 + Math.random() * 0.25; // Much lower opacity (15-40%)
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -160,12 +162,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         if (isBottomPart) {
           // Create material with or without splatter for bottom parts
           const material = new MeshStandardMaterial({
-            roughness: 0.8,
-            metalness: 0.1,
+            roughness: 0.9, // Higher roughness to reduce shine
+            metalness: 0.05, // Lower metalness
           });
           
           if (soleHasSplatter) {
-            material.map = createSplatterTexture(bottomColor, soleSplatterColor);
+            material.map = createSplatterTexture(bottomColor, soleSplatterColor, false);
+            material.roughness = 0.95; // Even higher roughness for splatter
           } else {
             material.color.set(bottomColor);
           }
@@ -174,12 +177,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         } else if (isTopPart) {
           // Create material with or without splatter for top parts
           const material = new MeshStandardMaterial({
-            roughness: 0.8,
-            metalness: 0.1,
+            roughness: 0.9, // Higher roughness to reduce shine
+            metalness: 0.05, // Lower metalness
           });
           
           if (upperHasSplatter) {
-            material.map = createSplatterTexture(topColor, upperSplatterColor);
+            material.map = createSplatterTexture(topColor, upperSplatterColor, true);
+            material.roughness = 0.95; // Even higher roughness for splatter
           } else {
             material.color.set(topColor);
           }

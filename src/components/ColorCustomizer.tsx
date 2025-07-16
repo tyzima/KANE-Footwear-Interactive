@@ -124,15 +124,15 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 {/* Show splatter preview */}
                 {getCurrentSplatter() && (
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 40 40">
-                    {/* Ultra dense small splatter dots for preview */}
-                    {Array.from({ length: 25 }, (_, i) => (
+                    {/* Ultra dense small splatter dots for preview - different sizes for upper vs sole */}
+                    {Array.from({ length: activeTab === 'upper' ? 35 : 25 }, (_, i) => (
                       <circle 
                         key={i}
-                        cx={2 + (i % 5) * 8 + Math.random() * 4} 
-                        cy={2 + Math.floor(i / 5) * 8 + Math.random() * 4} 
-                        r={0.3 + Math.random() * 0.4} 
+                        cx={2 + (i % 7) * 5.5 + Math.random() * 3} 
+                        cy={2 + Math.floor(i / 7) * 5.5 + Math.random() * 3} 
+                        r={activeTab === 'upper' ? 0.15 + Math.random() * 0.25 : 0.3 + Math.random() * 0.4} 
                         fill={getCurrentSplatterColor()} 
-                        opacity={0.4 + Math.random() * 0.4} 
+                        opacity={0.2 + Math.random() * 0.3} 
                       />
                     ))}
                   </svg>
