@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial } from 'three';
+import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture } from 'three';
 import { useGLTF, useBounds } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -12,6 +12,8 @@ interface ShoeModelProps {
   scale?: number;
   bottomColor?: string;
   topColor?: string;
+  soleHasSplatter?: boolean;
+  splatterColor?: string;
 }
 
 const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4foxLh8y6DeirLamH7Y1SBOW8l6CycoPdFvg4';
@@ -25,7 +27,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   onError, 
   scale = 1,
   bottomColor = '#2d5016',
-  topColor = '#8b4513'
+  topColor = '#8b4513',
+  soleHasSplatter = false,
+  splatterColor = '#f8f8ff'
 }) => {
   const groupRef = useRef<Group>(null);
   const mixerRef = useRef<AnimationMixer | null>(null);
@@ -104,6 +108,44 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     };
   }, [onLoad, onError]);
 
+  // Create splatter texture
+  const createSplatterTexture = (baseColor: string, splatterColor: string): Texture => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+    
+    // Fill base color
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 512, 512);
+    
+    // Add random splatter dots
+    ctx.fillStyle = splatterColor;
+    const splatters = [
+      { x: 100, y: 150, radius: 8 },
+      { x: 300, y: 80, radius: 6 },
+      { x: 450, y: 200, radius: 12 },
+      { x: 200, y: 350, radius: 5 },
+      { x: 380, y: 420, radius: 10 },
+      { x: 80, y: 400, radius: 7 },
+      { x: 350, y: 300, radius: 9 },
+      { x: 150, y: 250, radius: 4 },
+      { x: 420, y: 120, radius: 11 },
+      { x: 50, y: 300, radius: 6 },
+      { x: 250, y: 180, radius: 8 },
+      { x: 480, y: 350, radius: 5 },
+    ];
+    
+    splatters.forEach(splatter => {
+      ctx.globalAlpha = 0.6 + Math.random() * 0.4; // Random opacity
+      ctx.beginPath();
+      ctx.arc(splatter.x, splatter.y, splatter.radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    return new CanvasTexture(canvas);
+  };
+
   // Update colors when they change
   useEffect(() => {
     if (!gltf) return;
@@ -113,10 +155,24 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         const isBottomPart = child.name === 'shoe_left_bottom' || child.name === 'shoe_right_bottom';
         const isTopPart = child.name === 'shoe_left_top' || child.name === 'shoe_right_top';
         
-        if (isBottomPart || isTopPart) {
-          // Create new material with the selected color
+        if (isBottomPart) {
+          // Create material with or without splatter for bottom parts
           const material = new MeshStandardMaterial({
-            color: isBottomPart ? bottomColor : topColor,
+            roughness: 0.8,
+            metalness: 0.1,
+          });
+          
+          if (soleHasSplatter) {
+            material.map = createSplatterTexture(bottomColor, splatterColor);
+          } else {
+            material.color.set(bottomColor);
+          }
+          
+          child.material = material;
+        } else if (isTopPart) {
+          // Standard material for top parts
+          const material = new MeshStandardMaterial({
+            color: topColor,
             roughness: 0.8,
             metalness: 0.1,
           });
@@ -124,7 +180,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         }
       }
     });
-  }, [gltf, bottomColor, topColor]);
+  }, [gltf, bottomColor, topColor, soleHasSplatter, splatterColor]);
 
   // Animation frame loop
   useFrame((state, delta) => {

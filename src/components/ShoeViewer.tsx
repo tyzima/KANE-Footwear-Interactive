@@ -19,6 +19,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [bottomColor, setBottomColor] = useState('#2d5016'); // Forest Green
   const [topColor, setTopColor] = useState('#8b4513'); // Redwood
+  const [soleHasSplatter, setSoleHasSplatter] = useState(false);
+  const [splatterColor, setSplatterColor] = useState('#f8f8ff'); // Glacier White
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -119,6 +121,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
               scale={zoom}
               bottomColor={bottomColor}
               topColor={topColor}
+              soleHasSplatter={soleHasSplatter}
+              splatterColor={splatterColor}
             />
           </Suspense>
 
@@ -160,6 +164,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           bottomColor={bottomColor}
           onTopColorChange={setTopColor}
           onBottomColorChange={setBottomColor}
+          soleHasSplatter={soleHasSplatter}
+          splatterColor={splatterColor}
+          onSplatterToggle={setSoleHasSplatter}
+          onSplatterColorChange={setSplatterColor}
         />
 
         {/* Controls UI - Now positioned absolutely at bottom */}
