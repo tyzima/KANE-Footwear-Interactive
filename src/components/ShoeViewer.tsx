@@ -98,34 +98,23 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             autoRotateSpeed={0.5}
             enableDamping
             dampingFactor={0.05}
-            minDistance={1}
+            minDistance={1.5}
             maxDistance={6}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 6}
             enableZoom
             enablePan={false}
+            target={[0, 0, 0]}
             makeDefault
           />
 
           {/* 3D Model */}
           <Suspense fallback={null}>
-            <PresentationControls
-              enabled={true}
-              global={false}
-              cursor={true}
-              snap={false}
-              speed={1}
-              zoom={1}
-              rotation={[0, 0, 0]}
-              polar={[-Math.PI / 3, Math.PI / 3]}
-              azimuth={[-Math.PI / 1.4, Math.PI / 1.4]}
-            >
-              <ShoeModel
-                onLoad={handleModelLoad}
-                onError={handleModelError}
-                scale={zoom}
-              />
-            </PresentationControls>
+            <ShoeModel
+              onLoad={handleModelLoad}
+              onError={handleModelError}
+              scale={zoom}
+            />
           </Suspense>
 
           {/* Ground plane for shadows */}
