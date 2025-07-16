@@ -16,6 +16,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [autoRotate, setAutoRotate] = useState(false);
   const [zoom, setZoom] = useState(0.8); // Start at 80% zoom as requested
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+  const [bottomColor, setBottomColor] = useState('#2d5016'); // Forest Green
+  const [topColor, setTopColor] = useState('#8b4513'); // Redwood
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -114,6 +116,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
               onLoad={handleModelLoad}
               onError={handleModelError}
               scale={zoom}
+              bottomColor={bottomColor}
+              topColor={topColor}
             />
           </Suspense>
 
@@ -160,6 +164,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             onHotspotSelect={handleHotspotSelect}
             activeHotspot={activeHotspot}
             disabled={isLoading || !!error}
+            bottomColor={bottomColor}
+            topColor={topColor}
+            onBottomColorChange={setBottomColor}
+            onTopColorChange={setTopColor}
           />
         </div>
       </ErrorBoundary>

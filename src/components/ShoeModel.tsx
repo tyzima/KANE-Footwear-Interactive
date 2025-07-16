@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { Mesh, Group, AnimationMixer, Box3, Vector3 } from 'three';
+import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial } from 'three';
 import { useGLTF, useBounds } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -10,6 +10,8 @@ interface ShoeModelProps {
   onLoad?: () => void;
   onError?: (error: Error) => void;
   scale?: number;
+  bottomColor?: string;
+  topColor?: string;
 }
 
 const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4foxLh8y6DeirLamH7Y1SBOW8l6CycoPdFvg4';
@@ -21,7 +23,9 @@ dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5
 export const ShoeModel: React.FC<ShoeModelProps> = ({ 
   onLoad, 
   onError, 
-  scale = 1 
+  scale = 1,
+  bottomColor = '#2d5016',
+  topColor = '#8b4513'
 }) => {
   const groupRef = useRef<Group>(null);
   const mixerRef = useRef<AnimationMixer | null>(null);
@@ -52,7 +56,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           loadedGltf.scene.position.set(0, 0.1, 0); // Place on ground
           loadedGltf.scene.position.sub(center.multiplyScalar(scaleFactor));
           
-          // Enable shadows
+          // Enable shadows and store references for color changes
           loadedGltf.scene.traverse((child) => {
             if (child instanceof Mesh) {
               child.castShadow = true;
@@ -99,6 +103,28 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       }
     };
   }, [onLoad, onError]);
+
+  // Update colors when they change
+  useEffect(() => {
+    if (!gltf) return;
+
+    gltf.scene.traverse((child) => {
+      if (child instanceof Mesh && child.name) {
+        const isBottomPart = child.name === 'shoe_left_bottom' || child.name === 'shoe_right_bottom';
+        const isTopPart = child.name === 'shoe_left_top' || child.name === 'shoe_right_top';
+        
+        if (isBottomPart || isTopPart) {
+          // Create new material with the selected color
+          const material = new MeshStandardMaterial({
+            color: isBottomPart ? bottomColor : topColor,
+            roughness: 0.8,
+            metalness: 0.1,
+          });
+          child.material = material;
+        }
+      }
+    });
+  }, [gltf, bottomColor, topColor]);
 
   // Animation frame loop
   useFrame((state, delta) => {

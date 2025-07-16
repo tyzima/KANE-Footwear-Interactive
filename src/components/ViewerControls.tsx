@@ -1,8 +1,9 @@
 import React from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
+import { ColorPicker } from './ColorPicker';
 
 interface ViewerControlsProps {
   autoRotate: boolean;
@@ -13,6 +14,10 @@ interface ViewerControlsProps {
   onHotspotSelect: (hotspot: string) => void;
   activeHotspot: string | null;
   disabled?: boolean;
+  bottomColor: string;
+  topColor: string;
+  onBottomColorChange: (color: string) => void;
+  onTopColorChange: (color: string) => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -23,7 +28,11 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   onReset,
   onHotspotSelect,
   activeHotspot,
-  disabled = false
+  disabled = false,
+  bottomColor,
+  topColor,
+  onBottomColorChange,
+  onTopColorChange
 }) => {
   const handleZoomIn = () => {
     const newZoom = Math.min(zoom + 0.1, 2);
@@ -36,7 +45,8 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   };
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-elegant p-4">
+    <div className="bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-elegant p-4 space-y-4">
+      {/* Main Controls Row */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
         {/* Left Section - Hotspot Controls */}
         <div className="flex items-center gap-3">
@@ -127,6 +137,20 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           <span className="text-sm font-bold text-primary">KANE</span>
           <span className="text-xs text-muted-foreground">Revive Collection</span>
         </div>
+      </div>
+
+      {/* Color Customization Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2 border-t border-border">
+        <ColorPicker
+          selectedColor={bottomColor}
+          onColorChange={onBottomColorChange}
+          label="Sole Color"
+        />
+        <ColorPicker
+          selectedColor={topColor}
+          onColorChange={onTopColorChange}
+          label="Upper Color"
+        />
       </div>
     </div>
   );
