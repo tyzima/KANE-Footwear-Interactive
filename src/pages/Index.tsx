@@ -41,14 +41,14 @@ const Index = () => {
       {/* Main Viewer Section */}
       <main className="px-6 pb-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
-            {/* 3D Viewer */}
-            <div className="lg:col-span-2 h-full">
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 h-[700px]">
+            {/* 3D Viewer - Much Larger */}
+            <div className="xl:col-span-3 h-full">
               <ShoeViewer className="h-full shadow-glow border border-border/30" />
             </div>
 
-            {/* Info Panel */}
-            <div className="space-y-6">
+            {/* Info Panel - Smaller */}
+            <div className="space-y-4">
               {/* Features Card */}
               <div className="bg-card/50 backdrop-blur-sm border border-border rounded-lg p-6">
                 <h3 className="text-xl font-semibold mb-4 text-foreground">
