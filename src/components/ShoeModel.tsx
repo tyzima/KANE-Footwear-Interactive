@@ -123,13 +123,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, 512, 512);
     
-    // Add ULTRA dense splatter pattern
-    ctx.fillStyle = splatterColor;
-    
     // Different density and size for upper vs sole
     const numSplatters = isUpper ? 5000 : 3000; // More dots for upper, lots for sole
     const minRadius = isUpper ? 0.2 : 0.5; // Smaller dots for upper
     const maxRadius = isUpper ? 0.8 : 1.5; // Different max sizes
+    
+    // Use source-over blend mode and full opacity for splatter to ensure visibility
+    ctx.globalCompositeOperation = 'source-over';
     
     for (let i = 0; i < numSplatters; i++) {
       // Random position across entire canvas
@@ -139,8 +139,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       // Size variation based on part type
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
       
-      // Higher opacity to make splatter really visible
-      ctx.globalAlpha = 0.6 + Math.random() * 0.3; // Much higher opacity (60-90%)
+      // Use full opacity for splatter color to ensure it shows on any background
+      ctx.globalAlpha = 0.8 + Math.random() * 0.2; // High opacity (80-100%)
+      ctx.fillStyle = splatterColor; // Set color for each dot to ensure consistency
       
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);

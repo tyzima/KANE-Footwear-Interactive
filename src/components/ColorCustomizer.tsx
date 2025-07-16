@@ -132,7 +132,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         cy={2 + Math.floor(i / 7) * 5.5 + Math.random() * 3} 
                         r={activeTab === 'upper' ? 0.15 + Math.random() * 0.25 : 0.3 + Math.random() * 0.4} 
                         fill={getCurrentSplatterColor()} 
-                        opacity={0.6 + Math.random() * 0.3} 
+                        opacity={0.8 + Math.random() * 0.2} 
                       />
                     ))}
                   </svg>
