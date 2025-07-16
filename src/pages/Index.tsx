@@ -45,14 +45,6 @@ const Index = () => {
           {/* Large 3D Viewer */}
           <div className="h-[75vh] mb-8 relative">
             <ShoeViewer className="h-full shadow-elegant border border-border/30 rounded-xl" />
-            
-            {/* Floating Info Badge */}
-            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg border border-border shadow-md p-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent" />
-                <span className="text-sm font-medium">Live Preview</span>
-              </div>
-            </div>
           </div>
 
           {/* Feature Cards Below */}

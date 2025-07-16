@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette, ChevronDown } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface ColorCustomizerProps {
@@ -31,119 +31,105 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   onTopColorChange,
   onBottomColorChange
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeSection, setActiveSection] = useState<'upper' | 'sole' | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'upper' | 'sole'>('upper');
 
-  const ColorSection = ({ 
-    title, 
-    color, 
-    onColorChange, 
-    isActive 
-  }: { 
-    title: string;
-    color: string;
-    onColorChange: (color: string) => void;
-    isActive: boolean;
-  }) => (
-    <div className={`transition-all duration-300 ${isActive ? 'scale-105' : 'hover:scale-102'}`}>
-      <div 
-        className={`p-4 rounded-lg cursor-pointer transition-all duration-300 ${
-          isActive 
-            ? 'bg-primary/10 border-2 border-primary shadow-lg' 
-            : 'bg-white/80 border border-border hover:border-primary/50 hover:shadow-md'
-        }`}
-        onClick={() => setActiveSection(isActive ? null : (title.toLowerCase() as 'upper' | 'sole'))}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h3 className={`font-semibold text-lg ${isActive ? 'text-primary' : 'text-foreground'}`}>
-            {title}
-          </h3>
-          <ChevronDown 
-            className={`w-4 h-4 transition-transform duration-300 ${
-              isActive ? 'rotate-180 text-primary' : 'text-muted-foreground'
-            }`}
-          />
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div 
-            className="w-12 h-12 rounded-full border-3 border-white shadow-lg"
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-sm text-muted-foreground">
-            {NATIONAL_PARK_COLORS.find(c => c.value === color)?.name || 'Custom'}
-          </span>
-        </div>
-        
-        {isActive && (
-          <div className="mt-4 grid grid-cols-6 gap-2 animate-fade-in">
-            {NATIONAL_PARK_COLORS.map((colorOption) => (
-              <Button
-                key={colorOption.value}
-                variant="outline"
-                size="sm"
-                className={`w-8 h-8 p-0 border-2 rounded-full transition-all hover:scale-110 ${
-                  color === colorOption.value 
-                    ? 'border-primary ring-2 ring-primary/20 scale-110' 
-                    : 'border-border hover:border-primary/50'
-                }`}
-                style={{ backgroundColor: colorOption.value }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onColorChange(colorOption.value);
-                }}
-                title={colorOption.name}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const getCurrentColor = () => activeTab === 'upper' ? topColor : bottomColor;
+  const getCurrentColorChanger = () => activeTab === 'upper' ? onTopColorChange : onBottomColorChange;
 
   return (
     <div className="absolute top-4 right-4 z-20">
-      <div className={`transition-all duration-500 ease-out ${
-        isExpanded ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-95'
-      }`}>
-        {/* Toggle Button */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className={`mb-3 transition-all duration-300 shadow-lg hover:shadow-xl ${
-            isExpanded ? 'bg-primary text-primary-foreground' : 'bg-white/90 backdrop-blur-sm'
-          }`}
-        >
-          <Palette className="w-4 h-4 mr-2" />
-          Customize Colors
-          <ChevronDown 
-            className={`w-4 h-4 ml-2 transition-transform duration-300 ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
-          />
-        </Button>
+      {/* Toggle Button */}
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`transition-all duration-300 shadow-lg hover:shadow-xl mb-3 ${
+          isOpen ? 'bg-primary text-primary-foreground' : 'bg-white/90 backdrop-blur-sm'
+        }`}
+      >
+        <Palette className="w-4 h-4 mr-2" />
+        Customize Colors
+      </Button>
 
-        {/* Color Customizer Panel */}
-        <div className={`transition-all duration-500 ease-out overflow-hidden ${
-          isExpanded 
-            ? 'max-h-[500px] opacity-100 translate-y-0' 
-            : 'max-h-0 opacity-0 -translate-y-4'
-        }`}>
-          <div className="w-64 space-y-3 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl p-4">
-            <ColorSection
-              title="Upper"
-              color={topColor}
-              onColorChange={onTopColorChange}
-              isActive={activeSection === 'upper'}
-            />
-            
-            <ColorSection
-              title="Sole"
-              color={bottomColor}
-              onColorChange={onBottomColorChange}
-              isActive={activeSection === 'sole'}
-            />
+      {/* Color Customizer Panel with Tabs */}
+      <div className={`transition-all duration-500 ease-out overflow-hidden ${
+        isOpen 
+          ? 'max-h-[400px] opacity-100 translate-y-0' 
+          : 'max-h-0 opacity-0 -translate-y-4'
+      }`}>
+        <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl">
+          {/* Tab Header */}
+          <div className="relative p-4 pb-0">
+            <div className="flex rounded-lg bg-secondary/50 p-1 relative">
+              {/* Animated Tab Indicator */}
+              <div 
+                className={`absolute top-1 bottom-1 w-1/2 bg-white rounded-md shadow-sm transition-transform duration-300 ease-out ${
+                  activeTab === 'upper' ? 'translate-x-0' : 'translate-x-full'
+                }`}
+              />
+              
+              {/* Tab Buttons */}
+              <button
+                onClick={() => setActiveTab('upper')}
+                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                  activeTab === 'upper' 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Upper
+              </button>
+              <button
+                onClick={() => setActiveTab('sole')}
+                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                  activeTab === 'sole' 
+                    ? 'text-primary' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Sole
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-4">
+            {/* Current Color Preview */}
+            <div className="flex items-center gap-3 mb-4 p-3 bg-secondary/30 rounded-lg">
+              <div 
+                className="w-10 h-10 rounded-full border-2 border-white shadow-md"
+                style={{ backgroundColor: getCurrentColor() }}
+              />
+              <div>
+                <p className="font-medium text-sm capitalize">{activeTab} Color</p>
+                <p className="text-xs text-muted-foreground">
+                  {NATIONAL_PARK_COLORS.find(c => c.value === getCurrentColor())?.name || 'Custom'}
+                </p>
+              </div>
+            </div>
+
+            {/* Color Grid with Animation */}
+            <div className="grid grid-cols-6 gap-2 animate-fade-in">
+              {NATIONAL_PARK_COLORS.map((colorOption, index) => (
+                <Button
+                  key={colorOption.value}
+                  variant="outline"
+                  size="sm"
+                  className={`w-10 h-10 p-0 border-2 rounded-full transition-all hover:scale-110 ${
+                    getCurrentColor() === colorOption.value 
+                      ? 'border-primary ring-2 ring-primary/20 scale-110' 
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                  style={{ 
+                    backgroundColor: colorOption.value,
+                    animationDelay: `${index * 50}ms`
+                  }}
+                  onClick={() => getCurrentColorChanger()(colorOption.value)}
+                  title={colorOption.name}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
