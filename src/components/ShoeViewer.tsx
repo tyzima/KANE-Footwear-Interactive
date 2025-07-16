@@ -120,7 +120,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           {/* Ground plane for shadows */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
-            position={[0, -1.5, 0]}
+            position={[0, -0.5, 0]}
             receiveShadow
           >
             <planeGeometry args={[10, 10]} />
