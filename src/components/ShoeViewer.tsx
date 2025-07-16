@@ -14,7 +14,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(2.5); // Start zoomed in at 250%
   const controlsRef = useRef<any>(null);
 
   const handleModelLoad = () => {
@@ -30,7 +30,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const handleReset = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      setZoom(1);
+      setZoom(2.5); // Reset to 250% zoom
       setAutoRotate(true);
     }
   };
@@ -48,7 +48,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
       <ErrorBoundary onError={handleModelError}>
         <Canvas
           camera={{ 
-            position: [0, 0, 4], 
+            position: [0, 0, 2], 
             fov: 45,
             near: 0.1,
             far: 1000
@@ -91,8 +91,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
             autoRotateSpeed={0.5}
             enableDamping
             dampingFactor={0.05}
-            minDistance={2}
-            maxDistance={8}
+            minDistance={1}
+            maxDistance={6}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={Math.PI / 6}
             enableZoom
