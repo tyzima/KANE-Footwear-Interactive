@@ -29,9 +29,7 @@ const NATIONAL_PARK_COLORS = [
 ];
 
 const hotspots = [
-  { id: 'upper', label: 'Upper', icon: Layers, description: 'Customize the shoe upper' },
-  { id: 'sole', label: 'Sole', icon: Settings, description: 'Modify sole design' },
-  { id: 'laces', label: 'Laces', icon: Eye, description: 'Change lace style' },
+  { id: 'laces', label: 'Laces', description: 'Change lace style' },
 ];
 
 export const HotspotControls: React.FC<HotspotControlsProps> = ({
@@ -68,9 +66,9 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
   );
 
   return (
-    <div className="flex items-center gap-2 relative">
+    <div className="flex items-center gap-4 relative">
+      {/* Hotspot Controls - simplified */}
       {hotspots.map((hotspot) => {
-        const Icon = hotspot.icon;
         const isActive = activeHotspot === hotspot.id;
         
         return (
@@ -81,7 +79,7 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
             onClick={() => onHotspotSelect(hotspot.id)}
             disabled={disabled}
             className={`
-              flex items-center gap-2 transition-all duration-200
+              transition-all duration-200
               ${isActive 
                 ? 'bg-primary text-primary-foreground shadow-md' 
                 : 'hover:bg-secondary hover:shadow-sm'
@@ -89,28 +87,31 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
             `}
             title={hotspot.description}
           >
-            <Icon className="h-4 w-4" />
-            <span className="hidden sm:inline">{hotspot.label}</span>
+            {hotspot.label}
           </Button>
         );
       })}
       
-      {/* Color Selection - Inline */}
-      <div className="flex items-center gap-2 text-sm">
+      {/* Color Selection */}
+      <div className="flex items-center gap-3">
         <span className="text-muted-foreground">|</span>
-        <span className="text-sm font-medium text-foreground">Upper</span>
-        <div 
-          className="w-6 h-6 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
-          style={{ backgroundColor: topColor }}
-          onClick={() => setActiveColorSection(activeColorSection === 'upper' ? null : 'upper')}
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Upper</span>
+          <div 
+            className="w-6 h-6 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
+            style={{ backgroundColor: topColor }}
+            onClick={() => setActiveColorSection(activeColorSection === 'upper' ? null : 'upper')}
+          />
+        </div>
         
-        <span className="text-sm font-medium text-foreground">Sole</span>
-        <div 
-          className="w-6 h-6 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
-          style={{ backgroundColor: bottomColor }}
-          onClick={() => setActiveColorSection(activeColorSection === 'sole' ? null : 'sole')}
-        />
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">Sole</span>
+          <div 
+            className="w-6 h-6 rounded-full border-2 border-border cursor-pointer hover:border-primary/50 transition-colors"
+            style={{ backgroundColor: bottomColor }}
+            onClick={() => setActiveColorSection(activeColorSection === 'sole' ? null : 'sole')}
+          />
+        </div>
       </div>
 
       {/* Color Swatches Dropdown */}
