@@ -193,7 +193,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           <OrbitControls
             ref={controlsRef}
             autoRotate={autoRotate}
-            autoRotateSpeed={0.5}
+            autoRotateSpeed={2.0}
             enableDamping
             dampingFactor={0.05}
             minDistance={1.5}
@@ -300,7 +300,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           />
         </div>
 
-        {/* Debug Menu */}
+        {/* Debug Menu 
         <DebugMenu
           visible={debugVisible}
           onToggleVisibility={() => setDebugVisible(!debugVisible)}
@@ -309,7 +309,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           cameraInfo={cameraInfo}
           onCameraReset={handleCameraReset}
           onGoToHotspot={handleGoToHotspot}
-        />
+        />*/}
       </ErrorBoundary>
     </div>
   );

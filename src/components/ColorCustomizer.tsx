@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette, Droplets } from 'lucide-react';
+import { Palette, Droplets, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 
@@ -84,45 +84,72 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
   return (
     <div className="absolute top-4 right-4 z-20">
-      {/* Color Customizer Panel with Tabs - Always Open */}
-      <div className="max-h-[450px] opacity-100 translate-y-0">
-        <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl max-h-[420px] overflow-y-auto">
-          {/* Tab Header */}
-          <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 p-4 pb-0 border-b border-border/20">
-            <div className="flex rounded-lg bg-secondary/50 p-1 relative">
-              {/* Animated Tab Indicator */}
-              <div 
-                className={`absolute top-1 bottom-1 w-1/2 bg-white rounded-md shadow-sm transition-transform duration-300 ease-out ${
-                  activeTab === 'upper' ? 'translate-x-0' : 'translate-x-full'
-                }`}
-              />
-              
-              {/* Tab Buttons */}
-              <button
-                onClick={() => handleTabChange('upper')}
-                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  activeTab === 'upper' 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+      {/* Color Customizer Panel with Collapsible Feature */}
+      <div className={`transition-all duration-500 ease-in-out ${
+        isOpen ? 'max-h-[450px] opacity-100 translate-y-0' : 'max-h-16 opacity-100 translate-y-0'
+      }`}>
+        <div className="w-80 bg-white/95 backdrop-blur-sm rounded-xl border border-border shadow-xl overflow-hidden">
+          {/* Header with Collapse Button */}
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm z-10 p-4 pb-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Color Customizer</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOpen(!isOpen)}
+                className="h-6 w-6 p-0 hover:bg-secondary/50 transition-colors"
               >
-                Upper
-              </button>
-              <button
-                onClick={() => handleTabChange('sole')}
-                className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
-                  activeTab === 'sole' 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Sole
-              </button>
+                {isOpen ? (
+                  <ChevronUp className="w-3 h-3" />
+                ) : (
+                  <ChevronDown className="w-3 h-3" />
+                )}
+              </Button>
             </div>
+            
+            {/* Tab Header - Only show when open */}
+            {isOpen && (
+              <div className="flex rounded-lg bg-secondary/50 p-1 relative">
+                {/* Animated Tab Indicator */}
+                <div 
+                  className={`absolute top-1 bottom-1 w-1/2 bg-white rounded-md shadow-sm transition-transform duration-300 ease-out ${
+                    activeTab === 'upper' ? 'translate-x-0' : 'translate-x-full'
+                  }`}
+                />
+                
+                {/* Tab Buttons */}
+                <button
+                  onClick={() => handleTabChange('upper')}
+                  className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                    activeTab === 'upper' 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Upper
+                </button>
+                <button
+                  onClick={() => handleTabChange('sole')}
+                  className={`relative z-10 flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors duration-200 ${
+                    activeTab === 'sole' 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Sole
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Tab Content - Scrollable */}
-          <div className="p-4 space-y-4">
+          {/* Tab Content - Collapsible with smooth animation */}
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${
+            isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="p-4 space-y-4">
             {/* Current Color Preview */}
             <div className="flex items-center gap-3 mb-4 p-3 bg-secondary/30 rounded-lg">
               <div 
@@ -237,6 +264,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   title={colorOption.name}
                 />
               ))}
+            </div>
             </div>
           </div>
         </div>

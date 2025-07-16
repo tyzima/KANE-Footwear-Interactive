@@ -1,9 +1,8 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
-import { GLTFLoader
-} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
-import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture } from 'three';
+import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture, Material } from 'three';
 import { useGLTF, useBounds } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -22,7 +21,7 @@ interface ShoeModelProps {
   solePaintDensity?: number;
 }
 
-const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4foxLh8y6DeirLamH7Y1SBOW8l6CycoPdFvg4';
+const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4wM9tSdrXd4TzClS20xUyGWEH19i8nmkPheoJ';
 
 // Configure DRACO loader for optimized loading
 const dracoLoader = new DRACOLoader();
@@ -45,10 +44,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   const groupRef = useRef<Group>(null);
   const mixerRef = useRef<AnimationMixer | null>(null);
   const [gltf, setGltf] = useState<GLTF | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const [clickedPart, setClickedPart] = useState<string | null>(null);
   const bounds = useBounds();
   const originalMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
+  const currentMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
+  const textureCache = useRef<Map<string, Texture>>(new Map());
 
   // Load the model with DRACO compression support
   useEffect(() => {
@@ -122,45 +121,65 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       // Cleanup
       if (mixerRef.current) {
         mixerRef.current.stopAllAction();
+        mixerRef.current = null;
       }
+      
+      // Clean up current materials and textures
+      currentMaterialsRef.current.forEach((material) => {
+        if (material.map) material.map.dispose();
+        material.dispose();
+      });
+      currentMaterialsRef.current.clear();
+      
+      // Clear texture cache
+      textureCache.current.forEach((texture) => texture.dispose());
+      textureCache.current.clear();
+      
+      // Clear original materials
+      originalMaterialsRef.current.forEach((material) => {
+        if (material.map) material.map.dispose();
+        material.dispose();
+      });
+      originalMaterialsRef.current.clear();
     };
   }, [onLoad, onError]);
 
-  // Create ultra-dense, high-resolution splatter texture
-  const createSplatterTexture = (baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 50): Texture => {
+  // Memoized splatter texture creation with caching
+  const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 50): Texture => {
+    // Create cache key
+    const cacheKey = `${baseColor}-${splatterColor}-${isUpper}-${paintDensity}`;
+    
+    // Check cache first
+    if (textureCache.current.has(cacheKey)) {
+      return textureCache.current.get(cacheKey)!;
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = 1024; // Doubled resolution for sharper detail
-    canvas.height = 1024;
+    canvas.width = 512; // Reduced from 1024 for better performance
+    canvas.height = 512;
     const ctx = canvas.getContext('2d')!;
 
     // Fill base color
     ctx.fillStyle = baseColor;
-    ctx.fillRect(0, 0, 1024, 1024);
+    ctx.fillRect(0, 0, 512, 512);
 
-    // Calculate number of splatters based on density (10% = 1000, 100% = 10000, 200% = 20000)
-    const baseSplatters = isUpper ? 5000 : 3000;
-    const numSplatters = Math.floor((baseSplatters * paintDensity) / 50); // 50% = base amount
+    // Calculate number of splatters based on density
+    const baseSplatters = isUpper ? 2500 : 1500; // Reduced for performance
+    const numSplatters = Math.floor((baseSplatters * paintDensity) / 50);
 
-    // Sharper, smaller dots for higher resolution
-    const minRadius = isUpper ? 0.4 : 1.0; // Doubled for higher res canvas
-    const maxRadius = isUpper ? 1.6 : 3.0; // Doubled for higher res canvas
+    // Adjusted for smaller canvas
+    const minRadius = isUpper ? 0.2 : 0.5;
+    const maxRadius = isUpper ? 0.8 : 1.5;
 
-    // Use source-over blend mode and full opacity for splatter to ensure visibility
     ctx.globalCompositeOperation = 'source-over';
 
     for (let i = 0; i < numSplatters; i++) {
-      // Random position across entire canvas
-      const x = Math.random() * 1024;
-      const y = Math.random() * 1024;
-
-      // Size variation based on part type
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
       const radius = minRadius + Math.random() * (maxRadius - minRadius);
 
-      // Use full opacity for splatter color to ensure it shows on any background
-      ctx.globalAlpha = 0.8 + Math.random() * 0.2; // High opacity (80-100%)
-      ctx.fillStyle = splatterColor; // Set color for each dot to ensure consistency
-
-      // Create sharper edges with no anti-aliasing
+      ctx.globalAlpha = 0.8 + Math.random() * 0.2;
+      ctx.fillStyle = splatterColor;
       ctx.imageSmoothingEnabled = false;
 
       ctx.beginPath();
@@ -169,70 +188,115 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     }
 
     const texture = new CanvasTexture(canvas);
-    texture.generateMipmaps = false; // Disable mipmaps for sharper texture
-    texture.minFilter = 1003; // NearestFilter for sharp pixels
-    texture.magFilter = 1003; // NearestFilter for sharp pixels
+    texture.generateMipmaps = true; // Enable mipmaps for better performance
+    texture.needsUpdate = true;
 
+    // Cache the texture
+    textureCache.current.set(cacheKey, texture);
+    
     return texture;
-  };
+  }, []);
 
-  // Update colors when they change
+  // Cleanup function for materials and textures
+  const cleanupMaterials = useCallback(() => {
+    currentMaterialsRef.current.forEach((material) => {
+      if (material.map) material.map.dispose();
+      material.dispose();
+    });
+    currentMaterialsRef.current.clear();
+  }, []);
+
+  // Update colors when they change with proper memory management
   useEffect(() => {
     if (!gltf) return;
 
+    // Clean up previous materials
+    cleanupMaterials();
+
     gltf.scene.traverse((child) => {
       if (child instanceof Mesh && child.name) {
-        const isBottomPart = child.name === 'shoe_left_bottom' || child.name === 'shoe_right_bottom';
-        const isTopPart = child.name === 'shoe_left_top' || child.name === 'shoe_right_top';
+        const isBottomPart = child.name.includes('bottom') || child.name.includes('sole');
+        const isTopPart = child.name.includes('top') || child.name.includes('upper');
 
         // Get the original material for this part
         const originalMaterial = originalMaterialsRef.current.get(child.name);
+        let material: MeshStandardMaterial;
 
         if (isBottomPart) {
-          // Create material with or without splatter for bottom parts (old way)
-          const material = new MeshStandardMaterial({
-            roughness: 0.9, // Higher roughness to reduce shine
-            metalness: 0.05, // Lower metalness
-          });
+          // Reuse existing material if possible
+          const existingMaterial = currentMaterialsRef.current.get(child.name);
+          if (existingMaterial) {
+            material = existingMaterial;
+          } else {
+            material = new MeshStandardMaterial({
+              roughness: 0.9,
+              metalness: 0.05,
+            });
+            currentMaterialsRef.current.set(child.name, material);
+          }
 
           if (soleHasSplatter) {
+            // Dispose old texture if it exists
+            if (material.map && material.map !== originalMaterial?.map) {
+              material.map.dispose();
+            }
             material.map = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
-            material.roughness = 0.95; // Even higher roughness for splatter
+            material.roughness = 0.95;
           } else {
+            // Dispose splatter texture if switching back to solid color
+            if (material.map && material.map !== originalMaterial?.map) {
+              material.map.dispose();
+              material.map = null;
+            }
             material.color.set(bottomColor);
           }
 
           child.material = material;
         } else if (isTopPart) {
-          // Clone the original material to preserve textures
-          const material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
-
-          // Make upper completely matte: max roughness, no metalness
-          material.roughness = 1;
-          material.metalness = 0;
+          // Reuse existing material if possible
+          const existingMaterial = currentMaterialsRef.current.get(child.name);
+          if (existingMaterial) {
+            material = existingMaterial;
+          } else {
+            // Clone original material to preserve original textures and properties
+            material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
+            material.roughness = 1;
+            material.metalness = 0;
+            currentMaterialsRef.current.set(child.name, material);
+          }
 
           if (upperHasSplatter) {
-            // Apply splatter texture over the original
+            // Dispose old texture if it's not the original
+            if (material.map && material.map !== originalMaterial?.map) {
+              material.map.dispose();
+            }
             material.map = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
           } else {
-            // Preserve original texture but tint it with the selected color
+            // Restore original texture or use solid color
+            if (material.map && material.map !== originalMaterial?.map) {
+              material.map.dispose();
+            }
+            material.map = originalMaterial?.map || null;
             material.color.set(topColor);
-            // Keep original map if it exists
+            
+            // Ensure original texture is properly linked
             if (originalMaterial?.map) {
               material.map = originalMaterial.map;
-              // Ensure the texture is properly configured for color multiplication
               material.map.needsUpdate = true;
             }
           }
 
-          // Force material update
           material.needsUpdate = true;
-
           child.material = material;
         }
       }
     });
-  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity]);
+
+    // Cleanup function for this effect
+    return () => {
+      // Don't cleanup here as materials are still in use
+    };
+  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity, createSplatterTexture, cleanupMaterials]);
 
   // Animation frame loop
   useFrame((state, delta) => {
@@ -250,13 +314,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     event.stopPropagation();
 
     if (event.object && event.object.userData) {
-      const partName = event.object.userData.name;
-      setClickedPart(partName);
-
       // Determine part type and notify parent
       if (event.object.name) {
-        const isBottomPart = event.object.name === 'shoe_left_bottom' || event.object.name === 'shoe_right_bottom';
-        const isTopPart = event.object.name === 'shoe_left_top' || event.object.name === 'shoe_right_top';
+        const isBottomPart = event.object.name.includes('bottom') || event.object.name.includes('sole');
+        const isTopPart = event.object.name.includes('top') || event.object.name.includes('upper');
 
         if (isBottomPart && onPartClick) {
           onPartClick('sole');
@@ -274,7 +335,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           if (originalEmissive && event.object.material.emissive) {
             event.object.material.emissive.copy(originalEmissive);
           }
-          setClickedPart(null);
         }, 200);
       }
 
@@ -286,7 +346,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   };
 
   const handlePointerOver = (event: any) => {
-    setIsHovered(true);
     document.body.style.cursor = 'pointer';
 
     // Highlight hovered part
@@ -296,7 +355,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   };
 
   const handlePointerOut = (event: any) => {
-    setIsHovered(false);
     document.body.style.cursor = 'auto';
 
     // Remove highlight

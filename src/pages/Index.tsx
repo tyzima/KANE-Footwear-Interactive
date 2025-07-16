@@ -9,9 +9,9 @@ const Index = () => {
       <main className="h-screen relative">
         {/* Product Branding - Top Left */}
         <div className="absolute top-6 left-6 z-30 flex items-center gap-4">
-          <img 
-            src="/Kane_Footer_Logo.avif" 
-            alt="KANE Logo" 
+          <img
+            src="/Kane_Footer_Logo.avif"
+            alt="KANE Logo"
             className="h-8 w-auto"
           />
           <div>
@@ -21,9 +21,7 @@ const Index = () => {
                 Revive Collection
               </span>
             </div>
-            <p className="text-muted-foreground text-sm mt-1">
-              Custom Team Shoes
-            </p>
+
           </div>
         </div>
 
