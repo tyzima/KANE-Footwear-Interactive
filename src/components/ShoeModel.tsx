@@ -11,7 +11,7 @@ import { JibbitLogo } from './JibbitLogo';
 interface ShoeModelProps {
   onLoad?: () => void;
   onError?: (error: Error) => void;
-  onPartClick?: (partType: 'upper' | 'sole') => void;
+  onPartClick?: (partType: 'upper' | 'sole' | 'laces' | 'logos') => void;
   scale?: number;
   bottomColor?: string;
   topColor?: string;
@@ -31,6 +31,9 @@ interface ShoeModelProps {
   // Texture props
   upperTexture?: string | null;
   soleTexture?: string | null;
+  // Lace and logo colors (single color for both left and right)
+  laceColor?: string;
+  logoColor?: string;
   // Logo props
   logoUrl?: string | null;
   logoPosition?: [number, number, number];
@@ -79,7 +82,7 @@ const preloadModel = (): Promise<GLTF> => {
         const scaleFactor = 2 / maxDim;
 
         gltf.scene.scale.setScalar(scaleFactor);
-        gltf.scene.position.set(0, 0.1, 0);
+        gltf.scene.position.set(0, 0.2, 0);
         gltf.scene.position.sub(center.multiplyScalar(scaleFactor));
 
         // Enable shadows and prepare for interaction
@@ -128,6 +131,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   // Texture props with defaults
   upperTexture = null,
   soleTexture = null,
+  // Lace and logo colors with defaults (single color for both left and right)
+  laceColor = '#FFFFFF',
+  logoColor = '#FFFFFF',
   // Logo props with defaults
   logoUrl = null,
   logoPosition = [0.8, 0.2, 0.3],
@@ -145,6 +151,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   const originalMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
   const currentMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
   const textureCache = useRef<Map<string, Texture>>(new Map());
+  const laceTextureRef = useRef<Texture | null>(null);
 
   // Use preloaded model to prevent stuttering during animations
   useEffect(() => {
@@ -157,11 +164,18 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             scene: loadedGltf.scene.clone()
           };
 
-          // Store original materials for color changes
+          // Store original materials and apply them immediately for color changes
           clonedGltf.scene.traverse((child) => {
             if (child instanceof Mesh && child.material && child.name) {
               const originalMaterial = child.material.clone();
               originalMaterialsRef.current.set(child.name, originalMaterial);
+
+              // Immediately apply the original material with proper settings
+              // This ensures textures are visible from the start
+              const material = originalMaterial.clone();
+              material.needsUpdate = true;
+              child.material = material;
+              currentMaterialsRef.current.set(child.name, material);
             }
           });
 
@@ -202,6 +216,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       // Clear texture cache
       textureCache.current.forEach((texture) => texture.dispose());
       textureCache.current.clear();
+
+      // Clear lace texture
+      if (laceTextureRef.current) {
+        laceTextureRef.current.dispose();
+        laceTextureRef.current = null;
+      }
 
       // Clear original materials
       originalMaterialsRef.current.forEach((material) => {
@@ -438,18 +458,20 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Calculate number of splatters based on density
     const baseSplatters = isUpper ? 2000 : 1000;
-    const numSplatters = Math.floor((baseSplatters * paintDensity) / 50);
+    const numSplatters = Math.floor((baseSplatters * paintDensity) / 10);
 
     // Adjusted for higher resolution canvas
-    const minRadius = isUpper ? 0.5 : 1.0;
-    const maxRadius = isUpper ? 2.0 : 2.5;
-
+    const minRadius = isUpper ? 0.05 : 0.1; // Even smaller minimum radius for tiny dots
+    const maxRadius = isUpper ? 1.0 : 1.5; // Reduced maximum size further
     ctx.globalCompositeOperation = 'source-over';
 
     for (let i = 0; i < numSplatters; i++) {
       const x = Math.random() * 1024;
       const y = Math.random() * 1024;
-      const baseSize = minRadius + Math.random() * (maxRadius - minRadius);
+      
+      // Use stronger exponential distribution to heavily favor smaller dots
+      const sizeRandom = Math.pow(Math.random(), 3.5);
+      const baseSize = minRadius + sizeRandom * (maxRadius - minRadius);
 
       // Use varying opacity for more natural look
       ctx.globalAlpha = 0.7 + Math.random() * 0.3;
@@ -514,6 +536,130 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return texture;
   }, []);
 
+  // Load lace texture and cache it
+  const loadLaceTexture = useCallback((): Promise<Texture> => {
+    return new Promise((resolve, reject) => {
+      if (laceTextureRef.current) {
+        resolve(laceTextureRef.current);
+        return;
+      }
+
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        '/lace_texture.png',
+        (texture) => {
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+
+          texture.generateMipmaps = true;
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.needsUpdate = true;
+
+          laceTextureRef.current = texture;
+          resolve(texture);
+        },
+        undefined,
+        (error) => {
+          console.warn('Failed to load lace texture:', error);
+          reject(error);
+        }
+      );
+    });
+  }, []);
+
+  // Create lace material with color and texture overlay
+  const createLaceTexture = useCallback((baseColor: string): Texture => {
+    const cacheKey = `lace-${baseColor}`;
+
+    // Check cache first
+    if (textureCache.current.has(cacheKey)) {
+      return textureCache.current.get(cacheKey)!;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Fill with the base color
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 512, 512);
+
+    const texture = new CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+
+    texture.generateMipmaps = true;
+    texture.needsUpdate = true;
+
+    // Load the lace texture and overlay it
+    loadLaceTexture().then((laceTexture) => {
+      // Create a temporary canvas to combine textures
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 512;
+      tempCanvas.height = 512;
+      const tempCtx = tempCanvas.getContext('2d')!;
+
+      // Enable high-quality rendering
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = 'high';
+
+      // Draw the base color
+      tempCtx.fillStyle = baseColor;
+      tempCtx.fillRect(0, 0, 512, 512);
+
+      // Create an image from the lace texture
+      const laceImage = new Image();
+      laceImage.crossOrigin = 'anonymous';
+
+      // Convert the lace texture to a data URL
+      const laceCanvas = document.createElement('canvas');
+      laceCanvas.width = laceTexture.image.width;
+      laceCanvas.height = laceTexture.image.height;
+      const laceCtx = laceCanvas.getContext('2d')!;
+      laceCtx.drawImage(laceTexture.image, 0, 0);
+
+      laceImage.onload = () => {
+        // Use screen blend mode to overlay white lace texture on colored base
+        // This preserves the white texture details while showing the base color
+        tempCtx.globalCompositeOperation = 'screen';
+        tempCtx.globalAlpha = 0.7; // Adjust opacity for realistic blend
+
+        // Draw the lace texture tiled across the canvas
+        const tileSize = 128; // Size of each tile
+        for (let x = 0; x < 512; x += tileSize) {
+          for (let y = 0; y < 512; y += tileSize) {
+            tempCtx.drawImage(laceImage, x, y, tileSize, tileSize);
+          }
+        }
+
+        // Reset blend mode and alpha
+        tempCtx.globalCompositeOperation = 'source-over';
+        tempCtx.globalAlpha = 1.0;
+
+        // Update the main texture with the combined result
+        ctx.clearRect(0, 0, 512, 512);
+        ctx.drawImage(tempCanvas, 0, 0);
+        texture.needsUpdate = true;
+      };
+
+      laceImage.src = laceCanvas.toDataURL();
+    }).catch((error) => {
+      console.warn('Could not apply lace texture overlay:', error);
+      // Fallback to solid color if texture loading fails
+    });
+
+    // Cache the texture
+    textureCache.current.set(cacheKey, texture);
+
+    return texture;
+  }, [loadLaceTexture]);
+
   // Cleanup function for materials and textures
   const cleanupMaterials = useCallback(() => {
     currentMaterialsRef.current.forEach((material) => {
@@ -532,8 +678,37 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     gltf.scene.traverse((child) => {
       if (child instanceof Mesh && child.name) {
+        // Log ALL part names to see what's actually in the model
+        console.log('Model part found:', child.name);
+
         const isBottomPart = child.name.includes('bottom') || child.name.includes('sole');
         const isTopPart = child.name.includes('top') || child.name.includes('upper');
+
+        // VERY comprehensive lace and logo detection
+        const lowerName = child.name.toLowerCase();
+
+        // Lace detection - check for many possible variations
+        const isLeftLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+        const isRightLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+        const isLace = lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace') ||
+          lowerName.includes('cord') || lowerName.includes('tie') || lowerName.includes('eyelet');
+
+        // Logo detection - check for many possible variations  
+        const isLeftLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+        const isRightLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+        const isLogo = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
+          lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
+
+        // Debug logging for lace/logo parts
+        if (isLace || isLogo || isLeftLace || isRightLace || isLeftLogo || isRightLogo) {
+          console.log('🎯 FOUND LACE/LOGO PART:', child.name, {
+            isLace, isLogo, isLeftLace, isRightLace, isLeftLogo, isRightLogo
+          });
+        }
 
         // Get the original material for this part
         const originalMaterial = originalMaterialsRef.current.get(child.name);
@@ -598,24 +773,21 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             child.material = material;
           }
         } else if (isTopPart) {
-          // Get or create material for this part
+          // Always use the existing material if it exists, otherwise create new one
           const existingMaterial = currentMaterialsRef.current.get(child.name);
           if (existingMaterial) {
             material = existingMaterial;
-            // Store old material for cleanup later
-            if (child.material !== material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
           } else {
             // Clone original material to preserve original textures and properties
             material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
             material.roughness = 1;
             material.metalness = 0;
             currentMaterialsRef.current.set(child.name, material);
-            // Store old material for cleanup later
-            if (child.material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
+          }
+
+          // Store old material for cleanup later only if it's different
+          if (child.material && child.material !== material) {
+            materialsToCleanup.push(child.material as MeshStandardMaterial);
           }
 
           // Update material properties without disposing textures immediately
@@ -643,19 +815,82 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
               material.needsUpdate = true;
             }
           } else {
-            // Solid color mode - restore original texture or use solid color
-            const targetTexture = originalMaterial?.map || null;
-            if (material.map !== targetTexture) {
-              material.map = targetTexture;
+            // Solid color mode - ALWAYS preserve original texture and tint it
+            const originalTexture = originalMaterial?.map || null;
+            if (material.map !== originalTexture) {
+              material.map = originalTexture;
               material.needsUpdate = true;
             }
+            // Tint the original texture with the selected color
             material.color.set(topColor);
+            // Ensure proper material properties for texture visibility
+            if (originalTexture) {
+              material.roughness = originalMaterial?.roughness ?? 0.8;
+              material.metalness = originalMaterial?.metalness ?? 0.1;
+            }
           }
 
           // Only assign material if it's different to prevent flashing
           if (child.material !== material) {
             child.material = material;
           }
+        } else if (isLeftLace || isRightLace || isLace) {
+          // Handle ALL laces (left, right, or generic) - Apply color with lace texture overlay
+          console.log('Applying lace color and texture to:', child.name, 'Color:', laceColor);
+
+          // Get or create material for this part
+          const existingMaterial = currentMaterialsRef.current.get(child.name);
+          if (existingMaterial) {
+            material = existingMaterial;
+            // Store old material for cleanup later
+            if (child.material !== material) {
+              materialsToCleanup.push(child.material as MeshStandardMaterial);
+            }
+          } else {
+            material = new MeshStandardMaterial({
+              roughness: 0.6,
+              metalness: 0.1,
+            });
+            currentMaterialsRef.current.set(child.name, material);
+            // Store old material for cleanup later
+            if (child.material) {
+              materialsToCleanup.push(child.material as MeshStandardMaterial);
+            }
+          }
+
+          // Apply lace texture with color overlay
+          const laceTexture = createLaceTexture(laceColor);
+          if (material.map !== laceTexture) {
+            material.map = laceTexture;
+            material.color.setHex(0xffffff); // White base to let texture show through
+            material.needsUpdate = true;
+          }
+
+          // Only assign material if it's different to prevent flashing
+          if (child.material !== material) {
+            child.material = material;
+          }
+
+        } else if (isLeftLogo || isRightLogo || isLogo) {
+          // Handle ALL logos (left, right, or generic) - FORCE solid color only
+          console.log('Applying logo color to:', child.name, 'Color:', logoColor);
+
+          // Always create a completely fresh material to avoid any texture inheritance
+          material = new MeshStandardMaterial({
+            roughness: 0.3,
+            metalness: 0.2,
+            color: logoColor,
+            map: null, // Force no texture
+          });
+
+          // Store old material for cleanup
+          if (child.material) {
+            materialsToCleanup.push(child.material as MeshStandardMaterial);
+          }
+
+          // Always assign the new material
+          child.material = material;
+          currentMaterialsRef.current.set(child.name, material);
         }
       }
     });
@@ -688,7 +923,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return () => {
       // Don't cleanup here as materials are still in use
     };
-  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity, upperHasGradient, soleHasGradient, upperGradientColor1, upperGradientColor2, soleGradientColor1, soleGradientColor2, upperTexture, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, cleanupMaterials]);
+  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity, upperHasGradient, soleHasGradient, upperGradientColor1, upperGradientColor2, soleGradientColor1, soleGradientColor2, upperTexture, soleTexture, laceColor, logoColor, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createLaceTexture, cleanupMaterials]);
 
   // Animation frame loop
   useFrame((_state, delta) => {
@@ -730,10 +965,40 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         const isBottomPart = event.object.name.includes('bottom') || event.object.name.includes('sole');
         const isTopPart = event.object.name.includes('top') || event.object.name.includes('upper');
 
+        // Use the SAME comprehensive detection logic as in material application
+        const lowerName = event.object.name.toLowerCase();
+
+        // Lace detection - check for many possible variations (same as material logic)
+        const isLeftLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+        const isRightLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+        const isLace = lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace') ||
+          lowerName.includes('cord') || lowerName.includes('tie') || lowerName.includes('eyelet');
+
+        // Logo detection - check for many possible variations (same as material logic)
+        const isLeftLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+        const isRightLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+        const isLogo = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
+          lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
+
+        // Debug logging for clicks
+        if (isLace || isLogo || isLeftLace || isRightLace || isLeftLogo || isRightLogo) {
+          console.log('🖱️ CLICKED LACE/LOGO PART:', event.object.name, {
+            isLace, isLogo, isLeftLace, isRightLace, isLeftLogo, isRightLogo
+          });
+        }
+
         if (isBottomPart && onPartClick) {
           onPartClick('sole');
         } else if (isTopPart && onPartClick) {
           onPartClick('upper');
+        } else if ((isLeftLace || isRightLace || isLace) && onPartClick) {
+          onPartClick('laces');
+        } else if ((isLeftLogo || isRightLogo || isLogo) && onPartClick) {
+          onPartClick('logos');
         }
       }
 

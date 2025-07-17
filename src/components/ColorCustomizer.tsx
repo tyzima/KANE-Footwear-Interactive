@@ -23,8 +23,13 @@ interface ColorCustomizerProps {
   onSoleSplatterColorChange: (color: string) => void;
   onUpperPaintDensityChange: (density: number) => void;
   onSolePaintDensityChange: (density: number) => void;
-  activeTab?: 'upper' | 'sole';
-  onTabChange?: (tab: 'upper' | 'sole') => void;
+  activeTab?: 'upper' | 'sole' | 'laces' | 'logos';
+  onTabChange?: (tab: 'upper' | 'sole' | 'laces' | 'logos') => void;
+  // Lace and logo colors (single color for both left and right)
+  laceColor?: string;
+  logoColor?: string;
+  onLaceColorChange?: (color: string) => void;
+  onLogoColorChange?: (color: string) => void;
   upperHasGradient?: boolean;
   soleHasGradient?: boolean;
   upperGradientColor1?: string;
@@ -124,6 +129,11 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   soleTexture = null,
   onUpperTextureChange = () => { },
   onSoleTextureChange = () => { },
+  // Lace and logo colors with defaults (single color for both left and right)
+  laceColor = '#FFFFFF',
+  logoColor = '#FFFFFF',
+  onLaceColorChange = () => { },
+  onLogoColorChange = () => { },
   // Logo props with defaults
   logoUrl = null,
   onLogoChange = () => { },
@@ -132,12 +142,12 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
-  const [internalActiveTab, setInternalActiveTab] = useState<'upper' | 'sole'>('upper');
+  const [internalActiveTab, setInternalActiveTab] = useState<'upper' | 'sole' | 'laces' | 'logos'>('upper');
   const [schools, setSchools] = useState<any[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<any>(null);
 
   const activeTab = externalActiveTab || internalActiveTab;
-  const handleTabChange = (tab: 'upper' | 'sole') => {
+  const handleTabChange = (tab: 'upper' | 'sole' | 'laces' | 'logos') => {
     onTabChange ? onTabChange(tab) : setInternalActiveTab(tab);
   };
 
@@ -157,14 +167,62 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
     setCurrentStep(stepIndex);
   };
 
-  const getCurrentColor = () => activeTab === 'upper' ? topColor : bottomColor;
-  const getCurrentColorChanger = () => activeTab === 'upper' ? onTopColorChange : onBottomColorChange;
-  const getCurrentSplatter = () => activeTab === 'upper' ? upperHasSplatter : soleHasSplatter;
-  const getCurrentSplatterColor = () => activeTab === 'upper' ? upperSplatterColor : soleSplatterColor;
-  const getCurrentSplatterToggle = () => activeTab === 'upper' ? onUpperSplatterToggle : onSoleSplatterToggle;
-  const getCurrentSplatterColorChanger = () => activeTab === 'upper' ? onUpperSplatterColorChange : onSoleSplatterColorChange;
-  const getCurrentPaintDensity = () => activeTab === 'upper' ? upperPaintDensity : solePaintDensity;
-  const getCurrentPaintDensityChanger = () => activeTab === 'upper' ? onUpperPaintDensityChange : onSolePaintDensityChange;
+  const getCurrentColor = () => {
+    switch (activeTab) {
+      case 'upper': return topColor;
+      case 'sole': return bottomColor;
+      case 'laces': return laceColor;
+      case 'logos': return logoColor;
+      default: return topColor;
+    }
+  };
+
+  const getCurrentColorChanger = () => {
+    switch (activeTab) {
+      case 'upper': return onTopColorChange;
+      case 'sole': return onBottomColorChange;
+      case 'laces': return onLaceColorChange;
+      case 'logos': return onLogoColorChange;
+      default: return onTopColorChange;
+    }
+  };
+
+  const getCurrentSplatter = () => {
+    // Only upper and sole support splatter effects
+    if (activeTab === 'upper') return upperHasSplatter;
+    if (activeTab === 'sole') return soleHasSplatter;
+    return false; // Laces and logos don't support splatter
+  };
+
+  const getCurrentSplatterColor = () => {
+    if (activeTab === 'upper') return upperSplatterColor;
+    if (activeTab === 'sole') return soleSplatterColor;
+    return upperSplatterColor; // Default fallback for laces/logos (not used)
+  };
+
+  const getCurrentSplatterToggle = () => {
+    if (activeTab === 'upper') return onUpperSplatterToggle;
+    if (activeTab === 'sole') return onSoleSplatterToggle;
+    return onUpperSplatterToggle; // Default fallback for laces/logos (not used)
+  };
+
+  const getCurrentSplatterColorChanger = () => {
+    if (activeTab === 'upper') return onUpperSplatterColorChange;
+    if (activeTab === 'sole') return onSoleSplatterColorChange;
+    return onUpperSplatterColorChange; // Default fallback for laces/logos (not used)
+  };
+
+  const getCurrentPaintDensity = () => {
+    if (activeTab === 'upper') return upperPaintDensity;
+    if (activeTab === 'sole') return solePaintDensity;
+    return upperPaintDensity; // Default fallback for laces/logos (not used)
+  };
+
+  const getCurrentPaintDensityChanger = () => {
+    if (activeTab === 'upper') return onUpperPaintDensityChange;
+    if (activeTab === 'sole') return onSolePaintDensityChange;
+    return onUpperPaintDensityChange; // Default fallback for laces/logos (not used)
+  };
   const getCurrentGradient = () => activeTab === 'upper' ? upperHasGradient : soleHasGradient;
   const getCurrentGradientToggle = () => activeTab === 'upper' ? onUpperGradientToggle : onSoleGradientToggle;
   const getCurrentGradientColor1 = () => activeTab === 'upper' ? upperGradientColor1 : soleGradientColor1;
@@ -310,10 +368,10 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         return (
           <div className="space-y-4">
             <div className="text-center">
-              
+
             </div>
 
-          
+
           </div>
         );
 
@@ -404,7 +462,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-           
+
             </div>
 
             <LogoUploader
@@ -436,13 +494,30 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 </h2>
               </div>
 
-              <div className={`flex rounded-lg p-1 relative transition-all duration-300 ${isDarkMode ? 'bg-white/10' : 'bg-secondary/50'}`}>
-                <div className={`absolute top-1 bottom-1 w-1/2 rounded-md shadow-sm transition-all duration-300 ease-out ${isDarkMode ? 'bg-white/20' : 'bg-white'} ${activeTab === 'upper' ? 'translate-x-0' : 'translate-x-full'}`} />
-                <button onClick={() => handleTabChange('upper')} className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+              <div className={`flex rounded-lg p-1 relative min-w-fit transition-all duration-300 ${isDarkMode ? 'bg-white/10' : 'bg-secondary/50'}`}>
+                {/* Dynamic background for active tab */}
+                <div
+                  className={`absolute top-1 bottom-1 rounded-md shadow-sm transition-all duration-300 ease-out ${isDarkMode ? 'bg-white/20' : 'bg-white'}`}
+                  style={{
+                    width: 'calc(25% - 2px)',
+                    left: `calc(${activeTab === 'upper' ? '0' :
+                      activeTab === 'sole' ? '25' :
+                        activeTab === 'laces' ? '50' :
+                          activeTab === 'logos' ? '75' : '0'
+                      }% + 1px)`
+                  }}
+                />
+                <button onClick={() => handleTabChange('upper')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Upper
                 </button>
-                <button onClick={() => handleTabChange('sole')} className={`relative z-10 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-300 ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('sole')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Sole
+                </button>
+                <button onClick={() => handleTabChange('laces')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'laces' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                  Laces
+                </button>
+                <button onClick={() => handleTabChange('logos')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'logos' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                  Logos
                 </button>
               </div>
             </div>
@@ -599,20 +674,27 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             {/* Right: Effects & Actions */}
             <div className="flex items-center gap-3">
 
-              {/* Paint Splatter Toggle */}
+              {/* Paint Splatter Toggle - Always reserve space, only show for upper and sole */}
               <div className="flex items-center gap-2">
-                <Droplets className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
-                <Button
-                  variant={getCurrentSplatter() ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => getCurrentSplatterToggle()(!getCurrentSplatter())}
-                  className={`h-8 px-3 transition-all duration-300 ${isDarkMode && !getCurrentSplatter()
-                    ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white'
-                    : ''
-                    }`}
-                >
-                  {getCurrentSplatter() ? 'ON' : 'OFF'}
-                </Button>
+                {(activeTab === 'upper' || activeTab === 'sole') ? (
+                  <>
+                    <Droplets className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
+                    <Button
+                      variant={getCurrentSplatter() ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => getCurrentSplatterToggle()(!getCurrentSplatter())}
+                      className={`h-8 px-3 transition-all duration-300 ${isDarkMode && !getCurrentSplatter()
+                        ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white'
+                        : ''
+                        }`}
+                    >
+                      {getCurrentSplatter() ? 'ON' : 'OFF'}
+                    </Button>
+                  </>
+                ) : (
+                  // Invisible placeholder to maintain consistent spacing
+                  <div className="w-[77px] h-8"></div>
+                )}
               </div>
 
               {/* Quick Actions */}
@@ -655,8 +737,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             </div>
           </div>
 
-          {/* Splatter Controls - Inline when enabled */}
-          {getCurrentSplatter() && (
+          {/* Splatter Controls - Inline when enabled - Only show for upper and sole */}
+          {getCurrentSplatter() && (activeTab === 'upper' || activeTab === 'sole') && (
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-white/20">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
