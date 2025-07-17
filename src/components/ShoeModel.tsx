@@ -42,7 +42,7 @@ interface ShoeModelProps {
   logo2Rotation?: [number, number, number];
 }
 
-const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4s1S9lm4zNCvMpJ6DXrEF5hWbSmP1OUcIdgly';
+const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4zYRgLNVdU2gXuRI1OWCsNc53biYrh6QpG4Ae';
 
 // Configure DRACO loader for optimized loading
 const dracoLoader = new DRACOLoader();
