@@ -16,7 +16,9 @@ import {
   RotateCcw,
   Save,
   Download,
-  Upload
+  Upload,
+  Palette,
+  Droplets
 } from 'lucide-react';
 
 interface Hotspot {
@@ -44,6 +46,12 @@ interface DebugMenuProps {
   cameraInfo?: CameraInfo;
   onCameraReset?: () => void;
   onGoToHotspot?: (hotspot: Hotspot) => void;
+  onLogoPlacementModeToggle?: (enabled: boolean) => void;
+  logoPlacementMode?: boolean;
+  onLogoPositionSet?: (position: [number, number, number], normal: [number, number, number]) => void;
+  onLogoRotationSet?: (rotation: [number, number, number]) => void;
+  logoPosition?: [number, number, number];
+  logoRotation?: [number, number, number];
 }
 
 // Component that runs inside Canvas to collect camera data
@@ -140,11 +148,21 @@ export const DebugMenu: React.FC<DebugMenuProps> = ({
   onToggleVisibility,
   cameraInfo = { position: [0, 0, 0], target: [0, 0, 0], rotation: [0, 0, 0], zoom: 1 },
   onCameraReset,
-  onGoToHotspot
+  onGoToHotspot,
+  onLogoPlacementModeToggle,
+  logoPlacementMode = false,
+  onLogoPositionSet,
+  onLogoRotationSet,
+  logoPosition,
+  logoRotation
 }) => {
   const [hotspots, setHotspots] = useState<Hotspot[]>(predefinedHotspots);
   const [selectedHotspot, setSelectedHotspot] = useState<string | null>(null);
   const [hotspotName, setHotspotName] = useState('');
+  
+  // Color comparison state
+  const [testColor, setTestColor] = useState('#4a8c2b');
+  const [speckleTestColor, setSpeckleTestColor] = useState('#0f1a0c');
 
   const { position: currentPosition, target: currentTarget, rotation: currentRotation, zoom: currentZoom } = cameraInfo;
 
@@ -342,6 +360,439 @@ camera={{
               <Copy className="h-4 w-4 mr-2" />
               Copy Camera Code
             </Button>
+          </div>
+
+          <Separator />
+
+          {/* Color Comparison Tool */}
+          <div className="space-y-2">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Palette className="h-4 w-4" />
+              Color Comparison
+            </h3>
+            
+            <div className="space-y-3">
+              {/* Color Pickers */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Normal Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={testColor}
+                      onChange={(e) => setTestColor(e.target.value)}
+                      className="w-8 h-8 rounded border cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={testColor}
+                      onChange={(e) => setTestColor(e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border rounded font-mono"
+                      placeholder="#000000"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Speckle Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={speckleTestColor}
+                      onChange={(e) => setSpeckleTestColor(e.target.value)}
+                      className="w-8 h-8 rounded border cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={speckleTestColor}
+                      onChange={(e) => setSpeckleTestColor(e.target.value)}
+                      className="flex-1 px-2 py-1 text-xs border rounded font-mono"
+                      placeholder="#000000"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Color Preview */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Normal Preview</span>
+                  <div 
+                    className="w-full h-12 rounded border-2 border-white shadow-sm"
+                    style={{ backgroundColor: testColor }}
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">Speckle Preview</span>
+                  <div 
+                    className="w-full h-12 rounded border-2 border-white shadow-sm relative overflow-hidden"
+                    style={{ backgroundColor: speckleTestColor }}
+                  >
+                    {/* Speckle pattern overlay */}
+                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 48">
+                      {Array.from({ length: 40 }, (_, i) => (
+                        <circle 
+                          key={i}
+                          cx={5 + (i % 10) * 9 + Math.random() * 4} 
+                          cy={4 + Math.floor(i / 10) * 10 + Math.random() * 4} 
+                          r={0.3 + Math.random() * 0.7} 
+                          fill={testColor} 
+                          opacity={0.6 + Math.random() * 0.4} 
+                        />
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Auto-darken button */}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  // Auto-darken the normal color for speckle
+                  const hex = testColor.replace('#', '');
+                  const r = parseInt(hex.substring(0, 2), 16);
+                  const g = parseInt(hex.substring(2, 4), 16);
+                  const b = parseInt(hex.substring(4, 6), 16);
+                  
+                  const factor = 0.3; // Darken by 70%
+                  const newR = Math.floor(r * factor);
+                  const newG = Math.floor(g * factor);
+                  const newB = Math.floor(b * factor);
+                  
+                  const darkenedColor = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+                  setSpeckleTestColor(darkenedColor);
+                }}
+                className="w-full"
+              >
+                <Droplets className="h-4 w-4 mr-2" />
+                Auto-Darken for Speckle
+              </Button>
+
+              {/* Copy Results */}
+              <div className="space-y-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const colorData = `Color Comparison Results:
+Normal Color: ${testColor}
+Speckle Color: ${speckleTestColor}
+
+Color Entry Format:
+{ name: 'Custom Color', value: '${testColor}', speckleValue: '${speckleTestColor}' }
+
+Copy this to share with developer for color adjustments.`;
+                    copyToClipboard(colorData);
+                  }}
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Color Data
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Logo Placement */}
+          <div className="space-y-2">
+            <h3 className="font-semibold flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Logo Placement
+            </h3>
+            
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                variant={logoPlacementMode ? "default" : "outline"}
+                onClick={() => onLogoPlacementModeToggle?.(!logoPlacementMode)}
+                className="w-full"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                {logoPlacementMode ? 'Exit Placement Mode' : 'Enter Placement Mode'}
+              </Button>
+              
+              {logoPlacementMode && (
+                <div className="text-xs text-muted-foreground bg-yellow-50 border border-yellow-200 p-2 rounded">
+                  <p className="font-medium mb-1 text-yellow-800">Placement Mode Active:</p>
+                  <ul className="space-y-1 text-yellow-700">
+                    <li>• Click anywhere on the shoe model</li>
+                    <li>• Logo will be positioned at click point</li>
+                    <li>• Position and normal will be logged</li>
+                    <li>• Click "Exit" when done</li>
+                  </ul>
+                </div>
+              )}
+              
+              {/* Editable Logo Position and Rotation */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Logo Position (X, Y, Z):</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(`[${logoPosition?.join(', ') || '0, 0, 0'}]`)}
+                      className="h-4 w-4 p-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={logoPosition?.[0]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoPositionSet?.([
+                        parseFloat(e.target.value) || 0,
+                        logoPosition?.[1] || 0,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="X"
+                    />
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={logoPosition?.[1]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        parseFloat(e.target.value) || 0,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="Y"
+                    />
+                    <input
+                      type="number"
+                      step="0.001"
+                      value={logoPosition?.[2]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        logoPosition?.[1] || 0,
+                        parseFloat(e.target.value) || 0
+                      ], [0, 0, 1])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="Z"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">Logo Rotation (X, Y, Z):</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(`[${logoRotation?.join(', ') || '0, 0, 0'}]`)}
+                      className="h-4 w-4 p-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={logoRotation?.[0]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoRotationSet?.([
+                        parseFloat(e.target.value) || 0,
+                        logoRotation?.[1] || 0,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="X"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={logoRotation?.[1]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        parseFloat(e.target.value) || 0,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="Y"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={logoRotation?.[2]?.toFixed(3) || '0.000'}
+                      onChange={(e) => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        logoRotation?.[1] || 0,
+                        parseFloat(e.target.value) || 0
+                      ])}
+                      className="px-1 py-0.5 text-xs border rounded font-mono"
+                      placeholder="Z"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Adjustment Buttons */}
+                <div className="space-y-2">
+                  <span className="text-xs font-medium">Quick Adjustments:</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        (logoPosition?.[0] || 0) + 0.01,
+                        logoPosition?.[1] || 0,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      +X
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        (logoPosition?.[0] || 0) - 0.01,
+                        logoPosition?.[1] || 0,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      -X
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        (logoPosition?.[1] || 0) + 0.01,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      +Y
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        (logoPosition?.[1] || 0) - 0.01,
+                        logoPosition?.[2] || 0
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      -Y
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        logoPosition?.[1] || 0,
+                        (logoPosition?.[2] || 0) + 0.01
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      +Z
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoPositionSet?.([
+                        logoPosition?.[0] || 0,
+                        logoPosition?.[1] || 0,
+                        (logoPosition?.[2] || 0) - 0.01
+                      ], [0, 0, 1])}
+                      className="text-xs"
+                    >
+                      -Z
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Rotation Quick Adjustments */}
+                <div className="space-y-2">
+                  <span className="text-xs font-medium">Rotation Adjustments:</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        (logoRotation?.[0] || 0) + 0.1,
+                        logoRotation?.[1] || 0,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="text-xs"
+                    >
+                      +X Rot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        (logoRotation?.[0] || 0) - 0.1,
+                        logoRotation?.[1] || 0,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="text-xs"
+                    >
+                      -X Rot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        (logoRotation?.[1] || 0) + 0.1,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="text-xs"
+                    >
+                      +Y Rot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        (logoRotation?.[1] || 0) - 0.1,
+                        logoRotation?.[2] || 0
+                      ])}
+                      className="text-xs"
+                    >
+                      -Y Rot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        logoRotation?.[1] || 0,
+                        (logoRotation?.[2] || 0) + 0.1
+                      ])}
+                      className="text-xs"
+                    >
+                      +Z Rot
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onLogoRotationSet?.([
+                        logoRotation?.[0] || 0,
+                        logoRotation?.[1] || 0,
+                        (logoRotation?.[2] || 0) - 0.1
+                      ])}
+                      className="text-xs"
+                    >
+                      -Z Rot
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <Separator />

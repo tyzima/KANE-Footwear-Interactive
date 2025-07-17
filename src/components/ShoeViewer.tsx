@@ -1,5 +1,5 @@
 import React, { Suspense, useState, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { Environment, OrbitControls, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { ShoeModel } from './ShoeModel';
@@ -7,15 +7,59 @@ import { ViewerControls } from './ViewerControls';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ColorCustomizer } from './ColorCustomizer';
+import { AIChat } from './AIChat';
 import { LightingControls, LightingPreset } from './LightingControls';
 import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
 
+// National Park inspired color palette with specific darkened speckle base colors
+const NATIONAL_PARK_COLORS = [
+  { name: 'Forest Green', value: '#4a8c2b', speckleValue: '#162a0c' },
+  { name: 'Redwood', value: '#c25d1e', speckleValue: '#3a1c09' },
+  { name: 'Canyon Orange', value: '#ff8c3a', speckleValue: '#4d2a11' },
+  { name: 'Desert Sand', value: '#e6c095', speckleValue: '#44392c' },
+  { name: 'Stone Gray', value: '#9cb3c9', speckleValue: '#2e353c' },
+  { name: 'Sky Blue', value: '#5da9e9', speckleValue: '#1c3246' },
+  { name: 'Sunset Purple', value: '#b87da9', speckleValue: '#372532' },
+  { name: 'Pine Dark', value: '#2d6349', speckleValue: '#0e1d16' },
+  { name: 'Earth Brown', value: '#b06a2c', speckleValue: '#341f0d' },
+  { name: 'Glacier White', value: '#ffffff', speckleValue: '#ffffff' },
+  { name: 'Mountain Peak', value: '#6d6d6d', speckleValue: '#202020' },
+  { name: 'Meadow Green', value: '#94e600', speckleValue: '#2c4400' },
+];
+
+// Helper function to get the appropriate color based on speckle state
+const getColorForSpeckle = (baseColor: string, hasSpeckle: boolean): string => {
+  if (!hasSpeckle) return baseColor;
+
+  const colorEntry = NATIONAL_PARK_COLORS.find(c => c.value === baseColor);
+  return colorEntry?.speckleValue || baseColor;
+};
+
+// Background component to reactively update scene background
+const SceneBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+  const { scene } = useThree();
+
+  React.useEffect(() => {
+    scene.background = new THREE.Color(isDark ? '#1a1a1a' : '#f8f9fa');
+  }, [scene, isDark]);
+
+  return null;
+};
+
 interface ShoeViewerProps {
   className?: string;
+  isDarkBackground?: boolean;
+  onDarkBackgroundChange?: (isDark: boolean) => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
-export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
+export const ShoeViewer: React.FC<ShoeViewerProps> = ({
+  className = '',
+  isDarkBackground: externalIsDarkBackground,
+  onDarkBackgroundChange,
+  canvasRef
+}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(false);
@@ -30,6 +74,29 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
   const [upperPaintDensity, setUpperPaintDensity] = useState(50); // 50% default
   const [solePaintDensity, setSolePaintDensity] = useState(50); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'upper' | 'sole'>('upper');
+
+  // Gradient state
+  const [upperHasGradient, setUpperHasGradient] = useState(false);
+  const [soleHasGradient, setSoleHasGradient] = useState(false);
+  const [upperGradientColor1, setUpperGradientColor1] = useState('#4a8c2b'); // Forest Green
+  const [upperGradientColor2, setUpperGradientColor2] = useState('#c25d1e'); // Redwood
+  const [soleGradientColor1, setSoleGradientColor1] = useState('#4a8c2b'); // Forest Green
+  const [soleGradientColor2, setSoleGradientColor2] = useState('#c25d1e'); // Redwood
+
+  // Texture state
+  const [upperTexture, setUpperTexture] = useState<string | null>(null);
+  const [soleTexture, setSoleTexture] = useState<string | null>(null);
+
+  // Logo state
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoPlacementMode, setLogoPlacementMode] = useState(false);
+  const [logoPosition, setLogoPosition] = useState<[number, number, number]>([0.628, 0.159, -0.490]);
+  const [logoRotation, setLogoRotation] = useState<[number, number, number]>([1.171, -4.300, -1.100]);
+
+  // Second logo state
+  const [logo2Position, setLogo2Position] = useState<[number, number, number]>([-0.631, 0.163, -0.488]);
+  const [logo2Rotation, setLogo2Rotation] = useState<[number, number, number]>([1.163, -1.905, 1.183]);
+
   const [lightingIntensity, setLightingIntensity] = useState(1.0);
   const [shadowIntensity, setShadowIntensity] = useState(0.5);
   const [debugVisible, setDebugVisible] = useState(false);
@@ -41,6 +108,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
     zoom: 1
   });
   const controlsRef = useRef<any>(null);
+
+  // Use external dark background state or fallback to internal state
+  const isDarkBackground = externalIsDarkBackground ?? false;
+  const setIsDarkBackground = onDarkBackgroundChange ?? (() => { });
 
   const handleModelLoad = () => {
     setIsLoading(false);
@@ -110,45 +181,45 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
       // Smooth camera transition using three.js animation
       const controls = controlsRef.current;
       const camera = controls.object;
-      
+
       // Get current positions
       const startPosition = camera.position.clone();
       const startTarget = controls.target.clone();
       const startZoom = camera.zoom;
-      
+
       // Target positions
       const endPosition = new THREE.Vector3(...hotspot.position);
       const endTarget = new THREE.Vector3(...hotspot.target);
       const endZoom = hotspot.zoom || 1;
-      
+
       // Animation duration in milliseconds
       const duration = 1500;
       const startTime = Date.now();
-      
+
       // Disable controls during animation
       controls.enabled = false;
-      
+
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         // Smooth easing function (ease-in-out)
         const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         const easedProgress = easeInOut(progress);
-        
+
         // Interpolate position
         camera.position.lerpVectors(startPosition, endPosition, easedProgress);
-        
+
         // Interpolate target
         controls.target.lerpVectors(startTarget, endTarget, easedProgress);
-        
+
         // Interpolate zoom
         camera.zoom = startZoom + (endZoom - startZoom) * easedProgress;
         camera.updateProjectionMatrix();
-        
+
         // Update controls
         controls.update();
-        
+
         if (progress < 1) {
           requestAnimationFrame(animate);
         } else {
@@ -156,17 +227,70 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           controls.enabled = true;
         }
       };
-      
+
       animate();
     }
+  };
+
+  const handleLogoPlacementModeToggle = (enabled: boolean) => {
+    setLogoPlacementMode(enabled);
+    console.log('Logo placement mode:', enabled ? 'ENABLED' : 'DISABLED');
+  };
+
+  const handleLogoPositionSet = (position: [number, number, number], normal: [number, number, number]) => {
+    console.log('Logo position clicked:', { position, normal });
+    setLogoPosition(position);
+
+    // Only calculate rotation from normal if we're in placement mode (not manual editing)
+    if (logoPlacementMode) {
+      // Calculate rotation from normal vector to align logo with surface
+      const normalVector = new THREE.Vector3(...normal);
+
+      // Create a quaternion that rotates the logo to align with the surface normal
+      const up = new THREE.Vector3(0, 0, 1); // Logo's default "up" direction
+      const quaternion = new THREE.Quaternion();
+      quaternion.setFromUnitVectors(up, normalVector);
+
+      // Convert quaternion to Euler angles
+      const euler = new THREE.Euler();
+      euler.setFromQuaternion(quaternion, 'XYZ');
+
+      // Adjust the rotation to make the logo face outward from the surface
+      // Add a 90-degree rotation around the normal to make it lay flat
+      const rotationMatrix = new THREE.Matrix4();
+      rotationMatrix.makeRotationFromEuler(euler);
+
+      // Apply additional rotation to make logo lay flat on surface
+      const additionalRotation = new THREE.Euler(Math.PI / 2, 0, 0);
+      const additionalMatrix = new THREE.Matrix4();
+      additionalMatrix.makeRotationFromEuler(additionalRotation);
+
+      rotationMatrix.multiply(additionalMatrix);
+
+      const finalEuler = new THREE.Euler();
+      finalEuler.setFromRotationMatrix(rotationMatrix, 'XYZ');
+
+      setLogoRotation([finalEuler.x, finalEuler.y, finalEuler.z]);
+
+      console.log('Logo rotation set to:', [finalEuler.x, finalEuler.y, finalEuler.z]);
+
+      // Auto-exit placement mode after setting position
+      setLogoPlacementMode(false);
+    }
+  };
+
+  const handleLogoRotationSet = (rotation: [number, number, number]) => {
+    console.log('Logo rotation manually set to:', rotation);
+    setLogoRotation(rotation);
   };
 
   return (
     <div className={`relative w-full h-full bg-gradient-viewer rounded-lg overflow-hidden ${className}`}>
       <ErrorBoundary onError={handleModelError}>
         <Canvas
-          camera={{ 
-            position: [2.863, 0.461, 1.44], 
+          ref={canvasRef}
+          camera={{
+            position: [2.863, 0.461, 1.44],
             fov: 45,
             near: 0.1,
             far: 1000,
@@ -174,21 +298,25 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           }}
           shadows
           className="w-full h-full"
-          gl={{ 
-            antialias: true, 
+          gl={{
+            antialias: true,
             alpha: true,
             powerPreference: "high-performance",
             preserveDrawingBuffer: true
           }}
           dpr={[1, 2]}
+
         >
+          {/* Scene Background */}
+          <SceneBackground isDark={isDarkBackground} />
+
           {/* Dynamic Lighting System */}
-          <LightingSystem 
+          <LightingSystem
             preset={'photorealistic'}
             intensity={lightingIntensity}
             shadowIntensity={shadowIntensity}
           />
-          
+
           {/* Controls */}
           <OrbitControls
             ref={controlsRef}
@@ -218,14 +346,33 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
               onError={handleModelError}
               onPartClick={handlePartClick}
               scale={zoom}
-              bottomColor={bottomColor}
-              topColor={topColor}
+              bottomColor={getColorForSpeckle(bottomColor, soleHasSplatter)}
+              topColor={getColorForSpeckle(topColor, upperHasSplatter)}
               upperHasSplatter={upperHasSplatter}
               soleHasSplatter={soleHasSplatter}
               upperSplatterColor={upperSplatterColor}
               soleSplatterColor={soleSplatterColor}
               upperPaintDensity={upperPaintDensity}
               solePaintDensity={solePaintDensity}
+              // Gradient props
+              upperHasGradient={upperHasGradient}
+              soleHasGradient={soleHasGradient}
+              upperGradientColor1={upperGradientColor1}
+              upperGradientColor2={upperGradientColor2}
+              soleGradientColor1={soleGradientColor1}
+              soleGradientColor2={soleGradientColor2}
+              // Texture props
+              upperTexture={upperTexture}
+              soleTexture={soleTexture}
+              // Logo props
+              logoUrl={logoUrl}
+              logoPosition={logoPosition}
+              logoRotation={logoRotation}
+              logoPlacementMode={logoPlacementMode}
+              onLogoPositionSet={handleLogoPositionSet}
+              // Second logo props
+              logo2Position={logo2Position}
+              logo2Rotation={logo2Rotation}
             />
           </Suspense>
 
@@ -253,7 +400,52 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           </div>
         )}
 
-        {/* Color Customizer - Top Right */}
+        {/* ViewerControls - Right Side Under Share Button */}
+        <div className="absolute top-20 right-8 z-10 hidden md:block">
+          <ViewerControls
+            autoRotate={autoRotate}
+            onAutoRotateChange={setAutoRotate}
+            zoom={zoom}
+            onZoomChange={handleZoomChange}
+            onReset={handleReset}
+            onHotspotSelect={handleHotspotSelect}
+            activeHotspot={activeHotspot}
+            disabled={isLoading || !!error}
+            onCameraMove={handleCameraMove}
+            isDarkBackground={isDarkBackground}
+            onBackgroundToggle={setIsDarkBackground}
+          />
+        </div>
+
+        {/* ViewerControls - Mobile: Right Side Lower */}
+        <div className="absolute top-96 right-4 z-10 md:hidden">
+          <ViewerControls
+            autoRotate={autoRotate}
+            onAutoRotateChange={setAutoRotate}
+            zoom={zoom}
+            onZoomChange={handleZoomChange}
+            onReset={handleReset}
+            onHotspotSelect={handleHotspotSelect}
+            activeHotspot={activeHotspot}
+            disabled={isLoading || !!error}
+            onCameraMove={handleCameraMove}
+            isDarkBackground={isDarkBackground}
+            onBackgroundToggle={setIsDarkBackground}
+          />
+        </div>
+
+        {/* Lighting Controls - Top Right, Next to Share Button */}
+        <div className="absolute top-4 right-20 z-10">
+          <LightingControls
+            intensity={lightingIntensity}
+            onIntensityChange={setLightingIntensity}
+            shadowIntensity={shadowIntensity}
+            onShadowIntensityChange={setShadowIntensity}
+            isDarkMode={isDarkBackground}
+          />
+        </div>
+
+        {/* Color Customizer - Bottom Panel */}
         <ColorCustomizer
           topColor={topColor}
           bottomColor={bottomColor}
@@ -273,34 +465,111 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           onSolePaintDensityChange={setSolePaintDensity}
           activeTab={activeColorTab}
           onTabChange={setActiveColorTab}
+          // Gradient props
+          upperHasGradient={upperHasGradient}
+          soleHasGradient={soleHasGradient}
+          upperGradientColor1={upperGradientColor1}
+          upperGradientColor2={upperGradientColor2}
+          soleGradientColor1={soleGradientColor1}
+          soleGradientColor2={soleGradientColor2}
+          onUpperGradientToggle={setUpperHasGradient}
+          onSoleGradientToggle={setSoleHasGradient}
+          onUpperGradientColor1Change={setUpperGradientColor1}
+          onUpperGradientColor2Change={setUpperGradientColor2}
+          onSoleGradientColor1Change={setSoleGradientColor1}
+          onSoleGradientColor2Change={setSoleGradientColor2}
+          // Texture props
+          upperTexture={upperTexture}
+          soleTexture={soleTexture}
+          onUpperTextureChange={setUpperTexture}
+          onSoleTextureChange={setSoleTexture}
+          // Logo props
+          logoUrl={logoUrl}
+          onLogoChange={setLogoUrl}
+          // Dark mode
+          isDarkMode={isDarkBackground}
         />
 
-        {/* Lighting Controls - Bottom Left */}
-        <div className="absolute bottom-4 left-4 z-10">
-          <LightingControls
-            intensity={lightingIntensity}
-            onIntensityChange={setLightingIntensity}
-            shadowIntensity={shadowIntensity}
-            onShadowIntensityChange={setShadowIntensity}
+        {/* AI Chat - Responsive Position */}
+        {/* Desktop: Left side middle */}
+        <div className="absolute left-4 transform -translate-y-1/2 z-10 hidden md:block">
+          <AIChat
+            topColor={topColor}
+            bottomColor={bottomColor}
+            onTopColorChange={setTopColor}
+            onBottomColorChange={setBottomColor}
+            upperHasSplatter={upperHasSplatter}
+            soleHasSplatter={soleHasSplatter}
+            upperSplatterColor={upperSplatterColor}
+            soleSplatterColor={soleSplatterColor}
+            upperPaintDensity={upperPaintDensity}
+            solePaintDensity={solePaintDensity}
+            onUpperSplatterToggle={setUpperHasSplatter}
+            onSoleSplatterToggle={setSoleHasSplatter}
+            onUpperSplatterColorChange={setUpperSplatterColor}
+            onSoleSplatterColorChange={setSoleSplatterColor}
+            onUpperPaintDensityChange={setUpperPaintDensity}
+            onSolePaintDensityChange={setSolePaintDensity}
+            upperHasGradient={upperHasGradient}
+            soleHasGradient={soleHasGradient}
+            upperGradientColor1={upperGradientColor1}
+            upperGradientColor2={upperGradientColor2}
+            soleGradientColor1={soleGradientColor1}
+            soleGradientColor2={soleGradientColor2}
+            onUpperGradientToggle={setUpperHasGradient}
+            onSoleGradientToggle={setSoleHasGradient}
+            onUpperGradientColor1Change={setUpperGradientColor1}
+            onUpperGradientColor2Change={setUpperGradientColor2}
+            onSoleGradientColor1Change={setSoleGradientColor1}
+            onSoleGradientColor2Change={setSoleGradientColor2}
+            upperTexture={upperTexture}
+            soleTexture={soleTexture}
+            onUpperTextureChange={setUpperTexture}
+            onSoleTextureChange={setSoleTexture}
+            isDarkMode={isDarkBackground}
           />
         </div>
 
-        {/* Controls UI - Now positioned absolutely at bottom with higher z-index */}
-        <div className="absolute bottom-4 left-4 right-4 z-20">
-          <ViewerControls
-            autoRotate={autoRotate}
-            onAutoRotateChange={setAutoRotate}
-            zoom={zoom}
-            onZoomChange={handleZoomChange}
-            onReset={handleReset}
-            onHotspotSelect={handleHotspotSelect}
-            activeHotspot={activeHotspot}
-            disabled={isLoading || !!error}
-            onCameraMove={handleCameraMove}
+        {/* Mobile: Right side, below top controls */}
+        <div className="absolute right-4 top-20 z-10 md:hidden">
+          <AIChat
+            topColor={topColor}
+            bottomColor={bottomColor}
+            onTopColorChange={setTopColor}
+            onBottomColorChange={setBottomColor}
+            upperHasSplatter={upperHasSplatter}
+            soleHasSplatter={soleHasSplatter}
+            upperSplatterColor={upperSplatterColor}
+            soleSplatterColor={soleSplatterColor}
+            upperPaintDensity={upperPaintDensity}
+            solePaintDensity={solePaintDensity}
+            onUpperSplatterToggle={setUpperHasSplatter}
+            onSoleSplatterToggle={setSoleHasSplatter}
+            onUpperSplatterColorChange={setUpperSplatterColor}
+            onSoleSplatterColorChange={setSoleSplatterColor}
+            onUpperPaintDensityChange={setUpperPaintDensity}
+            onSolePaintDensityChange={setSolePaintDensity}
+            upperHasGradient={upperHasGradient}
+            soleHasGradient={soleHasGradient}
+            upperGradientColor1={upperGradientColor1}
+            upperGradientColor2={upperGradientColor2}
+            soleGradientColor1={soleGradientColor1}
+            soleGradientColor2={soleGradientColor2}
+            onUpperGradientToggle={setUpperHasGradient}
+            onSoleGradientToggle={setSoleHasGradient}
+            onUpperGradientColor1Change={setUpperGradientColor1}
+            onUpperGradientColor2Change={setUpperGradientColor2}
+            onSoleGradientColor1Change={setSoleGradientColor1}
+            onSoleGradientColor2Change={setSoleGradientColor2}
+            upperTexture={upperTexture}
+            soleTexture={soleTexture}
+            onUpperTextureChange={setUpperTexture}
+            onSoleTextureChange={setSoleTexture}
+            isDarkMode={isDarkBackground}
           />
         </div>
 
-        {/* Debug Menu 
+        {/* Debug Menu
         <DebugMenu
           visible={debugVisible}
           onToggleVisibility={() => setDebugVisible(!debugVisible)}
@@ -309,7 +578,13 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({ className = '' }) => {
           cameraInfo={cameraInfo}
           onCameraReset={handleCameraReset}
           onGoToHotspot={handleGoToHotspot}
-        />*/}
+          onLogoPlacementModeToggle={handleLogoPlacementModeToggle}
+          logoPlacementMode={logoPlacementMode}
+          onLogoPositionSet={handleLogoPositionSet}
+          onLogoRotationSet={handleLogoRotationSet}
+          logoPosition={logoPosition}
+          logoRotation={logoRotation}
+        /> */}
       </ErrorBoundary>
     </div>
   );

@@ -9,20 +9,34 @@ interface CompactColorPickerProps {
   onBottomColorChange: (color: string) => void;
 }
 
-// National Park inspired color palette
+// Helper function to darken colors for speckle base
+const darkenColorForSpeckle = (color: string, factor: number = 0.1): string => {
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  const newR = Math.floor(r * factor);
+  const newG = Math.floor(g * factor);
+  const newB = Math.floor(b * factor);
+  
+  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+};
+
+// National Park inspired color palette with both regular and darkened versions
 const NATIONAL_PARK_COLORS = [
-  { name: 'Forest Green', value: '#2d5016' },
-  { name: 'Redwood', value: '#8b4513' },
-  { name: 'Canyon Orange', value: '#d2691e' },
-  { name: 'Desert Sand', value: '#c19a6b' },
-  { name: 'Stone Gray', value: '#708090' },
-  { name: 'Sky Blue', value: '#4682b4' },
-  { name: 'Sunset Purple', value: '#8b5a80' },
-  { name: 'Pine Dark', value: '#1e3d2f' },
-  { name: 'Earth Brown', value: '#8b4513' },
-  { name: 'Glacier White', value: '#f8f8ff' },
-  { name: 'Mountain Peak', value: '#4a4a4a' },
-  { name: 'Meadow Green', value: '#7cba00' },
+  { name: 'Forest Green', value: '#2d5016', speckleValue: darkenColorForSpeckle('#2d5016') },
+  { name: 'Redwood', value: '#8b4513', speckleValue: darkenColorForSpeckle('#8b4513') },
+  { name: 'Canyon Orange', value: '#d2691e', speckleValue: darkenColorForSpeckle('#d2691e') },
+  { name: 'Desert Sand', value: '#c19a6b', speckleValue: darkenColorForSpeckle('#c19a6b') },
+  { name: 'Stone Gray', value: '#708090', speckleValue: darkenColorForSpeckle('#708090') },
+  { name: 'Sky Blue', value: '#4682b4', speckleValue: darkenColorForSpeckle('#4682b4') },
+  { name: 'Sunset Purple', value: '#8b5a80', speckleValue: darkenColorForSpeckle('#8b5a80') },
+  { name: 'Pine Dark', value: '#1e3d2f', speckleValue: darkenColorForSpeckle('#1e3d2f') },
+  { name: 'Earth Brown', value: '#8b4513', speckleValue: darkenColorForSpeckle('#8b4513') },
+  { name: 'Glacier White', value: '#f8f8ff', speckleValue: darkenColorForSpeckle('#f8f8ff') },
+  { name: 'Mountain Peak', value: '#4a4a4a', speckleValue: darkenColorForSpeckle('#4a4a4a') },
+  { name: 'Meadow Green', value: '#7cba00', speckleValue: darkenColorForSpeckle('#7cba00') },
 ];
 
 export const CompactColorPicker: React.FC<CompactColorPickerProps> = ({
