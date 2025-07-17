@@ -136,7 +136,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   logoColor = '#FFFFFF',
   // Logo props with defaults
   logoUrl = null,
-  logoPosition = [0.8, 0.2, 0.3],
+  logoPosition = [.8, 0.2, 0.5],
+
   logoRotation = [0, -0.3, 0],
   logoPlacementMode = false,
   onLogoPositionSet,
@@ -1049,7 +1050,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      position={[0, 0.27, 0]}
+      position={[0, .27, 0]}
     >
       <primitive
         object={gltf.scene}

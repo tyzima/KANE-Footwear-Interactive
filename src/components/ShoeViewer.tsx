@@ -94,11 +94,11 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   // Logo state
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPlacementMode, setLogoPlacementMode] = useState(false);
-  const [logoPosition, setLogoPosition] = useState<[number, number, number]>([0.628, 0.159, -0.490]);
+  const [logoPosition, setLogoPosition] = useState<[number, number, number]>([0.668, 0.159, -0.490]);
   const [logoRotation, setLogoRotation] = useState<[number, number, number]>([1.171, -4.300, -1.100]);
 
   // Second logo state
-  const [logo2Position, setLogo2Position] = useState<[number, number, number]>([-0.631, 0.163, -0.488]);
+  const [logo2Position, setLogo2Position] = useState<[number, number, number]>([-0.661, 0.163, -0.488]);
   const [logo2Rotation, setLogo2Rotation] = useState<[number, number, number]>([1.163, -1.905, 1.183]);
 
   const [lightingIntensity, setLightingIntensity] = useState(1.0);
@@ -581,7 +581,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           />
         </div>
 
-        {/* Debug Menu
+        {/* Debug Menu*/}
         <DebugMenu
           visible={debugVisible}
           onToggleVisibility={() => setDebugVisible(!debugVisible)}
@@ -596,7 +596,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           onLogoRotationSet={handleLogoRotationSet}
           logoPosition={logoPosition}
           logoRotation={logoRotation}
-        /> */}
+        /> 
       </ErrorBoundary>
     </div>
   );
