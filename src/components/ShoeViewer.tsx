@@ -581,7 +581,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           />
         </div>
 
-        {/* Debug Menu*/}
+        {/* Debug Menu 
         <DebugMenu
           visible={debugVisible}
           onToggleVisibility={() => setDebugVisible(!debugVisible)}
@@ -596,7 +596,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           onLogoRotationSet={handleLogoRotationSet}
           logoPosition={logoPosition}
           logoRotation={logoRotation}
-        /> 
+        /> */}
       </ErrorBoundary>
     </div>
   );
