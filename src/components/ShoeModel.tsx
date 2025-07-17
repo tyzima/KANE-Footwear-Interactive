@@ -434,6 +434,106 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return texture;
   }, []);
 
+  // Create inner shadow texture for sole parts
+  const createInnerShadowTexture = useCallback((baseColor: string): Texture => {
+    const cacheKey = `inner-shadow-${baseColor}`;
+
+    // Check cache first
+    if (textureCache.current.has(cacheKey)) {
+      return textureCache.current.get(cacheKey)!;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d')!;
+
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Start with the base color
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Create radial gradient for inner shadow effect
+    // This simulates the natural shadowing that occurs inside a shoe sole
+    const centerX = 512;
+    const centerY = 400; // Slightly higher to simulate the arch area
+    const innerRadius = 150;
+    const outerRadius = 450;
+
+    // Create multiple shadow layers for realistic depth
+    const shadowLayers = [
+      { radius: outerRadius, opacity: 0.15, color: '#000000' },
+      { radius: outerRadius * 0.8, opacity: 0.12, color: '#000000' },
+      { radius: outerRadius * 0.6, opacity: 0.08, color: '#000000' },
+      { radius: outerRadius * 0.4, opacity: 0.05, color: '#000000' }
+    ];
+
+    shadowLayers.forEach(layer => {
+      const gradient = ctx.createRadialGradient(
+        centerX, centerY, innerRadius,
+        centerX, centerY, layer.radius
+      );
+      
+      gradient.addColorStop(0, `rgba(0, 0, 0, 0)`);
+      gradient.addColorStop(0.3, `rgba(0, 0, 0, ${layer.opacity * 0.3})`);
+      gradient.addColorStop(0.7, `rgba(0, 0, 0, ${layer.opacity * 0.7})`);
+      gradient.addColorStop(1, `rgba(0, 0, 0, ${layer.opacity})`);
+
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1024, 1024);
+    });
+
+    // Add additional shadow areas to simulate the natural contours of a sole
+    ctx.globalCompositeOperation = 'multiply';
+    
+    // Heel shadow area
+    const heelGradient = ctx.createRadialGradient(512, 800, 50, 512, 800, 200);
+    heelGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    heelGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.08)');
+    heelGradient.addColorStop(1, 'rgba(0, 0, 0, 0.15)');
+    ctx.fillStyle = heelGradient;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Toe shadow area
+    const toeGradient = ctx.createRadialGradient(512, 200, 50, 512, 200, 180);
+    toeGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    toeGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.06)');
+    toeGradient.addColorStop(1, 'rgba(0, 0, 0, 0.12)');
+    ctx.fillStyle = toeGradient;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Side shadows for depth
+    const leftSideGradient = ctx.createLinearGradient(0, 0, 200, 0);
+    leftSideGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+    leftSideGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.05)');
+    leftSideGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = leftSideGradient;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    const rightSideGradient = ctx.createLinearGradient(1024, 0, 824, 0);
+    rightSideGradient.addColorStop(0, 'rgba(0, 0, 0, 0.1)');
+    rightSideGradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.05)');
+    rightSideGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = rightSideGradient;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // Reset composite operation
+    ctx.globalCompositeOperation = 'source-over';
+
+    const texture = new CanvasTexture(canvas);
+    texture.generateMipmaps = true;
+    texture.needsUpdate = true;
+
+    // Cache the texture
+    textureCache.current.set(cacheKey, texture);
+
+    return texture;
+  }, []);
+
   // Memoized splatter texture creation with caching
   const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 20): Texture => {
     // Create cache key
@@ -736,6 +836,11 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             }
           }
 
+          // Add inner shadow effect for sole parts
+          // This creates a darker shadow on the inside/top of the sole
+          material.transparent = true;
+          material.opacity = 0.95;
+
           // Update material properties without disposing textures immediately
           if (soleTexture) {
             const newTexture = createTextureFromDataUrl(soleTexture);
@@ -761,12 +866,15 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
               material.needsUpdate = true;
             }
           } else {
-            // Solid color mode
-            if (material.map !== null) {
-              material.map = null;
+            // Solid color mode with inner shadow
+            const shadowTexture = createInnerShadowTexture(bottomColor);
+            if (material.map !== shadowTexture) {
+              material.map = shadowTexture;
+              material.roughness = 0.9;
+              material.metalness = 0.05;
+              material.color.setHex(0xffffff); // White base to let texture show through
               material.needsUpdate = true;
             }
-            material.color.set(bottomColor);
           }
 
           // Only assign material if it's different to prevent flashing

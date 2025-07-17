@@ -5,7 +5,7 @@ import { ShareButton } from '@/components/ShareButton';
 const Index = () => {
   const [isDarkBackground, setIsDarkBackground] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Main Viewer Section - Full Height */}
@@ -32,7 +32,7 @@ const Index = () => {
 
         {/* Share Button - Top Right */}
         <div className="absolute top-8 right-8 z-30">
-          <ShareButton 
+          <ShareButton
             canvasRef={canvasRef}
             isDarkMode={isDarkBackground}
           />
@@ -53,5 +53,5 @@ const Index = () => {
 };
 
 export default Index;
- 
+
 
