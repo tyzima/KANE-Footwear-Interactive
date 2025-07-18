@@ -33,7 +33,7 @@ export const LightingControls: React.FC<LightingControlsProps> = ({
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
         className={`transition-all duration-300 shadow-lg hover:shadow-xl mb-3 ${
-          isOpen ? 'bg-primary text-primary-foreground' : (isDarkMode ? 'bg-black/90 backdrop-blur-sm border border-white/20' : 'bg-white/90 backdrop-blur-sm')
+          isOpen ? 'bg-primary text-primary-foreground' : (isDarkMode ? 'bg-black/40 backdrop-blur-sm border border-white/20' : 'bg-white/90 backdrop-blur-sm')
         }`}
       >
         <Camera className="w-4 h-4 mr-2" />
@@ -46,7 +46,7 @@ export const LightingControls: React.FC<LightingControlsProps> = ({
           ? 'max-h-[300px] opacity-100 translate-y-0' 
           : 'max-h-0 opacity-0 -translate-y-4'
       }`}>
-        <div className={`w-80 backdrop-blur-sm rounded-xl shadow-xl p-4 space-y-4 transition-all duration-300 ${isDarkMode ? 'bg-black/95 border border-white/20' : 'bg-white/95 border border-border'}`}>
+        <div className={`w-80 backdrop-blur-sm rounded-xl shadow-xl p-4 space-y-4 transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-border'}`}>
           
           {/* Current Setup Display */}
           <div className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/30' : 'bg-secondary/30'}`}>

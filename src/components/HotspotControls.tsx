@@ -108,7 +108,7 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
               ${isActive
                 ? 'bg-white text-primary-foreground shadow-md'
                 : isDarkMode
-                  ? 'border-white/30 bg-white text-white/80 hover:bg-white/90 hover:text-white hover:shadow-sm'
+                  ? 'border-white/30 bg-transparent text-white/80 hover:bg-white/90 hover:text-white hover:shadow-sm'
                   : 'border-border text-gray-600 hover:bg-secondary hover:shadow-sm'
               }
               ${isCustom ? 'border-dashed' : ''}

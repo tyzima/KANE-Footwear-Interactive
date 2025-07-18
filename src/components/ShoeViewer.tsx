@@ -37,28 +37,42 @@ const getColorForSpeckle = (baseColor: string, hasSpeckle: boolean): string => {
 };
 
 // Background component to reactively update scene background
-const SceneBackground: React.FC<{ isDark: boolean }> = ({ isDark }) => {
+const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'turf' }> = ({ backgroundType }) => {
   const { scene } = useThree();
 
   React.useEffect(() => {
-    scene.background = new THREE.Color(isDark ? '#1a1a1a' : '#f8f9fa');
-  }, [scene, isDark]);
+    let backgroundColor: string;
+    switch (backgroundType) {
+      case 'dark':
+        backgroundColor = '#1a1a1a';
+        break;
+      case 'turf':
+        // Turf field green - nice dark green grass color
+        backgroundColor = '#1b4f2a';
+        break;
+      case 'light':
+      default:
+        backgroundColor = '#f8f9fa';
+        break;
+    }
+    scene.background = new THREE.Color(backgroundColor);
+  }, [scene, backgroundType]);
 
   return null;
 };
 
 interface ShoeViewerProps {
   className?: string;
-  isDarkBackground?: boolean;
-  onDarkBackgroundChange?: (isDark: boolean) => void;
+  backgroundType?: 'light' | 'dark' | 'turf';
+  onBackgroundTypeChange?: (type: 'light' | 'dark' | 'turf') => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   onColorConfigurationChange?: (config: any) => void;
 }
 
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   className = '',
-  isDarkBackground: externalIsDarkBackground,
-  onDarkBackgroundChange,
+  backgroundType: externalBackgroundType = 'light',
+  onBackgroundTypeChange,
   canvasRef,
   onColorConfigurationChange
 }) => {
@@ -118,9 +132,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   });
   const controlsRef = useRef<any>(null);
 
-  // Use external dark background state or fallback to internal state
-  const isDarkBackground = externalIsDarkBackground ?? false;
-  const setIsDarkBackground = onDarkBackgroundChange ?? (() => { });
+  // Use external background type or fallback to internal state
+  const backgroundType = externalBackgroundType;
+  const setBackgroundType = onBackgroundTypeChange ?? (() => { });
+  
+  // Helper function to determine if current background should use dark mode styling
+  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
 
   // Function to get current color configuration
   const getColorConfiguration = () => {
@@ -367,7 +384,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
 
         >
           {/* Scene Background */}
-          <SceneBackground isDark={isDarkBackground} />
+          <SceneBackground backgroundType={backgroundType} />
 
           {/* Dynamic Lighting System */}
           <LightingSystem
@@ -474,8 +491,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             activeHotspot={activeHotspot}
             disabled={isLoading || !!error}
             onCameraMove={handleCameraMove}
-            isDarkBackground={isDarkBackground}
-            onBackgroundToggle={setIsDarkBackground}
+            backgroundType={backgroundType}
+            onBackgroundToggle={setBackgroundType}
           />
         </div>
 
@@ -491,8 +508,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             activeHotspot={activeHotspot}
             disabled={isLoading || !!error}
             onCameraMove={handleCameraMove}
-            isDarkBackground={isDarkBackground}
-            onBackgroundToggle={setIsDarkBackground}
+            backgroundType={backgroundType}
+            onBackgroundToggle={setBackgroundType}
           />
         </div>
 
@@ -503,7 +520,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             onIntensityChange={setLightingIntensity}
             shadowIntensity={shadowIntensity}
             onShadowIntensityChange={setShadowIntensity}
-            isDarkMode={isDarkBackground}
+            isDarkMode={isDarkMode}
           />
         </div>
 
@@ -554,7 +571,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           logoUrl={logoUrl}
           onLogoChange={setLogoUrl}
           // Dark mode
-          isDarkMode={isDarkBackground}
+          isDarkMode={isDarkMode}
           // Height callback for AIChat positioning
           onHeightChange={setCustomizerHeight}
         />
@@ -593,7 +610,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           soleTexture={soleTexture}
           onUpperTextureChange={setUpperTexture}
           onSoleTextureChange={setSoleTexture}
-          isDarkMode={isDarkBackground}
+          isDarkMode={isDarkMode}
           // ColorCustomizer height for positioning
           customizerHeight={customizerHeight}
         />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, Trees } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
@@ -15,8 +15,8 @@ interface ViewerControlsProps {
   activeHotspot: string | null;
   disabled?: boolean;
   onCameraMove?: (position: [number, number, number], target: [number, number, number], zoom?: number) => void;
-  isDarkBackground?: boolean;
-  onBackgroundToggle?: (isDark: boolean) => void;
+  backgroundType?: 'light' | 'dark' | 'turf';
+  onBackgroundToggle?: (type: 'light' | 'dark' | 'turf') => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -29,7 +29,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   activeHotspot,
   disabled = false,
   onCameraMove,
-  isDarkBackground = false,
+  backgroundType = 'light',
   onBackgroundToggle
 }) => {
   const handleZoomIn = () => {
@@ -42,11 +42,49 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
     onZoomChange(newZoom);
   };
 
+  // Helper to determine if current background should use dark mode styling
+  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+
+  // Function to cycle through background types
+  const handleBackgroundToggle = () => {
+    if (!onBackgroundToggle) return;
+    
+    const nextType = backgroundType === 'light' ? 'dark' : 
+                     backgroundType === 'dark' ? 'turf' : 'light';
+    onBackgroundToggle(nextType);
+  };
+
+  // Get appropriate icon and title for current background
+  const getBackgroundIcon = () => {
+    switch (backgroundType) {
+      case 'dark':
+        return <Trees className="h-4 w-4" />;
+      case 'turf':
+        return <Sun className="h-4 w-4" />;
+      case 'light':
+      default:
+        return <Moon className="h-4 w-4" />;
+    }
+  };
+
+  const getBackgroundTitle = () => {
+    switch (backgroundType) {
+      case 'light':
+        return "Switch to dark background";
+      case 'dark':
+        return "Switch to turf field background";
+      case 'turf':
+        return "Switch to light background";
+      default:
+        return "Switch background";
+    }
+  };
+
   return (
-    <div className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 space-y-3 transition-all duration-300 w-20 ${isDarkBackground ? 'bg-black/95 border border-white/20' : 'bg-white/95 border border-border'}`}>
+    <div className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 space-y-3 transition-all duration-300 w-20 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-border'}`}>
       {/* Hotspot Controls */}
       <div className="flex flex-col items-center gap-2">
-        <span className={`text-xs font-medium text-center transition-all duration-300 ${isDarkBackground ? 'text-white/60' : 'text-muted-foreground'}`}>
+        <span className={`text-xs font-medium text-center transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
           View
         </span>
         <HotspotControls
@@ -54,12 +92,12 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           activeHotspot={activeHotspot}
           disabled={disabled}
           onCameraMove={onCameraMove}
-          isDarkMode={isDarkBackground}
+          isDarkMode={isDarkMode}
         />
       </div>
 
       {/* Divider */}
-      <div className={`h-px w-full transition-all duration-300 ${isDarkBackground ? 'bg-white/20' : 'bg-border'}`} />
+      <div className={`h-px w-full transition-all duration-300 ${isDarkMode ? 'bg-white/20' : 'bg-border'}`} />
 
       {/* View Controls - Vertical Layout */}
       <div className="flex flex-col items-center gap-2">
@@ -69,7 +107,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           size="sm"
           onClick={() => onAutoRotateChange(!autoRotate)}
           disabled={disabled}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkBackground
+          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
             ? 'hover:bg-white/10 text-white/80 hover:text-white'
             : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
             }`}
@@ -88,7 +126,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           size="sm"
           onClick={handleZoomOut}
           disabled={disabled || zoom <= 0.3}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkBackground
+          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
             ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
             : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
             }`}
@@ -103,7 +141,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           size="sm"
           onClick={handleZoomIn}
           disabled={disabled || zoom >= 2}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkBackground
+          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
             ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
             : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
             }`}
@@ -113,7 +151,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
         </Button>
 
         {/* Zoom Percentage */}
-        <div className={`text-xs text-center py-1 transition-all duration-300 ${isDarkBackground ? 'text-white/60' : 'text-muted-foreground'}`}>
+        <div className={`text-xs text-center py-1 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
           {Math.round(zoom * 100)}%
         </div>
 
@@ -122,19 +160,15 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onBackgroundToggle(!isDarkBackground)}
+            onClick={handleBackgroundToggle}
             disabled={disabled}
-            className={`h-8 w-full p-0 transition-all duration-300 ${isDarkBackground
+            className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
               ? 'hover:bg-white/10 text-white/80 hover:text-white'
               : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
               }`}
-            title={isDarkBackground ? "Switch to light background" : "Switch to dark background"}
+            title={getBackgroundTitle()}
           >
-            {isDarkBackground ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {getBackgroundIcon()}
           </Button>
         )}
 

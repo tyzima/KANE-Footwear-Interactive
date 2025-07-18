@@ -447,7 +447,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         onClick={() => handleOpenChange(true)}
         className={`flex rounded-full items-center gap-2 transition-all duration-300 ${isDarkMode
           ? 'bg-white text-black hover:bg-white/90'
-          : 'bg-black text-white hover:bg-black/90'
+          : 'bg-black text-white hover:bg-black/40'
           }`}
       >
         <ShoppingCart className="w-4 h-4" />

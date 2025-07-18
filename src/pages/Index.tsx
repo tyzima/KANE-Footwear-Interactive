@@ -4,9 +4,12 @@ import { ShareButton } from '@/components/ShareButton';
 import { BuyButton } from '@/components/BuyButton';
 
 const Index = () => {
-  const [isDarkBackground, setIsDarkBackground] = useState(false);
+  const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [colorConfiguration, setColorConfiguration] = useState<any>(null);
+  
+  // Helper to determine if current background should use dark mode styling
+  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -17,12 +20,12 @@ const Index = () => {
           <img
             src="/mainkanelogo.png"
             alt="KANE Logo"
-            className={`h-8 w-auto transition-all duration-300 ${isDarkBackground ? 'invert' : ''}`}
+            className={`h-8 w-auto transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
           />
           <div>
             <div className="flex items-center gap-3">
-              <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkBackground ? 'text-white' : 'text-foreground'}`}></h1>
-              <span className={`px-2 py-1 ml-2 tracking-wider text-xs font-medium rounded-full transition-colors duration-300 ${isDarkBackground
+              <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}></h1>
+              <span className={`px-2 py-1 ml-2 tracking-wider text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode
                 ? 'bg-white/20 text-white/90'
                 : 'bg-accent/20 text-accent'
                 }`}>
@@ -36,12 +39,12 @@ const Index = () => {
         <div className="absolute top-8 right-8 z-30 flex flex-col gap-3">
           <BuyButton
             canvasRef={canvasRef}
-            isDarkMode={isDarkBackground}
+            isDarkMode={isDarkMode}
             getColorConfiguration={() => colorConfiguration}
           />
           <ShareButton
             canvasRef={canvasRef}
-            isDarkMode={isDarkBackground}
+            isDarkMode={isDarkMode}
           />
         </div>
 
@@ -49,8 +52,8 @@ const Index = () => {
         <div className="h-full relative">
           <ShoeViewer
             className="h-full"
-            isDarkBackground={isDarkBackground}
-            onDarkBackgroundChange={setIsDarkBackground}
+            backgroundType={backgroundType}
+            onBackgroundTypeChange={setBackgroundType}
             canvasRef={canvasRef}
             onColorConfigurationChange={setColorConfiguration}
           />

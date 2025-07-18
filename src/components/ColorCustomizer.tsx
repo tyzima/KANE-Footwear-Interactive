@@ -722,7 +722,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             className={`max-w-md px-4 py-3 rounded-xl shadow-lg transition-all duration-300 ${isDarkMode
-              ? 'bg-black/90 text-white/90 border border-white/20'
+              ? 'bg-black/40 text-white/90 border border-white/20'
               : 'bg-white text-gray-900 border border-gray-200'
               }`}
           >
@@ -750,7 +750,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className={`flex w-full max-w-md rounded-full p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-white/95 border border-gray-200'}`}
+                className={`flex w-full max-w-md rounded-full p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}
               >
                 <div className="flex items-center w-full px-3 py-1">
                   <motion.div
@@ -869,7 +869,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
                 transition={{ duration: 0.2 }}
-                className={`flex rounded-3xl p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-gray-100 border border-gray-200'}`}
+                className={`flex rounded-3xl p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-gray-100 border border-gray-200'}`}
               >
                 {/* Dynamic background for active tab */}
                 <div
@@ -947,7 +947,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         </div>
 
         {/* Main Control Card */}
-        <div className={`backdrop-blur-sm rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
+        <div className={`backdrop-blur-sm rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
           {/* Main Control Bar */}
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
@@ -1010,7 +1010,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       </PopoverTrigger>
                       <PopoverContent
                         className={`w-64 p-4 transition-all duration-300 ${isDarkMode
-                          ? 'bg-black/95 border-white/20 text-white/90'
+                          ? 'bg-black/40 border-white/20 text-white/90'
                           : 'bg-white border-gray-200'
                           }`}
                         sideOffset={5}
@@ -1118,7 +1118,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                             onClick={() => getCurrentColorChanger()(c.value)}
                           />
                           {/* Custom Tooltip */}
-                          <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
+                          <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/40 text-white border border-white/20' : 'bg-gray-900 text-white'
                             }`}>
                             {c.name}
                             <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
@@ -1142,7 +1142,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           `}
                         />
                         {/* Custom Color Tooltip */}
-                        <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
+                        <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/40 text-white border border-white/20' : 'bg-gray-900 text-white'
                           }`}>
                           Custom Color
                           <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
@@ -1224,7 +1224,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         setIsOpen(true);
                       }
                     }}
-                    className={`w-12 h-12 bg-white/20  p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/30 border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                    className={`w-12 h-12 bg-black/5  p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
                     <img src="/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
@@ -1240,7 +1240,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         setIsOpen(true);
                       }
                     }}
-                    className={`w-12 h-12 p-0 bg-white/20 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                    className={`w-12 h-12 p-0 bg-black/5 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
                     <img src="/logo.svg" alt="Logo" className="w-8 h-8" />

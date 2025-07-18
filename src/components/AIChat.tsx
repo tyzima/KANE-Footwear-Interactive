@@ -329,7 +329,7 @@ export const AIChat: React.FC<AIChatProps> = ({
           onClick={() => setIsOpen(true)}
           size="sm"
           className={`mb-2 flex items-center justify-center px-4 py-2 rounded-full border border-none focus:ring-2 focus:ring-primary/50 shadow-none transition-all duration-300 ${isDarkMode
-            ? 'bg-black/90 text-white hover:bg-black'
+            ? 'bg-black/40 text-white hover:bg-black'
             : 'bg-white/90 text-black hover:bg-white'
             }`}
         >
@@ -368,7 +368,7 @@ export const AIChat: React.FC<AIChatProps> = ({
                   <div
                     className={`max-w-[80%] px-4 py-3 rounded-xl text-sm shadow-sm transition-all duration-300 ${isDarkMode
                       ? msg.isUser
-                        ? 'bg-black/90 text-white border border-white/20'
+                        ? 'bg-black/40 text-white border border-white/20'
                         : 'bg-black/70 text-white/90 border border-white/10'
                       : msg.isUser
                         ? 'bg-white text-black border border-gray-100'
@@ -378,7 +378,7 @@ export const AIChat: React.FC<AIChatProps> = ({
                     {msg.text}
                   </div>
                   {msg.isUser && (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${isDarkMode ? 'bg-black/90' : 'bg-white'
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${isDarkMode ? 'bg-black/40' : 'bg-white'
                       }`}>
                       <span className={`text-sm font-medium transition-all duration-300 ${isDarkMode ? 'text-white/80' : 'text-slate-600'}`}>U</span>
                     </div>
@@ -411,7 +411,7 @@ export const AIChat: React.FC<AIChatProps> = ({
           {/* Input */}
           <div className={`px-4 py-4 bg-transparent ${(visibleMessages.length > 0 || isProcessing) ? 'border-t' : ''} transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-100'}`}>
             <div className={`flex items-center sm:hidden rounded-full px-4 py-4 shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-300 ${isDarkMode
-              ? 'bg-black/90 border border-white/20'
+              ? 'bg-black/40 border border-white/20'
               : 'bg-white border border-gray-200'
               }`}>
               <Atom className={`w-5 h-5 mr-3 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-gray-400'}`} />
