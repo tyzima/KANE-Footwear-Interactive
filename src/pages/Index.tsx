@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { ShoeViewer } from '@/components/ShoeViewer';
 import { ShareButton } from '@/components/ShareButton';
+import { BuyButton } from '@/components/BuyButton';
 
 const Index = () => {
   const [isDarkBackground, setIsDarkBackground] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [colorConfiguration, setColorConfiguration] = useState<any>(null);
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -15,7 +17,7 @@ const Index = () => {
           <img
             src="/mainkanelogo.png"
             alt="KANE Logo"
-            className={`h-10 w-auto transition-all duration-300 ${isDarkBackground ? 'invert' : ''}`}
+            className={`h-8 w-auto transition-all duration-300 ${isDarkBackground ? 'invert' : ''}`}
           />
           <div>
             <div className="flex items-center gap-3">
@@ -30,8 +32,13 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Share Button - Top Right */}
-        <div className="absolute top-8 right-8 z-30">
+        {/* Buy and Share Buttons - Top Right */}
+        <div className="absolute top-8 right-8 z-30 flex flex-col gap-3">
+          <BuyButton
+            canvasRef={canvasRef}
+            isDarkMode={isDarkBackground}
+            getColorConfiguration={() => colorConfiguration}
+          />
           <ShareButton
             canvasRef={canvasRef}
             isDarkMode={isDarkBackground}
@@ -45,6 +52,7 @@ const Index = () => {
             isDarkBackground={isDarkBackground}
             onDarkBackgroundChange={setIsDarkBackground}
             canvasRef={canvasRef}
+            onColorConfigurationChange={setColorConfiguration}
           />
         </div>
       </main>

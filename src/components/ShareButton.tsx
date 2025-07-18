@@ -205,12 +205,11 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
           Share
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={generateInstagramPost}>
-          <Download className="w-4 h-4 mr-2" />
+      <DropdownMenuContent align="end" className="w-48 rounded-2xl">
+<DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 rounded-2xl">
           Instagram Post
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyShareLink}>
+        <DropdownMenuItem onClick={copyShareLink}  className="hover:bg-gray-100 rounded-2xl" >
           {copied ? (
             <Check className="w-4 h-4 mr-2 text-green-500" />
           ) : (

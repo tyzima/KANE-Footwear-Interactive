@@ -138,20 +138,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
           </Button>
         )}
 
-        {/* Reset */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onReset}
-          disabled={disabled}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkBackground
-            ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
-            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
-            }`}
-          title="Reset view"
-        >
-          <RotateCcw className="h-4 w-4" />
-        </Button>
+     
       </div>
     </div>
   );

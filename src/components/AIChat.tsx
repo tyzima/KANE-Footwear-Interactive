@@ -38,6 +38,8 @@ interface AIChatProps {
   onUpperTextureChange?: (texture: string | null) => void;
   onSoleTextureChange?: (texture: string | null) => void;
   isDarkMode?: boolean;
+  // ColorCustomizer height for dynamic positioning
+  customizerHeight?: number;
 }
 
 interface ChatMessage {
@@ -80,13 +82,14 @@ export const AIChat: React.FC<AIChatProps> = ({
   soleTexture = null,
   onUpperTextureChange = () => { },
   onSoleTextureChange = () => { },
-  isDarkMode = false
+  isDarkMode = false,
+  customizerHeight = 100
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [customizerHeight, setCustomizerHeight] = useState(0);
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const genAI = useMemo(() => {
@@ -298,28 +301,7 @@ export const AIChat: React.FC<AIChatProps> = ({
     }
   }, [chatMessages, isProcessing]);
 
-  // Monitor ColorCustomizer height changes
-  useEffect(() => {
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target.matches('[class*="ColorCustomizer"]') || 
-            entry.target.querySelector('[class*="ColorCustomizer"]') ||
-            entry.target.closest('[class*="bottom-0"]')) {
-          setCustomizerHeight(entry.contentRect.height);
-        }
-      }
-    });
 
-    // Find the ColorCustomizer element
-    const customizerElement = document.querySelector('[class*="bottom-0"][class*="left-0"][class*="right-0"]');
-    if (customizerElement) {
-      observer.observe(customizerElement);
-      // Set initial height
-      setCustomizerHeight(customizerElement.getBoundingClientRect().height);
-    }
-
-    return () => observer.disconnect();
-  }, []);
 
   // Auto-fade messages after 10 seconds (fixed to remove oldest)
   useEffect(() => {
@@ -331,11 +313,14 @@ export const AIChat: React.FC<AIChatProps> = ({
     }
   }, [chatMessages]);
 
+  // Use the actual ColorCustomizer height plus some padding
+  const dynamicBottomPosition = customizerHeight + 16;
+
   return (
-    <div 
-      className="fixed left-4 z-30 w-80 lg:w-[500px] transition-all duration-300 ease-out"
-      style={{ 
-        bottom: `${customizerHeight + 20}px` // 20px gap above customizer
+    <div
+      className="fixed left-4 md:left-4 md:translate-x-0 max-md:left-1/2 max-md:-translate-x-1/2 z-20 w-80 lg:w-[400px] transition-all duration-500 ease-out"
+      style={{
+        bottom: `${dynamicBottomPosition}px`
       }}
     >
       {/* Chat Toggle Button */}
@@ -359,16 +344,12 @@ export const AIChat: React.FC<AIChatProps> = ({
           {/* No header to match minimal Grok design */}
 
           {/* Messages */}
-          <div
-            ref={chatContainerRef}
-            className="max-h-60 overflow-y-auto px-6 py-6 space-y-0"
-          >
-            {visibleMessages.length === 0 ? (
-              <div className={`text-center text-base font-medium transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-500'}`}>
-                What do you want to design?
-              </div>
-            ) : (
-              visibleMessages.map((msg, i) => (
+          {(visibleMessages.length > 0 || isProcessing) && (
+            <div
+              ref={chatContainerRef}
+              className="max-h-60 overflow-y-auto px-6 py-6 space-y-0"
+            >
+              {visibleMessages.map((msg, i) => (
                 <div
                   key={msg.id}
                   className={`flex gap-3 items-end transition-all duration-300 ${msg.isUser ? 'justify-end' : 'justify-start'} ${i > 0 ? '-mt-3' : ''}`}
@@ -403,33 +384,33 @@ export const AIChat: React.FC<AIChatProps> = ({
                     </div>
                   )}
                 </div>
-              ))
-            )}
+              ))}
 
-            {isProcessing && (
-              <div className="flex gap-3 items-end justify-start animate-pulse mt-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${isDarkMode ? 'bg-black/80' : 'bg-gray-50'
-                  }`}>
-                  <Bot className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/80' : 'text-gray-600'}`} />
+              {isProcessing && (
+                <div className="flex gap-3 items-end justify-start animate-pulse mt-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-all duration-300 ${isDarkMode ? 'bg-black/80' : 'bg-gray-50'
+                    }`}>
+                    <Bot className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/80' : 'text-gray-600'}`} />
+                  </div>
+                  <div className={`flex items-center space-x-1 px-4 py-3 rounded-xl shadow-sm transition-all duration-300 ${isDarkMode
+                    ? 'bg-black/70 border border-white/10'
+                    : 'bg-gray-50 border border-gray-100'
+                    }`}>
+                    <div className={`w-2 h-2 rounded-full animate-bounce transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
+                      }`} />
+                    <div className={`w-2 h-2 rounded-full animate-bounce delay-150 transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
+                      }`} />
+                    <div className={`w-2 h-2 rounded-full animate-bounce delay-300 transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
+                      }`} />
+                  </div>
                 </div>
-                <div className={`flex items-center space-x-1 px-4 py-3 rounded-xl shadow-sm transition-all duration-300 ${isDarkMode
-                  ? 'bg-black/70 border border-white/10'
-                  : 'bg-gray-50 border border-gray-100'
-                  }`}>
-                  <div className={`w-2 h-2 rounded-full animate-bounce transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
-                    }`} />
-                  <div className={`w-2 h-2 rounded-full animate-bounce delay-150 transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
-                    }`} />
-                  <div className={`w-2 h-2 rounded-full animate-bounce delay-300 transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'
-                    }`} />
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Input */}
-          <div className={`px-4 py-4 bg-transparent border-t transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-100'}`}>
-            <div className={`flex items-center rounded-full px-4 py-4 shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-300 ${isDarkMode
+          <div className={`px-4 py-4 bg-transparent ${(visibleMessages.length > 0 || isProcessing) ? 'border-t' : ''} transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-100'}`}>
+            <div className={`flex items-center sm:hidden rounded-full px-4 py-4 shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-300 ${isDarkMode
               ? 'bg-black/90 border border-white/20'
               : 'bg-white border border-gray-200'
               }`}>

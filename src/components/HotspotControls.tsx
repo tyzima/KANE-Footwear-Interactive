@@ -106,9 +106,9 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
               w-16 h-16 p-1 aspect-square
               transition-all duration-300
               ${isActive
-                ? 'bg-primary text-primary-foreground shadow-md'
+                ? 'bg-white text-primary-foreground shadow-md'
                 : isDarkMode
-                  ? 'border-white/30 bg-transparent text-white/80 hover:bg-white/10 hover:text-white hover:shadow-sm'
+                  ? 'border-white/30 bg-white text-white/80 hover:bg-white/90 hover:text-white hover:shadow-sm'
                   : 'border-border text-gray-600 hover:bg-secondary hover:shadow-sm'
               }
               ${isCustom ? 'border-dashed' : ''}

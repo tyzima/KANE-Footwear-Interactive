@@ -82,32 +82,25 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
   };
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-foreground flex items-center gap-2 flex-shrink-0">
-          <Upload className="w-4 h-4" />
-          Logo:
-        </label>
-        <div className="flex-1 flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">
-            {currentLogo ? 'Logo uploaded' : 'No logo selected'}
-          </span>
-          {currentLogo && (
-            <button
-              onClick={handleRemoveLogo}
-              className="p-1 text-muted-foreground hover:text-destructive transition-colors"
-              title="Remove logo"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+    <div className={`h-[60px] !-mt-2 flex flex-col ${className}`}>
+      {/* Minimal Header - Single Line */}
+      <div className="flex items-center justify-between ">
+      
+        {currentLogo && (
+          <button
+            onClick={handleRemoveLogo}
+            className="text-muted-foreground hover:text-destructive transition-colors"
+            title="Remove logo"
+          >
+            <X size={12} />
+          </button>
+        )}
       </div>
 
-      {/* Upload Area */}
+      {/* Compact Upload Area - Takes remaining space */}
       <div
         className={`
-          relative border-2 border-dashed rounded-lg p-4 transition-all cursor-pointer
+          flex-1 relative border-2 border-dashed rounded-lg transition-all cursor-pointer flex items-center justify-center
           ${isDragging
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
@@ -128,43 +121,36 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
         />
 
         {currentLogo ? (
-          // Preview current logo
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+          // Horizontal layout for preview
+          <div className="flex items-center gap-2 px-2">
+            <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden flex-shrink-0">
               <img
                 src={currentLogo}
                 alt="Logo preview"
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Logo uploaded</p>
-              <p className="text-xs text-muted-foreground">Click to change or drag new image</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-foreground">Logo uploaded</p>
+              <p className="text-xs text-muted-foreground">Click to change</p>
             </div>
           </div>
         ) : (
-          // Upload prompt
-          <div className="text-center">
-            <div className="w-12 h-12 mx-auto bg-muted rounded-lg flex items-center justify-center">
+          // Centered upload prompt
+          <div className="text-center px-2">
+            <div className="w-6 h-6 mx-auto bg-muted rounded flex items-center justify-center mb-1">
               {isProcessing ? (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
               ) : (
-                <ImageIcon size={18} className="text-muted-foreground" />
+                <ImageIcon size={12} className="text-muted-foreground" />
               )}
             </div>
-            <p className="text-sm font-medium text-foreground mb-1">
-              {isProcessing ? 'Processing...' : 'Upload Logo'}
+            <p className="text-xs font-medium text-foreground">
+              {isProcessing ? 'Processing...' : 'Drop or click to upload'}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Drag & drop or click to select
-            </p>
-
           </div>
         )}
       </div>
-
-      {/* Position Controls */}
-
     </div>
   );
 };

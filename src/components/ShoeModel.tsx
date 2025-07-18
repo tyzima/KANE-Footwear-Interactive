@@ -119,8 +119,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   soleHasSplatter = false,
   upperSplatterColor = '#f8f8ff',
   soleSplatterColor = '#f8f8f8ff',
-  upperPaintDensity = 25,
-  solePaintDensity = 25,
+  upperPaintDensity = 100,
+  solePaintDensity = 100,
   // Gradient props with defaults
   upperHasGradient = false,
   soleHasGradient = false,

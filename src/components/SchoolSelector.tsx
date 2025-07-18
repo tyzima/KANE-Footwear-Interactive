@@ -65,23 +65,20 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      {/* School Spirit Label with Search Bar and Inline Results */}
-      <div className="flex items-center gap-4">
+    <div className="h-[80px] flex flex-col">
+      {/* Ultra Compact Header with Search */}
+      <div className="flex items-center gap-2 mb-2">
         {/* Left: Label */}
         <div className="flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <GraduationCap className={`w-4 h-4 transition-all duration-300 ${
+          <div className="flex items-center gap-1.5">
+            <GraduationCap className={`w-3 h-3 transition-all duration-300 ${
               isDarkMode ? 'text-white/80' : 'text-muted-foreground'
             }`} />
-            <div>
-              <h3 className={`text-sm font-medium transition-all duration-300 ${
-                isDarkMode ? 'text-white/90' : 'text-foreground'
-              }`}>
-                Search NCAA Schools
-              </h3>
-            
-            </div>
+            <h3 className={`text-xs font-medium transition-all duration-300 ${
+              isDarkMode ? 'text-white/90' : 'text-foreground'
+            }`}>
+              Search Schools
+            </h3>
           </div>
         </div>
         

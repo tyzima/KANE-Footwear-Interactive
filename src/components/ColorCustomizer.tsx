@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, Droplets, ChevronDown, ChevronUp, School, Upload, Paintbrush, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Palette, Droplets, ChevronDown, ChevronUp, School, Upload, Paintbrush, ChevronLeft, ChevronRight, MessageCircle, X, Send, Bot, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { LogoUploader } from './LogoUploader';
 import { SchoolSelector } from './SchoolSelector';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 interface ColorCustomizerProps {
   topColor: string;
@@ -51,6 +53,8 @@ interface ColorCustomizerProps {
   onLogoChange?: (logoUrl: string | null) => void;
   // Dark mode
   isDarkMode?: boolean;
+  // Height callback for AIChat positioning
+  onHeightChange?: (height: number) => void;
 }
 
 const NATIONAL_PARK_COLORS = [
@@ -138,13 +142,31 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   logoUrl = null,
   onLogoChange = () => { },
   // Dark mode with default
-  isDarkMode = false
+  isDarkMode = false,
+  // Height callback for AIChat positioning
+  onHeightChange = () => { }
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [internalActiveTab, setInternalActiveTab] = useState<'upper' | 'sole' | 'laces' | 'logos'>('upper');
   const [schools, setSchools] = useState<any[]>([]);
   const [selectedSchool, setSelectedSchool] = useState<any>(null);
+  // AI Chat integration
+  const [isAIChatActive, setIsAIChatActive] = useState(false);
+  const [aiInputMessage, setAiInputMessage] = useState('');
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ id: string; text: string; isUser: boolean; timestamp: Date }[]>([]);
+  const [aiResponseVisible, setAiResponseVisible] = useState(false);
+
+  // Initialize Gemini AI
+  const genAI = useMemo(() => {
+    const apiKey = "AIzaSyDr_8GiHPH6yJaFsTQeoaDQ6cLJPgtn0XE";
+    if (!apiKey) {
+      console.error("⚠️ Gemini API key not found");
+      return null;
+    }
+    return new GoogleGenerativeAI(apiKey);
+  }, []);
 
   const activeTab = externalActiveTab || internalActiveTab;
   const handleTabChange = (tab: 'upper' | 'sole' | 'laces' | 'logos') => {
@@ -223,6 +245,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
     if (activeTab === 'sole') return onSolePaintDensityChange;
     return onUpperPaintDensityChange; // Default fallback for laces/logos (not used)
   };
+
   const getCurrentGradient = () => activeTab === 'upper' ? upperHasGradient : soleHasGradient;
   const getCurrentGradientToggle = () => activeTab === 'upper' ? onUpperGradientToggle : onSoleGradientToggle;
   const getCurrentGradientColor1 = () => activeTab === 'upper' ? upperGradientColor1 : soleGradientColor1;
@@ -235,6 +258,190 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
     const color2 = getCurrentGradientColor2();
     getCurrentGradientColor1Changer()(color2);
     getCurrentGradientColor2Changer()(color1);
+  };
+
+  // AI Chat functionality
+  const handleAICommand = async (message: string) => {
+    if (!message.trim() || isAiProcessing) return;
+
+    setIsAiProcessing(true);
+    setChatMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      text: message,
+      isUser: true,
+      timestamp: new Date()
+    }]);
+
+    try {
+      if (!genAI) {
+        throw new Error("AI features are disabled. Missing Gemini API key.");
+      }
+
+      const generationConfig = {
+        responseMimeType: 'text/plain',
+        responseModalities: ['TEXT', 'IMAGE'],
+      };
+
+      const modelName = 'gemini-2.0-flash-preview-image-generation';
+      const model = genAI.getGenerativeModel({ model: modelName, generationConfig });
+
+      const prompt = `You are an AI texture pattern generator for shoe customization. Analyze the user's request and respond with BOTH a JSON plan AND optionally a seamless pattern image.
+
+            User Request: "${message}"
+
+            Current Shoe State:
+            - Upper color: ${topColor}
+            - Sole color: ${bottomColor}
+            - Upper has texture: ${upperTexture ? 'YES' : 'NO'}
+            - Sole has texture: ${soleTexture ? 'YES' : 'NO'}
+            - Upper has splatter: ${upperHasSplatter ? 'YES' : 'NO'}
+            - Sole has splatter: ${soleHasSplatter ? 'YES' : 'NO'}
+            - Upper has gradient: ${upperHasGradient ? 'YES' : 'NO'}
+            - Sole has gradient: ${soleHasGradient ? 'YES' : 'NO'}
+
+            CRITICAL INSTRUCTIONS:
+            1. You MUST ALWAYS include a JSON object in your text response with this EXACT format:
+            {
+              "message": "A friendly message for the user about what you're doing",
+              "targetPart": "upper" | "sole" | "both" | "none",
+              "clearTextures": "upper" | "sole" | "both" | "none" (ONLY clear textures for parts being modified),
+              "changes": {
+                "topColor": "hex code or 'current'",
+                "bottomColor": "hex code or 'current'",
+                "upperHasSplatter": true/false (ONLY include if user specifically requests speckle/splatter/dots),
+                "soleHasSplatter": true/false (ONLY include if user specifically requests speckle/splatter/dots)
+              }
+            }
+
+            2. IMAGE GENERATION RULES:
+               - Generate an image ONLY for: "pattern", "print", "design", "texture", "camo", "galaxy", "marble", "wood", "stripes", "dots", "floral", "geometric", "abstract", "animal print", "tie-dye", "waves", "chevron", "plaid", "checkered", or any visual pattern request
+               
+               - ABSOLUTELY CRITICAL: When generating images, create ONLY seamless, tileable texture patterns
+               - DO NOT generate pictures of shoes, sneakers, or footwear
+               - DO NOT generate 3D objects or realistic shoe images
+               - Generate HIGH-RESOLUTION, DETAILED, FLAT, 2D repeating patterns that look like fabric or material textures
+               - The pattern should tile perfectly when repeated (seamless edges)
+               - Think of it like wallpaper or fabric swatches - flat patterns that repeat infinitely
+               - Make textures VIBRANT, HIGH-CONTRAST, and DETAILED with rich colors and sharp details
+               - Avoid washed-out, faded, or low-contrast patterns
+               - Create textures that will look crisp and clear when applied to 3D surfaces
+
+            3. SPECKLE/SPLATTER HANDLING:
+               - ONLY set upperHasSplatter or soleHasSplatter to true if user explicitly asks for: "speckle", "splatter", "dots", "spots", "paint splatter", "speckled", or similar terms
+               - DO NOT add speckle/splatter for texture patterns, colors, or other requests
+               - When generating textures/patterns, do NOT automatically add speckle effects
+               - If user asks to remove speckle/splatter, set the appropriate field to false
+
+            4. PART-SPECIFIC REQUESTS:
+               - When user specifies different treatments for different parts (e.g., "USA pattern top, solid red bottom"), handle each part separately
+               - Set targetPart to the part getting the texture/pattern
+               - Set clearTextures to only the parts being modified
+               - Update colors for parts specified as solid colors
+
+            5. COLOR HANDLING:
+               - For solid color requests, update topColor/bottomColor and set clearTextures for that part without generating image
+               - If changing from texture back to color, set clearTextures to clear only the specified part's texture
+
+            6. FOLLOW-UP REQUESTS:
+               - Always consider current state when processing requests
+               - Replace existing patterns with new ones when requested
+               - Clear patterns when user asks for solid colors`;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const responseParts = response.candidates?.[0].content.parts || [];
+
+      let parsedPlan: any = null;
+      let imageDataUrl: string | null = null;
+      let combinedText = '';
+
+      for (const part of responseParts) {
+        if (part.text) {
+          combinedText += part.text;
+        } else if ('inlineData' in part && part.inlineData) {
+          const { mimeType, data } = part.inlineData;
+          imageDataUrl = `data:${mimeType};base64,${data}`;
+        }
+      }
+
+      try {
+        const jsonStringMatch = combinedText.match(/\{[\s\S]*\}/);
+        if (jsonStringMatch) {
+          parsedPlan = JSON.parse(jsonStringMatch[0]);
+        }
+      } catch (e) {
+        console.error("Failed to parse JSON from combined text:", combinedText);
+        if (imageDataUrl) {
+          parsedPlan = {
+            message: "I've generated a texture pattern for your shoe!",
+            targetPart: "upper",
+            changes: {}
+          };
+        }
+      }
+
+      if (!parsedPlan) {
+        throw new Error("AI response did not include a valid JSON plan.");
+      }
+
+      // Add AI response to chat messages
+      setChatMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        text: parsedPlan.message,
+        isUser: false,
+        timestamp: new Date()
+      }]);
+
+      // Apply changes to the shoe
+      if (parsedPlan.clearTextures && parsedPlan.clearTextures !== 'none') {
+        if (parsedPlan.clearTextures === 'upper' || parsedPlan.clearTextures === 'both') {
+          onUpperTextureChange(null);
+        }
+        if (parsedPlan.clearTextures === 'sole' || parsedPlan.clearTextures === 'both') {
+          onSoleTextureChange(null);
+        }
+      }
+
+      if (parsedPlan.changes) {
+        if (parsedPlan.changes.topColor && parsedPlan.changes.topColor !== 'current') onTopColorChange(parsedPlan.changes.topColor);
+        if (parsedPlan.changes.bottomColor && parsedPlan.changes.bottomColor !== 'current') onBottomColorChange(parsedPlan.changes.bottomColor);
+        if (typeof parsedPlan.changes.upperHasSplatter === 'boolean') onUpperSplatterToggle(parsedPlan.changes.upperHasSplatter);
+        if (typeof parsedPlan.changes.soleHasSplatter === 'boolean') onSoleSplatterToggle(parsedPlan.changes.soleHasSplatter);
+      }
+
+      if (imageDataUrl && parsedPlan.targetPart) {
+        console.log('Applying texture to:', parsedPlan.targetPart, 'Image size:', imageDataUrl.length);
+        if (parsedPlan.targetPart === 'upper' || parsedPlan.targetPart === 'both') {
+          onUpperTextureChange(imageDataUrl);
+        }
+        if (parsedPlan.targetPart === 'sole' || parsedPlan.targetPart === 'both') {
+          onSoleTextureChange(imageDataUrl);
+        }
+      }
+
+      // Show AI response for a few seconds
+      setAiResponseVisible(true);
+      setTimeout(() => {
+        setAiResponseVisible(false);
+      }, 5000);
+
+    } catch (error) {
+      console.error('AI processing error:', error);
+      setChatMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        text: 'Sorry, I had trouble with that request. Please try again.',
+        isUser: false,
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsAiProcessing(false);
+      setAiInputMessage('');
+
+      // Close AI chat input after processing
+      setTimeout(() => {
+        setIsAIChatActive(false);
+      }, 2000);
+    }
   };
 
   // Load school data
@@ -250,6 +457,34 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
     };
     loadSchools();
   }, []);
+
+  // Track height changes using ResizeObserver
+  const customizerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!customizerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        onHeightChange(height);
+      }
+    });
+
+    resizeObserver.observe(customizerRef.current);
+
+    // Initial height measurement with a small delay to ensure DOM is ready
+    setTimeout(() => {
+      if (customizerRef.current) {
+        const initialHeight = customizerRef.current.offsetHeight;
+        onHeightChange(initialHeight);
+      }
+    }, 100);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [onHeightChange]);
 
   // Handle school selection and actions
   const handleSchoolSelect = (school: any) => {
@@ -479,327 +714,587 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4">
-      <div className={`backdrop-blur-sm rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
-
-        {/* Main Control Bar */}
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-
-            {/* Left: Title & Upper/Sole Toggle */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Palette className="w-5 h-5 text-primary" />
-                <h2 className={`text-lg font-bold transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
-                  Customize
-                </h2>
+      {/* AI Chat Messages Bubble */}
+      {aiResponseVisible && chatMessages.length > 0 && (
+        <div className="flex justify-center mb-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className={`max-w-md px-4 py-3 rounded-xl shadow-lg transition-all duration-300 ${isDarkMode
+              ? 'bg-black/90 text-white/90 border border-white/20'
+              : 'bg-white text-gray-900 border border-gray-200'
+              }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm mt-0.5 transition-all duration-300 ${isDarkMode ? 'bg-black/80' : 'bg-gray-50'
+                }`}>
+                <Bot className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/80' : 'text-gray-600'
+                  }`} />
               </div>
+              <div>
+                <p className="text-sm">{chatMessages[chatMessages.length - 1]?.isUser ? 'Thinking...' : chatMessages[chatMessages.length - 1]?.text}</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
-              <div className={`flex rounded-lg p-1 relative min-w-fit transition-all duration-300 ${isDarkMode ? 'bg-white/10' : 'bg-secondary/50'}`}>
+      <div ref={customizerRef} className="space-y-3">
+        {/* Tabs - Outside and Centered */}
+        <div className="flex justify-center">
+          <AnimatePresence mode="wait">
+            {isAIChatActive ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className={`flex w-full max-w-md rounded-full p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-white/95 border border-gray-200'}`}
+              >
+                <div className="flex items-center w-full px-3 py-1">
+                  <motion.div
+                    initial={{ rotate: -30, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="relative"
+                  >
+                    <svg
+                      className="w-5 h-5 mr-3"
+                      viewBox="0 0 9.86 8.28"
+                      style={{
+                        filter: `drop-shadow(0 0 2px ${isDarkMode ? 'rgba(0, 100, 255, 0.7)' : 'rgba(0, 100, 255, 0.5)'})`
+                      }}
+                    >
+                      <motion.path
+                        d="M.25.26c.27.11.53.21.8.31.83.31,1.65.62,2.48.93.21.08.41.19.56.36.22.24.31.52.31.84v5.33s-.03,0-.04-.01c-.85-.35-1.71-.7-2.55-1.07-.9-.4-1.4-1.1-1.54-2.07,0-.09-.02-.18-.02-.28V.32s0-.04,0-.06Z"
+                        stroke={isDarkMode ? "#4d8bf9" : "#2563eb"}
+                        strokeWidth="0.5"
+                        strokeLinejoin="round"
+                        fill="none"
+                        animate={{
+                          stroke: isDarkMode
+                            ? ["#4d8bf9", "#00c2ff", "#4d8bf9"]
+                            : ["#2563eb", "#0ea5e9", "#2563eb"]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <motion.path
+                        d="M5.45,8.03V2.75c0-.61.28-1.02.85-1.24.92-.35,1.84-.69,2.76-1.04.16-.06.31-.12.47-.19.02,0,.05-.02.08-.03v4.29c0,1.09-.62,2.01-1.63,2.43-.81.34-1.63.68-2.44,1.02-.02.01-.05.02-.08.03h0Z"
+                        stroke={isDarkMode ? "#4d8bf9" : "#2563eb"}
+                        strokeWidth="0.5"
+                        strokeLinejoin="round"
+                        fill="none"
+                        animate={{
+                          stroke: isDarkMode
+                            ? ["#4d8bf9", "#00c2ff", "#4d8bf9"]
+                            : ["#2563eb", "#0ea5e9", "#2563eb"]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      />
+                    </svg>
+                  </motion.div>
+                  <input
+                    type="text"
+                    value={aiInputMessage}
+                    onChange={(e) => setAiInputMessage(e.target.value)}
+                    placeholder="Describe your shoe design..."
+                    disabled={isAiProcessing}
+                    className={`flex-1 bg-transparent focus:outline-none text-sm ${isDarkMode
+                      ? 'text-white placeholder-white/60'
+                      : 'text-gray-900 placeholder-gray-400'
+                      }`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && aiInputMessage.trim()) {
+                        e.preventDefault();
+                        handleAICommand(aiInputMessage);
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <div className="flex items-center gap-2">
+                    {isAiProcessing ? (
+                      <div className="flex items-center space-x-1 mr-1">
+                        <motion.div
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.8 }}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'}`}
+                        />
+                        <motion.div
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.8, delay: 0.2 }}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'}`}
+                        />
+                        <motion.div
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.8, delay: 0.4 }}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${isDarkMode ? 'bg-white/70' : 'bg-gray-500'}`}
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!aiInputMessage.trim()}
+                        className={`h-8 w-8 p-0 rounded-full transition-all duration-300 ${isDarkMode
+                          ? 'hover:bg-white/10 text-white/80 hover:text-white'
+                          : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                          }`}
+                        onClick={() => {
+                          if (aiInputMessage.trim()) {
+                            handleAICommand(aiInputMessage);
+                          }
+                        }}
+                      >
+                        <Send className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsAIChatActive(false)}
+                      className={`h-8 w-8 p-0 rounded-full transition-all duration-300 ${isDarkMode
+                        ? 'hover:bg-white/10 text-white/80 hover:text-white'
+                        : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                        }`}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 5 }}
+                transition={{ duration: 0.2 }}
+                className={`flex rounded-3xl p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-gray-100 border border-gray-200'}`}
+              >
                 {/* Dynamic background for active tab */}
                 <div
-                  className={`absolute top-1 bottom-1 rounded-md shadow-sm transition-all duration-300 ease-out ${isDarkMode ? 'bg-white/20' : 'bg-white'}`}
+                  className={`absolute top-1 bottom-1 ml-1 rounded-full shadow-sm transition-all duration-300 ease-out ${isDarkMode ? 'bg-white/20' : 'bg-white'}`}
                   style={{
-                    width: 'calc(25% - 2px)',
+                    width: 'calc(20% - 2px)',
                     left: `calc(${activeTab === 'upper' ? '0' :
-                      activeTab === 'sole' ? '25' :
-                        activeTab === 'laces' ? '50' :
-                          activeTab === 'logos' ? '75' : '0'
+                      activeTab === 'sole' ? '20' :
+                        activeTab === 'laces' ? '40' :
+                          activeTab === 'logos' ? '60' : '0'
                       }% + 1px)`
                   }}
                 />
-                <button onClick={() => handleTabChange('upper')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('upper')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Upper
                 </button>
-                <button onClick={() => handleTabChange('sole')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('sole')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Sole
                 </button>
-                <button onClick={() => handleTabChange('laces')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'laces' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('laces')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'laces' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Laces
                 </button>
-                <button onClick={() => handleTabChange('logos')} className={`relative z-10 flex-1 px-4 md:px-6 py-1.5 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] md:min-w-[80px] ${activeTab === 'logos' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('logos')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'logos' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Logos
                 </button>
-              </div>
-            </div>
-
-            {/* Center: Color Palette */}
-            <div className="flex-1 flex justify-center">
-              {/* Desktop: Scrollable Color Palette with Arrows and Fade */}
-              <div className="hidden md:flex items-center relative w-full max-w-md lg:max-w-lg xl:max-w-2xl 2xl:max-w-4xl">
-                {/* Left Scroll Arrow */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex-shrink-0 h-8 w-8 p-0 rounded-full transition-all duration-300 z-20 ${isDarkMode
-                    ? 'bg-black/80 hover:bg-black/90 text-white/80 hover:text-white border border-white/20'
-                    : 'bg-white/90 hover:bg-white text-gray-600 hover:text-gray-900 border border-gray-200 shadow-sm'
-                    }`}
-                  onClick={() => {
-                    const container = document.getElementById('color-palette-container');
-                    if (container) {
-                      container.scrollBy({ left: -200, behavior: 'smooth' });
-                    }
-                  }}
+                <button
+                  onClick={() => setIsAIChatActive(true)}
+                  className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-full transition-all duration-300 min-w-[60px] flex items-center justify-center ${isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground'}`}
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-
-                {/* Color Palette Container with Fade Mask */}
-                <div
-                  className="relative flex-1 mx-2 overflow-hidden"
-                  style={{
-                    maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)'
-                  }}
-                >
-                  {/* Scrollable Color Container */}
-                  <div
-                    id="color-palette-container"
-                    className="flex items-center gap-2 overflow-x-auto py-2 px-4"
-                    style={{
-                      scrollbarWidth: 'none',
-                      msOverflowStyle: 'none'
-                    }}
+                  <motion.div
+                    initial={{ rotate: -30, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="relative"
                   >
-                    <style jsx>{`
-                      #color-palette-container::-webkit-scrollbar {
-                        display: none;
-                      }
-                    `}</style>
-                    {NATIONAL_PARK_COLORS.map(c => (
-                      <div key={c.value} className="relative group">
+                    <svg
+                      className="w-5 h-5 mr-3"
+                      viewBox="0 0 9.86 8.28"
+                      style={{
+                        filter: `drop-shadow(0 0 2px ${isDarkMode ? 'rgba(0, 100, 255, 0.7)' : 'rgba(0, 100, 255, 0.5)'})`
+                      }}
+                    >
+                      <motion.path
+                        d="M.25.26c.27.11.53.21.8.31.83.31,1.65.62,2.48.93.21.08.41.19.56.36.22.24.31.52.31.84v5.33s-.03,0-.04-.01c-.85-.35-1.71-.7-2.55-1.07-.9-.4-1.4-1.1-1.54-2.07,0-.09-.02-.18-.02-.28V.32s0-.04,0-.06Z"
+                        stroke={isDarkMode ? "#4d8bf9" : "#2563eb"}
+                        strokeWidth="0.5"
+                        strokeLinejoin="round"
+                        fill="none"
+                        animate={{
+                          stroke: isDarkMode
+                            ? ["#4d8bf9", "#00c2ff", "#4d8bf9"]
+                            : ["#2563eb", "#0ea5e9", "#2563eb"]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <motion.path
+                        d="M5.45,8.03V2.75c0-.61.28-1.02.85-1.24.92-.35,1.84-.69,2.76-1.04.16-.06.31-.12.47-.19.02,0,.05-.02.08-.03v4.29c0,1.09-.62,2.01-1.63,2.43-.81.34-1.63.68-2.44,1.02-.02.01-.05.02-.08.03h0Z"
+                        stroke={isDarkMode ? "#4d8bf9" : "#2563eb"}
+                        strokeWidth="0.5"
+                        strokeLinejoin="round"
+                        fill="none"
+                        animate={{
+                          stroke: isDarkMode
+                            ? ["#4d8bf9", "#00c2ff", "#4d8bf9"]
+                            : ["#2563eb", "#0ea5e9", "#2563eb"]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                      />
+                    </svg>
+                  </motion.div> <p className='text-[8px] font-black pl-1.5 pr-1.5 -ml-1 -pt-1 -ml-2 rounded-sm bg-white/40' > AI </p>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Main Control Card */}
+        <div className={`backdrop-blur-sm rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/90 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
+          {/* Main Control Bar */}
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
+
+              {/* Left: Title */}
+              <div className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <h2 className={`text-base sm:text-lg font-bold transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                    Customize
+                  </h2>
+                </div>
+              </div>
+
+              {/* Center: Color Palette */}
+              <div className="flex-1 flex justify-center">
+                {/* Desktop: Scrollable Color Palette with Arrows and Fade */}
+                <div className="hidden md:flex items-center relative w-full max-w-xs sm:max-sm md:max-w-lg ml-10 lg:max-w-[595px] xl:max-w-[610px] 2xl:max-w-2xl">
+                  {/* Left Scroll Arrow */}
+
+                  {/* Paint Splatter Toggle with Popover - Only show for upper and sole */}
+                  {(activeTab === 'upper' || activeTab === 'sole') && (
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          size="sm"
-                          className={`w-10 h-10 p-0 border-2 rounded-full transition-all duration-300 hover:scale-110 flex-shrink-0 ${getCurrentColor() === c.value ? 'border-primary ring-2 ring-primary/20 scale-110' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                          size="icon"
+                          className={`w-10 h-10 p-0 border-2 relative rounded-full transition-all duration-300 ${getCurrentSplatter()
+                            ? 'bg-primary/10 border-gray-300 hover:bg-primary/20'
+                            : isDarkMode
+                              ? 'border-white/30 hover:bg-white/10'
+                              : 'hover:bg-gray-100'
                             }`}
-                          style={{ backgroundColor: c.value }}
-                          onClick={() => getCurrentColorChanger()(c.value)}
+                          onClick={(e) => {
+                            // If splatter is off, turn it on when clicking the button
+                            if (!getCurrentSplatter()) {
+                              getCurrentSplatterToggle()(true);
+                            }
+                          }}
+                        >
+                          <img
+                            src="/splatter.svg"
+                            alt="Paint Splatter"
+                            className={`w-10 h-10 transition-all duration-300 ${getCurrentSplatter()
+                              ? 'text-primary'
+                              : isDarkMode
+                                ? 'text-white/70'
+                                : 'text-gray-600'
+                              }`}
+                            style={{
+                              filter: getCurrentSplatter()
+                                ? `drop-shadow(0 0 2px ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'})`
+                                : 'none',
+                              color: getCurrentSplatterColor() // This will tint the SVG if it uses currentColor
+                            }}
+                          />
+                          {getCurrentSplatter() && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white"></span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className={`w-64 p-4 transition-all duration-300 ${isDarkMode
+                          ? 'bg-black/95 border-white/20 text-white/90'
+                          : 'bg-white border-gray-200'
+                          }`}
+                        sideOffset={5}
+                      >
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <img src="/splatter.svg" alt="Paint Splatter" className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
+                              <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                Paint Splatter
+                              </span>
+                            </div>
+                            <Button
+                              variant={getCurrentSplatter() ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => getCurrentSplatterToggle()(!getCurrentSplatter())}
+                              className={`h-7 px-2 text-xs transition-all duration-300 ${isDarkMode && !getCurrentSplatter()
+                                ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white'
+                                : ''
+                                }`}
+                            >
+                              {getCurrentSplatter() ? 'ON' : 'OFF'}
+                            </Button>
+                          </div>
+
+                          <div className={getCurrentSplatter() ? "" : "opacity-50 pointer-events-none"}>
+                            <div>
+
+                              <div className="flex gap-1.5 pb-20 flex-wrap">
+                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                  <Button
+                                    key={c.value}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${getCurrentSplatterColor() === c.value
+                                      ? 'border-primary ring-2 ring-primary/20'
+                                      : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                                      }`}
+                                    style={{ backgroundColor: c.value }}
+                                    onClick={() => getCurrentSplatterColorChanger()(c.value)}
+                                    disabled={!getCurrentSplatter()}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className={`pt-3 border-t transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                  Intensity
+                                </span>
+                                <span className={`text-xs font-mono px-2 py-0.5 rounded transition-all duration-300 ${isDarkMode ? 'bg-black/80 text-white/90' : 'bg-secondary text-foreground'
+                                  }`}>
+                                  {getCurrentPaintDensity()}%
+                                </span>
+                              </div>
+                              <Slider
+                                value={[getCurrentPaintDensity()]}
+                                onValueChange={v => getCurrentPaintDensityChanger()(v[0])}
+                                min={500}
+                                max={1000}
+                                step={100}
+                                className="w-full"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+
+
+
+
+                  {/* Color Palette Container with Fade Mask */}
+                  <div
+                    className="relative flex-1 mx-2 overflow-hidden"
+                    style={{
+                      maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)'
+                    }}
+                  >
+                    {/* Scrollable Color Container */}
+                    <div
+                      id="color-palette-container"
+                      className="flex items-center gap-2 overflow-x-auto py-2 px-4"
+                      style={{
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none'
+                      }}
+                    >
+                      <style jsx>{`
+                        #color-palette-container::-webkit-scrollbar {
+                          display: none;
+                        }
+                      `}</style>
+                      {NATIONAL_PARK_COLORS.map(c => (
+                        <div key={c.value} className="relative group">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`w-10 h-10 p-0 border-2 rounded-full transition-all duration-300 hover:scale-110 flex-shrink-0 ${getCurrentColor() === c.value ? 'border-primary ring-2 ring-primary/20 scale-110' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                              }`}
+                            style={{ backgroundColor: c.value }}
+                            onClick={() => getCurrentColorChanger()(c.value)}
+                          />
+                          {/* Custom Tooltip */}
+                          <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
+                            }`}>
+                            {c.name}
+                            <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
+                              }`}></div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Custom Color Picker */}
+                      <div className="relative group">
+                        <input
+                          type="color"
+                          value={getCurrentColor()}
+                          onChange={e => getCurrentColorChanger()(e.target.value)}
+                          className={`
+                            w-10 h-10 p-0 cursor-pointer border-2 border-white flex-shrink-0
+                            rounded-full appearance-none overflow-hidden
+                            [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                            [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-none
+                            hover:scale-110 transition-all duration-300
+                          `}
                         />
-                        {/* Custom Tooltip */}
+                        {/* Custom Color Tooltip */}
                         <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
                           }`}>
-                          {c.name}
+                          Custom Color
                           <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
                             }`}></div>
                         </div>
                       </div>
-                    ))}
-
-                    {/* Custom Color Picker */}
-                    <div className="relative group">
-                      <input
-                        type="color"
-                        value={getCurrentColor()}
-                        onChange={e => getCurrentColorChanger()(e.target.value)}
-                        className={`
-                          w-10 h-10 p-0 cursor-pointer border-2 border-white flex-shrink-0
-                          rounded-full appearance-none overflow-hidden
-                          [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
-                          [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-none
-                          hover:scale-110 transition-all duration-300
-                        `}
-                      />
-                      {/* Custom Color Tooltip */}
-                      <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
-                        }`}>
-                        Custom Color
-                        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
-                          }`}></div>
-                      </div>
                     </div>
                   </div>
+
+                  {/* Right Scroll Arrow */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`absolute hover:bg-gray-300 top-2 -right-9 z-10 h-10 w-10 p-0 rounded-full transition-all duration-300 ${isDarkMode
+                      ? 'border-none hover:text-white  '
+                      : 'text-gray-600 hover:text-gray-900 '
+                      }`}
+                    onClick={() => {
+                      const container = document.getElementById('color-palette-container');
+                      if (container) {
+                        container.scrollBy({ left: 200, behavior: 'smooth' });
+                      }
+                    }}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
 
-                {/* Right Scroll Arrow */}
+                {/* Mobile: Compact Grid Layout */}
+                <div className="md:hidden w-full">
+                  <div className="grid grid-cols-6 gap-1.5 max-w-[200px] mx-auto">
+                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                      <div key={c.value} className="relative group">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-110 ${getCurrentColor() === c.value ? 'border-primary ring-1 ring-primary/20 scale-110' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                            }`}
+                          style={{ backgroundColor: c.value }}
+                          onClick={() => getCurrentColorChanger()(c.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Mobile Custom Color Picker - Separate Row */}
+                  <div className="flex justify-center mt-2">
+                    <input
+                      type="color"
+                      value={getCurrentColor()}
+                      onChange={e => getCurrentColorChanger()(e.target.value)}
+                      title="Custom Color"
+                      className={`
+                        w-8 h-8 p-0 cursor-pointer border-2 border-white
+                        rounded-full appearance-none overflow-hidden
+                        [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                        [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-none
+                        hover:scale-110 transition-all duration-300
+                      `}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Effects & Actions */}
+              <div className="flex items-center gap-1 sm:gap-2">
+
+                {/* Quick Actions */}
+                <div className="flex items-center gap-1 sm:gap-2">
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      if (isOpen && currentStep === 2) {
+                        setIsOpen(false);
+                      } else {
+                        setCurrentStep(2);
+                        setIsOpen(true);
+                      }
+                    }}
+                    className={`w-12 h-12 bg-white/20  p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/30 border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                      }`}
+                  >
+                    <img src="public/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      if (isOpen && currentStep === 3) {
+                        setIsOpen(false);
+                      } else {
+                        setCurrentStep(3);
+                        setIsOpen(true);
+                      }
+                    }}
+                    className={`w-12 h-12 p-0 bg-white/20 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                      }`}
+                  >
+                    <img src="public/logo.svg" alt="Logo" className="w-8 h-8" />
+                  </Button>
+                </div>
+
+                {/* Expand/Collapse */}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`absolute right-0 z-10 h-8 w-8 p-0 rounded-full transition-all duration-300 ${isDarkMode
-                    ? 'bg-black/80 hover:bg-black/90 text-white/80 hover:text-white border border-white/20'
-                    : 'bg-white/90 hover:bg-white text-gray-600 hover:text-gray-900 border border-gray-200 shadow-sm'
+                  onClick={() => setIsOpen(!isOpen)}
+                  className={`h-8 w-8 p-0 transition-all duration-300 ${isDarkMode
+                    ? 'hover:bg-white/10 text-white/80 hover:text-white'
+                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
                     }`}
-                  onClick={() => {
-                    const container = document.getElementById('color-palette-container');
-                    if (container) {
-                      container.scrollBy({ left: 200, behavior: 'smooth' });
-                    }
-                  }}
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                 </Button>
-              </div>
-
-              {/* Mobile: Grid Layout */}
-              <div className="md:hidden w-full max-w-sm">
-                <div className="grid grid-cols-8 gap-2">
-                  {NATIONAL_PARK_COLORS.map(c => (
-                    <div key={c.value} className="relative group">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`w-8 h-8 p-0 border-2 rounded-full transition-all duration-300 hover:scale-110 ${getCurrentColor() === c.value ? 'border-primary ring-2 ring-primary/20 scale-110' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
-                          }`}
-                        style={{ backgroundColor: c.value }}
-                        onClick={() => getCurrentColorChanger()(c.value)}
-                      />
-                      {/* Custom Tooltip */}
-                      <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/90 text-white border border-white/20' : 'bg-gray-900 text-white'
-                        }`}>
-                        {c.name}
-                        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'
-                          }`}></div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Custom Color Picker */}
-                  <input
-                    type="color"
-                    value={getCurrentColor()}
-                    onChange={e => getCurrentColorChanger()(e.target.value)}
-                    title="Custom Color"
-                    className={`
-                      w-8 h-8 p-0 cursor-pointer border-2 border-white
-                      rounded-full appearance-none overflow-hidden
-                      [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
-                      [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-none
-                      hover:scale-110 transition-all duration-300
-                    `}
-                  />
-                </div>
               </div>
             </div>
+          </div>
 
-            {/* Right: Effects & Actions */}
-            <div className="flex items-center gap-3">
-
-              {/* Paint Splatter Toggle - Always reserve space, only show for upper and sole */}
-              <div className="flex items-center gap-2">
-                {(activeTab === 'upper' || activeTab === 'sole') ? (
-                  <>
-                    <Droplets className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
-                    <Button
-                      variant={getCurrentSplatter() ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => getCurrentSplatterToggle()(!getCurrentSplatter())}
-                      className={`h-8 px-3 transition-all duration-300 ${isDarkMode && !getCurrentSplatter()
-                        ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white'
-                        : ''
-                        }`}
-                    >
-                      {getCurrentSplatter() ? 'ON' : 'OFF'}
-                    </Button>
-                  </>
-                ) : (
-                  // Invisible placeholder to maintain consistent spacing
-                  <div className="w-[77px] h-8"></div>
-                )}
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentStep(2)}
-                  className={`h-8 px-3 flex items-center gap-1 transition-all duration-300 ${isDarkMode ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white' : ''
-                    }`}
-                >
-                  <School className="w-4 h-4" />
-                  <span className="hidden lg:inline">Schools</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentStep(3)}
-                  className={`h-8 px-3 flex items-center gap-1 transition-all duration-300 ${isDarkMode ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white' : ''
-                    }`}
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="hidden lg:inline">Logo</span>
-                </Button>
-              </div>
-
-              {/* Expand/Collapse */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`h-8 w-8 p-0 transition-all duration-300 ${isDarkMode
-                  ? 'hover:bg-white/10 text-white/80 hover:text-white'
-                  : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                  }`}
+          {/* Expanded Content Area */}
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 80, opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.4, 0.0, 0.2, 1],
+                  opacity: { duration: 0.3 }
+                }}
+                className="overflow-hidden"
               >
-                {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-
-          {/* Splatter Controls - Inline when enabled - Only show for upper and sole */}
-          {getCurrentSplatter() && (activeTab === 'upper' || activeTab === 'sole') && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-white/20">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
-                    Splatter:
-                  </span>
-                  <div className="flex gap-1">
-                    {NATIONAL_PARK_COLORS.slice(0, 6).map(c => (
-                      <Button
-                        key={c.value}
-                        variant="outline"
-                        size="sm"
-                        className={`w-6 h-6 p-0 border rounded-full transition-all duration-300 hover:scale-110 ${getCurrentSplatterColor() === c.value ? 'border-primary ring-1 ring-primary/20' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
-                          }`}
-                        style={{ backgroundColor: c.value }}
-                        onClick={() => getCurrentSplatterColorChanger()(c.value)}
-                      />
-                    ))}
+                <div className={`px-4 pb-4 border-t transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`}>
+                  <div className="pt-4 h-full overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentStep}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {renderStepContent()}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-muted-foreground'}`}>
-                    Intensity:
-                  </span>
-                  <div className="w-24">
-                    <Slider
-                      value={[getCurrentPaintDensity()]}
-                      onValueChange={v => getCurrentPaintDensityChanger()(v[0])}
-                      min={100}
-                      max={500}
-                      step={10}
-                      className="w-full"
-                    />
-                  </div>
-                  <span className={`text-sm font-mono px-2 py-1 rounded transition-all duration-300 ${isDarkMode ? 'bg-black/80 text-white/90' : 'bg-secondary text-foreground'}`}>
-                    {getCurrentPaintDensity()}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Expanded Content Area */}
-        <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-64 opacity-100 overflow-y-auto' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-          <div className="px-4 pb-4 border-t border-gray-200 dark:border-white/20">
-            <div className="pt-4">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {renderStepContent()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

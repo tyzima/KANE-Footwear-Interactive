@@ -52,13 +52,15 @@ interface ShoeViewerProps {
   isDarkBackground?: boolean;
   onDarkBackgroundChange?: (isDark: boolean) => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
+  onColorConfigurationChange?: (config: any) => void;
 }
 
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   className = '',
   isDarkBackground: externalIsDarkBackground,
   onDarkBackgroundChange,
-  canvasRef
+  canvasRef,
+  onColorConfigurationChange
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,9 +73,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [soleHasSplatter, setSoleHasSplatter] = useState(false);
   const [upperSplatterColor, setUpperSplatterColor] = useState('#f8f8ff'); // Glacier White
   const [soleSplatterColor, setSoleSplatterColor] = useState('#f8f8ff'); // Glacier White
-  const [upperPaintDensity, setUpperPaintDensity] = useState(50); // 50% default
-  const [solePaintDensity, setSolePaintDensity] = useState(50); // 50% default
+  const [upperPaintDensity, setUpperPaintDensity] = useState(500); // 50% default
+  const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'upper' | 'sole' | 'laces' | 'logos'>('upper');
+
+  // ColorCustomizer height tracking for AIChat positioning
+  const [customizerHeight, setCustomizerHeight] = useState(100);
 
   // Lace and logo colors (single color for both left and right)
   const [laceColor, setLaceColor] = useState('#FFFFFF');
@@ -116,6 +121,56 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   // Use external dark background state or fallback to internal state
   const isDarkBackground = externalIsDarkBackground ?? false;
   const setIsDarkBackground = onDarkBackgroundChange ?? (() => { });
+
+  // Function to get current color configuration
+  const getColorConfiguration = () => {
+    return {
+      upper: {
+        baseColor: topColor,
+        hasSplatter: upperHasSplatter,
+        splatterColor: upperSplatterColor,
+        hasGradient: upperHasGradient,
+        gradientColor1: upperGradientColor1,
+        gradientColor2: upperGradientColor2,
+        texture: upperTexture,
+        paintDensity: upperPaintDensity
+      },
+      sole: {
+        baseColor: bottomColor,
+        hasSplatter: soleHasSplatter,
+        splatterColor: soleSplatterColor,
+        hasGradient: soleHasGradient,
+        gradientColor1: soleGradientColor1,
+        gradientColor2: soleGradientColor2,
+        texture: soleTexture,
+        paintDensity: solePaintDensity
+      },
+      laces: {
+        color: laceColor
+      },
+      logo: {
+        color: logoColor,
+        url: logoUrl,
+        position: logoPosition,
+        rotation: logoRotation
+      }
+    };
+  };
+
+  // Effect to notify parent component when color configuration changes
+  React.useEffect(() => {
+    if (onColorConfigurationChange) {
+      onColorConfigurationChange(getColorConfiguration());
+    }
+  }, [
+    topColor, bottomColor, laceColor, logoColor,
+    upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor,
+    upperPaintDensity, solePaintDensity,
+    upperHasGradient, soleHasGradient,
+    upperGradientColor1, upperGradientColor2, soleGradientColor1, soleGradientColor2,
+    upperTexture, soleTexture, logoUrl, logoPosition, logoRotation,
+    onColorConfigurationChange
+  ]);
 
   const handleModelLoad = () => {
     setIsLoading(false);
@@ -408,7 +463,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         )}
 
         {/* ViewerControls - Right Side Under Share Button */}
-        <div className="absolute top-20 right-8 z-10 hidden md:block">
+        <div className="absolute top-12 md:top-32  right-8 z-10 hidden md:block">
           <ViewerControls
             autoRotate={autoRotate}
             onAutoRotateChange={setAutoRotate}
@@ -425,7 +480,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         </div>
 
         {/* ViewerControls - Mobile: Right Side Lower */}
-        <div className="absolute top-96 right-4 z-10 md:hidden">
+        <div className="absolute top-32 right-8 z-10 md:hidden">
           <ViewerControls
             autoRotate={autoRotate}
             onAutoRotateChange={setAutoRotate}
@@ -500,86 +555,48 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           onLogoChange={setLogoUrl}
           // Dark mode
           isDarkMode={isDarkBackground}
+          // Height callback for AIChat positioning
+          onHeightChange={setCustomizerHeight}
         />
 
-        {/* AI Chat - Responsive Position */}
-        {/* Desktop: Left side middle */}
-        <div className="absolute left-4 transform -translate-y-1/2 z-10 hidden md:block">
-          <AIChat
-            topColor={topColor}
-            bottomColor={bottomColor}
-            onTopColorChange={setTopColor}
-            onBottomColorChange={setBottomColor}
-            upperHasSplatter={upperHasSplatter}
-            soleHasSplatter={soleHasSplatter}
-            upperSplatterColor={upperSplatterColor}
-            soleSplatterColor={soleSplatterColor}
-            upperPaintDensity={upperPaintDensity}
-            solePaintDensity={solePaintDensity}
-            onUpperSplatterToggle={setUpperHasSplatter}
-            onSoleSplatterToggle={setSoleHasSplatter}
-            onUpperSplatterColorChange={setUpperSplatterColor}
-            onSoleSplatterColorChange={setSoleSplatterColor}
-            onUpperPaintDensityChange={setUpperPaintDensity}
-            onSolePaintDensityChange={setSolePaintDensity}
-            upperHasGradient={upperHasGradient}
-            soleHasGradient={soleHasGradient}
-            upperGradientColor1={upperGradientColor1}
-            upperGradientColor2={upperGradientColor2}
-            soleGradientColor1={soleGradientColor1}
-            soleGradientColor2={soleGradientColor2}
-            onUpperGradientToggle={setUpperHasGradient}
-            onSoleGradientToggle={setSoleHasGradient}
-            onUpperGradientColor1Change={setUpperGradientColor1}
-            onUpperGradientColor2Change={setUpperGradientColor2}
-            onSoleGradientColor1Change={setSoleGradientColor1}
-            onSoleGradientColor2Change={setSoleGradientColor2}
-            upperTexture={upperTexture}
-            soleTexture={soleTexture}
-            onUpperTextureChange={setUpperTexture}
-            onSoleTextureChange={setSoleTexture}
-            isDarkMode={isDarkBackground}
-          />
-        </div>
-
-        {/* Mobile: Right side, below top controls */}
-        <div className="absolute right-4 top-20 z-10 md:hidden">
-          <AIChat
-            topColor={topColor}
-            bottomColor={bottomColor}
-            onTopColorChange={setTopColor}
-            onBottomColorChange={setBottomColor}
-            upperHasSplatter={upperHasSplatter}
-            soleHasSplatter={soleHasSplatter}
-            upperSplatterColor={upperSplatterColor}
-            soleSplatterColor={soleSplatterColor}
-            upperPaintDensity={upperPaintDensity}
-            solePaintDensity={solePaintDensity}
-            onUpperSplatterToggle={setUpperHasSplatter}
-            onSoleSplatterToggle={setSoleHasSplatter}
-            onUpperSplatterColorChange={setUpperSplatterColor}
-            onSoleSplatterColorChange={setSoleSplatterColor}
-            onUpperPaintDensityChange={setUpperPaintDensity}
-            onSolePaintDensityChange={setSolePaintDensity}
-            upperHasGradient={upperHasGradient}
-            soleHasGradient={soleHasGradient}
-            upperGradientColor1={upperGradientColor1}
-            upperGradientColor2={upperGradientColor2}
-            soleGradientColor1={soleGradientColor1}
-            soleGradientColor2={soleGradientColor2}
-            onUpperGradientToggle={setUpperHasGradient}
-            onSoleGradientToggle={setSoleHasGradient}
-            onUpperGradientColor1Change={setUpperGradientColor1}
-            onUpperGradientColor2Change={setUpperGradientColor2}
-            onSoleGradientColor1Change={setSoleGradientColor1}
-            onSoleGradientColor2Change={setSoleGradientColor2}
-            upperTexture={upperTexture}
-            soleTexture={soleTexture}
-            onUpperTextureChange={setUpperTexture}
-            onSoleTextureChange={setSoleTexture}
-            isDarkMode={isDarkBackground}
-          />
-        </div>
+        {/* AI Chat - Fixed Position (handles its own responsive positioning) */}
+        <AIChat
+          topColor={topColor}
+          bottomColor={bottomColor}
+          onTopColorChange={setTopColor}
+          onBottomColorChange={setBottomColor}
+          upperHasSplatter={upperHasSplatter}
+          soleHasSplatter={soleHasSplatter}
+          upperSplatterColor={upperSplatterColor}
+          soleSplatterColor={soleSplatterColor}
+          upperPaintDensity={upperPaintDensity}
+          solePaintDensity={solePaintDensity}
+          onUpperSplatterToggle={setUpperHasSplatter}
+          onSoleSplatterToggle={setSoleHasSplatter}
+          onUpperSplatterColorChange={setUpperSplatterColor}
+          onSoleSplatterColorChange={setSoleSplatterColor}
+          onUpperPaintDensityChange={setUpperPaintDensity}
+          onSolePaintDensityChange={setSolePaintDensity}
+          upperHasGradient={upperHasGradient}
+          soleHasGradient={soleHasGradient}
+          upperGradientColor1={upperGradientColor1}
+          upperGradientColor2={upperGradientColor2}
+          soleGradientColor1={soleGradientColor1}
+          soleGradientColor2={soleGradientColor2}
+          onUpperGradientToggle={setUpperHasGradient}
+          onSoleGradientToggle={setSoleHasGradient}
+          onUpperGradientColor1Change={setUpperGradientColor1}
+          onUpperGradientColor2Change={setUpperGradientColor2}
+          onSoleGradientColor1Change={setSoleGradientColor1}
+          onSoleGradientColor2Change={setSoleGradientColor2}
+          upperTexture={upperTexture}
+          soleTexture={soleTexture}
+          onUpperTextureChange={setUpperTexture}
+          onSoleTextureChange={setSoleTexture}
+          isDarkMode={isDarkBackground}
+          // ColorCustomizer height for positioning
+          customizerHeight={customizerHeight}
+        />
 
         {/* Debug Menu 
         <DebugMenu
