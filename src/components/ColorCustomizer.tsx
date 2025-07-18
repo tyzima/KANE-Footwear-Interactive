@@ -314,38 +314,38 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             }
 
             2. IMAGE GENERATION RULES:
-               - Generate an image ONLY for: "pattern", "print", "design", "texture", "camo", "galaxy", "marble", "wood", "stripes", "dots", "floral", "geometric", "abstract", "animal print", "tie-dye", "waves", "chevron", "plaid", "checkered", or any visual pattern request
-               
-               - ABSOLUTELY CRITICAL: When generating images, create ONLY seamless, tileable texture patterns
-               - DO NOT generate pictures of shoes, sneakers, or footwear
-               - DO NOT generate 3D objects or realistic shoe images
-               - Generate HIGH-RESOLUTION, DETAILED, FLAT, 2D repeating patterns that look like fabric or material textures
-               - The pattern should tile perfectly when repeated (seamless edges)
-               - Think of it like wallpaper or fabric swatches - flat patterns that repeat infinitely
-               - Make textures VIBRANT, HIGH-CONTRAST, and DETAILED with rich colors and sharp details
-               - Avoid washed-out, faded, or low-contrast patterns
-               - Create textures that will look crisp and clear when applied to 3D surfaces
+                - Generate an image ONLY for: "pattern", "print", "design", "texture", "camo", "galaxy", "marble", "wood", "stripes", "dots", "floral", "geometric", "abstract", "animal print", "tie-dye", "waves", "chevron", "plaid", "checkered", or any visual pattern request
+                
+                - ABSOLUTELY CRITICAL: When generating images, create ONLY seamless, tileable texture patterns
+                - DO NOT generate pictures of shoes, sneakers, or footwear
+                - DO NOT generate 3D objects or realistic shoe images
+                - Generate HIGH-RESOLUTION, DETAILED, FLAT, 2D repeating patterns that look like fabric or material textures
+                - The pattern should tile perfectly when repeated (seamless edges)
+                - Think of it like wallpaper or fabric swatches - flat patterns that repeat infinitely
+                - Make textures VIBRANT, HIGH-CONTRAST, and DETAILED with rich colors and sharp details
+                - Avoid washed-out, faded, or low-contrast patterns
+                - Create textures that will look crisp and clear when applied to 3D surfaces
 
             3. SPECKLE/SPLATTER HANDLING:
-               - ONLY set upperHasSplatter or soleHasSplatter to true if user explicitly asks for: "speckle", "splatter", "dots", "spots", "paint splatter", "speckled", or similar terms
-               - DO NOT add speckle/splatter for texture patterns, colors, or other requests
-               - When generating textures/patterns, do NOT automatically add speckle effects
-               - If user asks to remove speckle/splatter, set the appropriate field to false
+                - ONLY set upperHasSplatter or soleHasSplatter to true if user explicitly asks for: "speckle", "splatter", "dots", "spots", "paint splatter", "speckled", or similar terms
+                - DO NOT add speckle/splatter for texture patterns, colors, or other requests
+                - When generating textures/patterns, do NOT automatically add speckle effects
+                - If user asks to remove speckle/splatter, set the appropriate field to false
 
             4. PART-SPECIFIC REQUESTS:
-               - When user specifies different treatments for different parts (e.g., "USA pattern top, solid red bottom"), handle each part separately
-               - Set targetPart to the part getting the texture/pattern
-               - Set clearTextures to only the parts being modified
-               - Update colors for parts specified as solid colors
+                - When user specifies different treatments for different parts (e.g., "USA pattern top, solid red bottom"), handle each part separately
+                - Set targetPart to the part getting the texture/pattern
+                - Set clearTextures to only the parts being modified
+                - Update colors for parts specified as solid colors
 
             5. COLOR HANDLING:
-               - For solid color requests, update topColor/bottomColor and set clearTextures for that part without generating image
-               - If changing from texture back to color, set clearTextures to clear only the specified part's texture
+                - For solid color requests, update topColor/bottomColor and set clearTextures for that part without generating image
+                - If changing from texture back to color, set clearTextures to clear only the specified part's texture
 
             6. FOLLOW-UP REQUESTS:
-               - Always consider current state when processing requests
-               - Replace existing patterns with new ones when requested
-               - Clear patterns when user asks for solid colors`;
+                - Always consider current state when processing requests
+                - Replace existing patterns with new ones when requested
+                - Clear patterns when user asks for solid colors`;
 
       const result = await model.generateContent(prompt);
       const response = result.response;
@@ -971,42 +971,61 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   {(activeTab === 'upper' || activeTab === 'sole') && (
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className={`w-10 h-10 p-0 border-2 relative rounded-full transition-all duration-300 ${getCurrentSplatter()
-                            ? 'bg-primary/10 border-gray-300 hover:bg-primary/20'
-                            : isDarkMode
-                              ? 'border-white/30 hover:bg-white/10'
-                              : 'hover:bg-gray-100'
-                            }`}
-                          onClick={(e) => {
-                            // If splatter is off, turn it on when clicking the button
-                            if (!getCurrentSplatter()) {
-                              getCurrentSplatterToggle()(true);
-                            }
-                          }}
-                        >
-                          <img
-                            src="/splatter.svg"
-                            alt="Paint Splatter"
-                            className={`w-10 h-10 transition-all duration-300 ${getCurrentSplatter()
-                              ? 'text-primary'
-                              : isDarkMode
-                                ? 'text-white/70'
-                                : 'text-gray-600'
-                              }`}
-                            style={{
-                              filter: getCurrentSplatter()
-                                ? `drop-shadow(0 0 2px ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'})`
-                                : 'none',
-                              color: getCurrentSplatterColor() // This will tint the SVG if it uses currentColor
-                            }}
-                          />
-                          {getCurrentSplatter() && (
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white"></span>
-                          )}
-                        </Button>
+                    
+                      <Button
+  variant="outline"
+  size="icon"
+  className={`w-10 h-10 p-0 border-2 relative rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 ${
+    getCurrentSplatter()
+      ? 'bg-primary/10 border-gray-300 hover:bg-primary/20'
+      : isDarkMode
+        ? 'border-white/30 hover:bg-white/10'
+        : 'hover:bg-gray-100'
+  }`}
+  onClick={() => {
+    if (!getCurrentSplatter()) {
+      getCurrentSplatterToggle()(true);
+    }
+  }}
+  style={getCurrentSplatter() ? { color: getCurrentSplatterColor() } : {}}
+>
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    stroke="none"
+    className="w-full h-full  scale-[2.2] origin-center "
+    preserveAspectRatio="xMidYMid slice"
+  >
+    <g transform="translate(1 2)">
+      <path d="M3.77,6.82c.41,0,.75-.34.75-.75s-.34-.75-.75-.75-.75.34-.75.75.34.75.75.75Z" />
+      <path d="M7.52,4.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+      <path d="M11.02,5.32c.28,0,.5-.22.5-.5s-.22-.5-.5-.5-.5.22-.5.5.22.5.5.5Z" />
+      <path d="M19.28,4.17c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+      <path d="M18.02,10.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+      <path d="M19.52,13.32c.62,0,1.12-.5,1.12-1.12s-.5-1.12-1.12-1.12-1.12.5-1.12,1.12.5,1.12,1.12,1.12Z" />
+      <path d="M19.28,18.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+      <path d="M15,20.7c.59,0,1.08-.48,1.08-1.08s-.48-1.08-1.08-1.08-1.08.48-1.08,1.08.48,1.08,1.08,1.08Z" />
+      <path d="M10.34,13.57c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+      <path d="M6.98,18.82c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+      <path d="M2.02,15.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+      <path d="M2.52,11.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+      <path d="M6.98,9.82c.3,0,.54-.24.54-.54s-.24-.54-.54-.54-.54.24-.54.54.24.54.54.54Z" />
+      <path d="M11.69,9.21c.59,0,1.07-.48,1.07-1.07s-.48-1.07-1.07-1.07-1.07.48-1.07,1.07.48,1.07,1.07,1.07Z" />
+      <path d="M6.44,14c.24,0,.43-.19.43-.43s-.19-.43-.43-.43-.43.19-.43.43.19.43.43.43Z" />
+      <path d="M13.93,13.97c.46,0,.82-.37.82-.82s-.37-.82-.82-.82-.82.37-.82.82.37.82.82.82Z" />
+      <path d="M20.64,7.05c.19,0,.35-.16.35-.35s-.16-.35-.35-.35-.35.16-.35.35.16.35.35.35Z" />
+      <path d="M20.17,16.82c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
+      <path d="M13.3,16.21c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
+      <path d="M.68,15.82c-.19-.02-.36.11-.39.3s.11.36.3.39.36-.11.39-.3-.11-.36-.3-.39Z" />
+    </g>
+  </svg>
+
+  {getCurrentSplatter() && (
+    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white" />
+  )}
+</Button>
+
+
                       </PopoverTrigger>
                       <PopoverContent
                         className={`w-64 p-4 transition-all duration-300 ${isDarkMode
@@ -1018,7 +1037,45 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <img src="/splatter.svg" alt="Paint Splatter" className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`} />
+                              {/* Inline SVG for splatter within Popover as well */}
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`w-4 h-4 transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}
+                                style={{ color: getCurrentSplatterColor() }} // Apply color directly here too
+                              >
+                                {/* Replace with actual paths from splatter.svg */}
+                                <circle cx="6" cy="5" r="1.2" />
+  {/* Larger central splatter */}
+  <circle cx="6" cy="6" r="1.4" />
+  <circle cx="12" cy="9" r="1.6" />
+  <circle cx="16" cy="13" r="1.3" />
+  <circle cx="10" cy="16" r="1.2" />
+  <circle cx="14" cy="6" r="1.1" />
+
+  {/* Small splatter extending outward */}
+  <circle cx="2" cy="3" r="0.4" />
+  <circle cx="22" cy="4" r="0.5" />
+  <circle cx="3" cy="10" r="0.6" />
+  <circle cx="20" cy="8" r="0.3" />
+  <circle cx="4" cy="20" r="0.4" />
+  <circle cx="19" cy="19" r="0.6" />
+  <circle cx="8" cy="22" r="0.5" />
+  <circle cx="0.5" cy="15" r="0.3" />
+  <circle cx="23" cy="12" r="0.4" />
+  <circle cx="7" cy="3" r="0.5" />
+  <circle cx="17" cy="2" r="0.4" />
+  <circle cx="21" cy="22" r="0.5" />
+  <circle cx="11" cy="1" r="0.3" />
+
+
+                              </svg>
                               <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                                 Paint Splatter
                               </span>
@@ -1157,7 +1214,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     variant="ghost"
                     size="sm"
                     className={`absolute hover:bg-gray-300 top-2 -right-9 z-10 h-10 w-10 p-0 rounded-full transition-all duration-300 ${isDarkMode
-                      ? 'border-none hover:text-white  '
+                      ? 'border-none hover:text-white '
                       : 'text-gray-600 hover:text-gray-900 '
                       }`}
                     onClick={() => {
@@ -1224,7 +1281,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         setIsOpen(true);
                       }
                     }}
-                    className={`w-12 h-12 bg-black/5  p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                    className={`w-12 h-12 bg-black/5 p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
                     <img src="/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />

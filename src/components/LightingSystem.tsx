@@ -14,47 +14,108 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
   shadowIntensity
 }) => {
   const renderLighting = () => {
-    return (
-      <>
-        <Environment preset="studio" />
+    if (preset === 'dark_optimized') {
+      // Dark background optimized lighting - brighter but smoother
+      return (
+        <>
+          <Environment preset="night" />
 
-        {/* Main Key Light - Professional product photography */}
-        <directionalLight
-          position={[4, 8, 6]}
-          intensity={1.2 * intensity}
-          color="#ffffff"
-        />
+          {/* Main Key Light - Moderate increase for dark backgrounds */}
+          <directionalLight
+            position={[4, 8, 6]}
+            intensity={1.5 * intensity}
+            color="#ffffff"
+            castShadow
+          />
 
-        {/* Fill Light - Soft opposite side */}
-        <directionalLight
-          position={[-3, 6, 4]}
-          intensity={0.6 * intensity}
-          color="#f8f8ff"
-        />
+          {/* Strong Fill Light to reduce harsh shadows */}
+          <directionalLight
+            position={[-3, 6, 4]}
+            intensity={1.0 * intensity}
+            color="#f8f8ff"
+          />
 
-        {/* Rim Light - Edge definition */}
-        <directionalLight
-          position={[-2, 4, -6]}
-          intensity={0.8 * intensity}
-          color="#fff8dc"
-        />
+          {/* Moderate Rim Light for edge definition */}
+          <directionalLight
+            position={[-2, 4, -6]}
+            intensity={1.0 * intensity}
+            color="#fff8dc"
+          />
 
-        {/* Top Light - Even illumination */}
-        <directionalLight
-          position={[0, 10, 2]}
-          intensity={0.4 * intensity}
-          color="#ffffff"
-        />
+          {/* Soft Top Light for even illumination */}
+          <directionalLight
+            position={[0, 10, 2]}
+            intensity={0.6 * intensity}
+            color="#ffffff"
+          />
 
-        {/* Professional accent lights */}
-        <pointLight position={[3, 3, 3]} intensity={0.4 * intensity} color="#ffffff" distance={10} decay={2} />
-        <pointLight position={[-3, 3, 3]} intensity={0.3 * intensity} color="#f8f8ff" distance={10} decay={2} />
-        <pointLight position={[0, 2, 5]} intensity={0.3 * intensity} color="#ffffff" distance={8} decay={2} />
+          {/* Additional fill lights to smooth transitions */}
+          <directionalLight
+            position={[2, 4, -2]}
+            intensity={0.4 * intensity}
+            color="#f0f8ff"
+          />
+          
+          <directionalLight
+            position={[-2, 4, 2]}
+            intensity={0.4 * intensity}
+            color="#fff8f0"
+          />
 
-        {/* Soft ambient for realism */}
-        <ambientLight intensity={0.25 * intensity} color="#f8f8ff" />
-      </>
-    );
+          {/* Softer accent lights */}
+          <pointLight position={[3, 3, 3]} intensity={0.5 * intensity} color="#ffffff" distance={12} decay={2} />
+          <pointLight position={[-3, 3, 3]} intensity={0.4 * intensity} color="#f8f8ff" distance={12} decay={2} />
+          <pointLight position={[0, 2, 5]} intensity={0.4 * intensity} color="#ffffff" distance={10} decay={2} />
+
+          {/* Higher ambient to fill in shadows smoothly */}
+          <ambientLight intensity={0.5 * intensity} color="#f8f8ff" />
+        </>
+      );
+    } else {
+      // Photorealistic studio lighting for light backgrounds - much more subtle
+      return (
+        <>
+          <Environment preset="studio" />
+
+          {/* Main Key Light - Much more subtle */}
+          <directionalLight
+            position={[4, 8, 6]}
+            intensity={0.4 * intensity}
+            color="#ffffff"
+            castShadow
+          />
+
+          {/* Fill Light - Very soft */}
+          <directionalLight
+            position={[-3, 6, 4]}
+            intensity={0.2 * intensity}
+            color="#f8f8ff"
+          />
+
+          {/* Rim Light - Minimal edge definition */}
+          <directionalLight
+            position={[-2, 4, -6]}
+            intensity={0.25 * intensity}
+            color="#fff8dc"
+          />
+
+          {/* Top Light - Very gentle */}
+          <directionalLight
+            position={[0, 10, 2]}
+            intensity={0.15 * intensity}
+            color="#ffffff"
+          />
+
+          {/* Very subtle accent lights */}
+          <pointLight position={[3, 3, 3]} intensity={0.1 * intensity} color="#ffffff" distance={10} decay={2} />
+          <pointLight position={[-3, 3, 3]} intensity={0.08 * intensity} color="#f8f8ff" distance={10} decay={2} />
+          <pointLight position={[0, 2, 5]} intensity={0.08 * intensity} color="#ffffff" distance={8} decay={2} />
+
+          {/* Very low ambient - let the environment do most of the work */}
+          <ambientLight intensity={0.08 * intensity} color="#f8f8ff" />
+        </>
+      );
+    }
   };
 
   return (

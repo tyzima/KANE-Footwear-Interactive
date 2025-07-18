@@ -476,7 +476,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         centerX, centerY, innerRadius,
         centerX, centerY, layer.radius
       );
-      
+
       gradient.addColorStop(0, `rgba(0, 0, 0, 0)`);
       gradient.addColorStop(0.3, `rgba(0, 0, 0, ${layer.opacity * 0.3})`);
       gradient.addColorStop(0.7, `rgba(0, 0, 0, ${layer.opacity * 0.7})`);
@@ -489,7 +489,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Add additional shadow areas to simulate the natural contours of a sole
     ctx.globalCompositeOperation = 'multiply';
-    
+
     // Heel shadow area
     const heelGradient = ctx.createRadialGradient(512, 800, 50, 512, 800, 200);
     heelGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
@@ -569,7 +569,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     for (let i = 0; i < numSplatters; i++) {
       const x = Math.random() * 1024;
       const y = Math.random() * 1024;
-      
+
       // Use stronger exponential distribution to heavily favor smaller dots
       const sizeRandom = Math.pow(Math.random(), 3.5);
       const baseSize = minRadius + sizeRandom * (maxRadius - minRadius);
@@ -726,10 +726,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       laceCtx.drawImage(laceTexture.image, 0, 0);
 
       laceImage.onload = () => {
-        // Use screen blend mode to overlay white lace texture on colored base
-        // This preserves the white texture details while showing the base color
-        tempCtx.globalCompositeOperation = 'screen';
-        tempCtx.globalAlpha = 0.7; // Adjust opacity for realistic blend
+        // Use overlay blend mode to overlay lace texture on colored base
+        // This preserves saturation better and avoids washing out
+        tempCtx.globalCompositeOperation = 'overlay';
+        tempCtx.globalAlpha = 0.8; // Adjust opacity for realistic blend
 
         // Draw the lace texture tiled across the canvas
         const tileSize = 128; // Size of each tile
@@ -957,8 +957,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             }
           } else {
             material = new MeshStandardMaterial({
-              roughness: 0.6,
-              metalness: 0.1,
+              roughness: 0.9,
+              metalness: 0,
             });
             currentMaterialsRef.current.set(child.name, material);
             // Store old material for cleanup later

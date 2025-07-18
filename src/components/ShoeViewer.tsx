@@ -122,6 +122,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
 
   const [lightingIntensity, setLightingIntensity] = useState(1.0);
   const [shadowIntensity, setShadowIntensity] = useState(0.5);
+  const [lightingPreset, setLightingPreset] = useState<LightingPreset>('photorealistic');
   const [debugVisible, setDebugVisible] = useState(false);
   const [hotspots, setHotspots] = useState<any[]>([]);
   const [cameraInfo, setCameraInfo] = useState({
@@ -378,7 +379,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             antialias: true,
             alpha: true,
             powerPreference: "high-performance",
-            preserveDrawingBuffer: true
+            preserveDrawingBuffer: true,
+            outputColorSpace: "srgb",
+            toneMapping: 1, // ACESFilmicToneMapping
+            toneMappingExposure: 0.8
           }}
           dpr={[1, 2]}
 
@@ -388,7 +392,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
 
           {/* Dynamic Lighting System */}
           <LightingSystem
-            preset={'photorealistic'}
+            preset={lightingPreset}
             intensity={lightingIntensity}
             shadowIntensity={shadowIntensity}
           />
@@ -521,6 +525,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             shadowIntensity={shadowIntensity}
             onShadowIntensityChange={setShadowIntensity}
             isDarkMode={isDarkMode}
+            onPresetChange={setLightingPreset}
           />
         </div>
 
