@@ -20,6 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				'heading': ['Work Sans', 'sans-serif'],
+				'blender': ['BlenderBook', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

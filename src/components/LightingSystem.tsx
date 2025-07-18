@@ -124,7 +124,7 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
 
       {/* Clean contact shadows without texture bleeding */}
       <ContactShadows
-        position={[0, -0.01, 0]}
+        position={[0, -0.17, 0]}
         opacity={shadowIntensity * 0.9}
         scale={4}
         blur={2}

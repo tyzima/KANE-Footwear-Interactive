@@ -6,6 +6,26 @@
 All colors MUST be HSL.
 */
 
+
+@font-face {
+  font-family: 'BlenderBook';
+  src: url('/BlenderTrial-Book.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BlenderBook';
+  src: url('/BlenderTrial-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+h1, h2, h3 {
+  font-family: 'BlenderBook', sans-serif;
+  font-weight: 700;
+}
+
 @layer base {
   :root {
     /* Nike-inspired light theme */

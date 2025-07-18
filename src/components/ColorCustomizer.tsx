@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
 import { Palette, Droplets, ChevronDown, ChevronUp, School, Upload, Paintbrush, ChevronLeft, ChevronRight, MessageCircle, X, Send, Bot, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
@@ -158,6 +159,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [chatMessages, setChatMessages] = useState<{ id: string; text: string; isUser: boolean; timestamp: Date }[]>([]);
   const [aiResponseVisible, setAiResponseVisible] = useState(false);
 
+
   // Initialize Gemini AI
   const genAI = useMemo(() => {
     const apiKey = "AIzaSyDr_8GiHPH6yJaFsTQeoaDQ6cLJPgtn0XE";
@@ -208,6 +210,14 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       default: return onTopColorChange;
     }
   };
+
+  const PLACEHOLDERS = [
+    "Describe your shoe design...",
+    "Add splatter to the sole...",
+    "Try red on black gradient...",
+    "Make it inspired by nature...",
+    "Use vintage hockey laces..."
+  ];
 
   const getCurrentSplatter = () => {
     // Only upper and sole support splatter effects
@@ -443,6 +453,38 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       }, 2000);
     }
   };
+
+
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [displayText, setDisplayText] = useState('');
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const typingSpeed = useRef(50);
+
+  useEffect(() => {
+    const current = PLACEHOLDERS[placeholderIndex];
+
+    if (!isDeleting && charIndex < current.length) {
+      setTimeout(() => {
+        setDisplayText(current.slice(0, charIndex + 1));
+        setCharIndex((prev) => prev + 1);
+      }, typingSpeed.current);
+    } else if (isDeleting && charIndex > 0) {
+      setTimeout(() => {
+        setDisplayText(current.slice(0, charIndex - 1));
+        setCharIndex((prev) => prev - 1);
+      }, typingSpeed.current);
+    } else {
+      setTimeout(() => {
+        setIsDeleting((prev) => !prev);
+        if (!isDeleting) {
+          setTimeout(() => setIsDeleting(true), 1000);
+        } else {
+          setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
+        }
+      }, 1000);
+    }
+  }, [charIndex, isDeleting, placeholderIndex]);
 
   // Load school data
   useEffect(() => {
@@ -798,11 +840,11 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     type="text"
                     value={aiInputMessage}
                     onChange={(e) => setAiInputMessage(e.target.value)}
-                    placeholder="Describe your shoe design..."
+                    placeholder={displayText}
                     disabled={isAiProcessing}
                     className={`flex-1 bg-transparent focus:outline-none text-sm ${isDarkMode
-                      ? 'text-white placeholder-white/60'
-                      : 'text-gray-900 placeholder-gray-400'
+                        ? 'text-white placeholder-white/60'
+                        : 'text-gray-900 placeholder-gray-400'
                       }`}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey && aiInputMessage.trim()) {
@@ -846,7 +888,17 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           }
                         }}
                       >
-                        <Send className="w-4 h-4" />
+
+
+
+
+
+
+                        <Send className="w-4 h-4 rotate-45 opacity-50" />
+
+
+
+
                       </Button>
                     )}
                     <Button
@@ -878,21 +930,21 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     width: 'calc(20% - 2px)',
                     left: `calc(${activeTab === 'upper' ? '0' :
                       activeTab === 'sole' ? '20' :
-                        activeTab === 'laces' ? '40' :
-                          activeTab === 'logos' ? '60' : '0'
+                        activeTab === 'laces' ? '39' :
+                          activeTab === 'logos' ? '59' : '0'
                       }% + 1px)`
                   }}
                 />
-                <button onClick={() => handleTabChange('upper')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('upper')} className={`relative uppercase font-blender font-bold z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'upper' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Upper
                 </button>
-                <button onClick={() => handleTabChange('sole')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('sole')} className={`relative uppercase font-blender z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-bold rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'sole' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Sole
                 </button>
-                <button onClick={() => handleTabChange('laces')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'laces' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('laces')} className={`relative uppercase font-blender z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-bold rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'laces' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Laces
                 </button>
-                <button onClick={() => handleTabChange('logos')} className={`relative z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-medium rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'logos' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
+                <button onClick={() => handleTabChange('logos')} className={`relative uppercase font-blender z-10 flex-1 px-3 sm:px-4 md:px-5 py-2 text-sm font-bold rounded-md transition-all duration-300 min-w-[60px] ${activeTab === 'logos' ? (isDarkMode ? 'text-white' : 'text-primary') : (isDarkMode ? 'text-white/70 hover:text-white/90' : 'text-muted-foreground hover:text-foreground')}`}>
                   Logos
                 </button>
                 <button
@@ -939,7 +991,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                       />
                     </svg>
-                  </motion.div> <p className='text-[8px] font-black -ml-2 rounded-sm' > AI </p>
+                  </motion.div>
                 </button>
               </motion.div>
             )}
@@ -947,7 +999,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         </div>
 
         {/* Main Control Card */}
-        <div className={`backdrop-blur-sm rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
+        <div className={`backdrop-blur-sm max-w-6xl mx-auto rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
           {/* Main Control Bar */}
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
@@ -971,59 +1023,58 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   {(activeTab === 'upper' || activeTab === 'sole') && (
                     <Popover>
                       <PopoverTrigger asChild>
-                    
-                      <Button
-  variant="outline"
-  size="icon"
-  className={`w-10 h-10 p-0 border-2 relative rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 ${
-    getCurrentSplatter()
-      ? 'bg-primary/10 border-gray-300 hover:bg-primary/20'
-      : isDarkMode
-        ? 'border-white/30 hover:bg-white/10'
-        : 'hover:bg-gray-100'
-  }`}
-  onClick={() => {
-    if (!getCurrentSplatter()) {
-      getCurrentSplatterToggle()(true);
-    }
-  }}
-  style={getCurrentSplatter() ? { color: getCurrentSplatterColor() } : {}}
->
-  <svg
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    stroke="none"
-    className="w-full h-full  scale-[2.2] origin-center "
-    preserveAspectRatio="xMidYMid slice"
-  >
-    <g transform="translate(1 2)">
-      <path d="M3.77,6.82c.41,0,.75-.34.75-.75s-.34-.75-.75-.75-.75.34-.75.75.34.75.75.75Z" />
-      <path d="M7.52,4.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
-      <path d="M11.02,5.32c.28,0,.5-.22.5-.5s-.22-.5-.5-.5-.5.22-.5.5.22.5.5.5Z" />
-      <path d="M19.28,4.17c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
-      <path d="M18.02,10.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
-      <path d="M19.52,13.32c.62,0,1.12-.5,1.12-1.12s-.5-1.12-1.12-1.12-1.12.5-1.12,1.12.5,1.12,1.12,1.12Z" />
-      <path d="M19.28,18.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
-      <path d="M15,20.7c.59,0,1.08-.48,1.08-1.08s-.48-1.08-1.08-1.08-1.08.48-1.08,1.08.48,1.08,1.08,1.08Z" />
-      <path d="M10.34,13.57c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
-      <path d="M6.98,18.82c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
-      <path d="M2.02,15.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
-      <path d="M2.52,11.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
-      <path d="M6.98,9.82c.3,0,.54-.24.54-.54s-.24-.54-.54-.54-.54.24-.54.54.24.54.54.54Z" />
-      <path d="M11.69,9.21c.59,0,1.07-.48,1.07-1.07s-.48-1.07-1.07-1.07-1.07.48-1.07,1.07.48,1.07,1.07,1.07Z" />
-      <path d="M6.44,14c.24,0,.43-.19.43-.43s-.19-.43-.43-.43-.43.19-.43.43.19.43.43.43Z" />
-      <path d="M13.93,13.97c.46,0,.82-.37.82-.82s-.37-.82-.82-.82-.82.37-.82.82.37.82.82.82Z" />
-      <path d="M20.64,7.05c.19,0,.35-.16.35-.35s-.16-.35-.35-.35-.35.16-.35.35.16.35.35.35Z" />
-      <path d="M20.17,16.82c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
-      <path d="M13.3,16.21c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
-      <path d="M.68,15.82c-.19-.02-.36.11-.39.3s.11.36.3.39.36-.11.39-.3-.11-.36-.3-.39Z" />
-    </g>
-  </svg>
 
-  {getCurrentSplatter() && (
-    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white" />
-  )}
-</Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className={`w-10 h-10 p-0 border-2 relative rounded-full overflow-hidden flex items-center justify-center transition-all duration-300 ${getCurrentSplatter()
+                              ? 'bg-primary/10 border-gray-300 hover:bg-primary/20'
+                              : isDarkMode
+                                ? 'border-white/30 hover:bg-white/10'
+                                : 'hover:bg-gray-100'
+                            }`}
+                          onClick={() => {
+                            if (!getCurrentSplatter()) {
+                              getCurrentSplatterToggle()(true);
+                            }
+                          }}
+                          style={getCurrentSplatter() ? { color: getCurrentSplatterColor() } : {}}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            stroke="none"
+                            className="w-full h-full  scale-[2.2] origin-center "
+                            preserveAspectRatio="xMidYMid slice"
+                          >
+                            <g transform="translate(1 2)">
+                              <path d="M3.77,6.82c.41,0,.75-.34.75-.75s-.34-.75-.75-.75-.75.34-.75.75.34.75.75.75Z" />
+                              <path d="M7.52,4.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+                              <path d="M11.02,5.32c.28,0,.5-.22.5-.5s-.22-.5-.5-.5-.5.22-.5.5.22.5.5.5Z" />
+                              <path d="M19.28,4.17c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+                              <path d="M18.02,10.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+                              <path d="M19.52,13.32c.62,0,1.12-.5,1.12-1.12s-.5-1.12-1.12-1.12-1.12.5-1.12,1.12.5,1.12,1.12,1.12Z" />
+                              <path d="M19.28,18.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+                              <path d="M15,20.7c.59,0,1.08-.48,1.08-1.08s-.48-1.08-1.08-1.08-1.08.48-1.08,1.08.48,1.08,1.08,1.08Z" />
+                              <path d="M10.34,13.57c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+                              <path d="M6.98,18.82c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+                              <path d="M2.02,15.32c.55,0,1-.45,1-1s-.45-1-1-1-1,.45-1,1,.45,1,1,1Z" />
+                              <path d="M2.52,11.32c.83,0,1.5-.67,1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5,1.5.67,1.5,1.5,1.5Z" />
+                              <path d="M6.98,9.82c.3,0,.54-.24.54-.54s-.24-.54-.54-.54-.54.24-.54.54.24.54.54.54Z" />
+                              <path d="M11.69,9.21c.59,0,1.07-.48,1.07-1.07s-.48-1.07-1.07-1.07-1.07.48-1.07,1.07.48,1.07,1.07,1.07Z" />
+                              <path d="M6.44,14c.24,0,.43-.19.43-.43s-.19-.43-.43-.43-.43.19-.43.43.19.43.43.43Z" />
+                              <path d="M13.93,13.97c.46,0,.82-.37.82-.82s-.37-.82-.82-.82-.82.37-.82.82.37.82.82.82Z" />
+                              <path d="M20.64,7.05c.19,0,.35-.16.35-.35s-.16-.35-.35-.35-.35.16-.35.35.16.35.35.35Z" />
+                              <path d="M20.17,16.82c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
+                              <path d="M13.3,16.21c-.06.18.04.38.22.44s.38-.04.44-.22-.04-.38-.22-.44-.38.04-.44.22Z" />
+                              <path d="M.68,15.82c-.19-.02-.36.11-.39.3s.11.36.3.39.36-.11.39-.3-.11-.36-.3-.39Z" />
+                            </g>
+                          </svg>
+
+                          {getCurrentSplatter() && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border border-white" />
+                          )}
+                        </Button>
 
 
                       </PopoverTrigger>
@@ -1052,27 +1103,27 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                               >
                                 {/* Replace with actual paths from splatter.svg */}
                                 <circle cx="6" cy="5" r="1.2" />
-  {/* Larger central splatter */}
-  <circle cx="6" cy="6" r="1.4" />
-  <circle cx="12" cy="9" r="1.6" />
-  <circle cx="16" cy="13" r="1.3" />
-  <circle cx="10" cy="16" r="1.2" />
-  <circle cx="14" cy="6" r="1.1" />
+                                {/* Larger central splatter */}
+                                <circle cx="6" cy="6" r="1.4" />
+                                <circle cx="12" cy="9" r="1.6" />
+                                <circle cx="16" cy="13" r="1.3" />
+                                <circle cx="10" cy="16" r="1.2" />
+                                <circle cx="14" cy="6" r="1.1" />
 
-  {/* Small splatter extending outward */}
-  <circle cx="2" cy="3" r="0.4" />
-  <circle cx="22" cy="4" r="0.5" />
-  <circle cx="3" cy="10" r="0.6" />
-  <circle cx="20" cy="8" r="0.3" />
-  <circle cx="4" cy="20" r="0.4" />
-  <circle cx="19" cy="19" r="0.6" />
-  <circle cx="8" cy="22" r="0.5" />
-  <circle cx="0.5" cy="15" r="0.3" />
-  <circle cx="23" cy="12" r="0.4" />
-  <circle cx="7" cy="3" r="0.5" />
-  <circle cx="17" cy="2" r="0.4" />
-  <circle cx="21" cy="22" r="0.5" />
-  <circle cx="11" cy="1" r="0.3" />
+                                {/* Small splatter extending outward */}
+                                <circle cx="2" cy="3" r="0.4" />
+                                <circle cx="22" cy="4" r="0.5" />
+                                <circle cx="3" cy="10" r="0.6" />
+                                <circle cx="20" cy="8" r="0.3" />
+                                <circle cx="4" cy="20" r="0.4" />
+                                <circle cx="19" cy="19" r="0.6" />
+                                <circle cx="8" cy="22" r="0.5" />
+                                <circle cx="0.5" cy="15" r="0.3" />
+                                <circle cx="23" cy="12" r="0.4" />
+                                <circle cx="7" cy="3" r="0.5" />
+                                <circle cx="17" cy="2" r="0.4" />
+                                <circle cx="21" cy="22" r="0.5" />
+                                <circle cx="11" cy="1" r="0.3" />
 
 
                               </svg>

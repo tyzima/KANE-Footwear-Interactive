@@ -1158,7 +1158,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       onClick={handleClick}
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
-      position={[0, .27, 0]}
+      position={[0, .1, 0]}
     >
       <primitive
         object={gltf.scene}

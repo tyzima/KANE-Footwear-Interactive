@@ -368,7 +368,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           ref={canvasRef}
           camera={{
             position: [2.863, 1.961, 1.44],
-            fov: 50,
+            fov: 40,
             near: 0.1,
             far: 100,
             zoom: 1.25
@@ -404,7 +404,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             autoRotateSpeed={2.0}
             enableDamping
             dampingFactor={0.05}
-            minDistance={2.5}
+            minDistance={3.5}
             maxDistance={5}
             maxPolarAngle={Math.PI / 2.2}
             minPolarAngle={Math.PI / 6}
