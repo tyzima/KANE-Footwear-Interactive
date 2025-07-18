@@ -1227,7 +1227,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     className={`w-12 h-12 bg-white/20  p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/30 border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
-                    <img src="public/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
+                    <img src="/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
                   </Button>
                   <Button
                     variant="outline"
@@ -1243,7 +1243,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     className={`w-12 h-12 p-0 bg-white/20 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
-                    <img src="public/logo.svg" alt="Logo" className="w-8 h-8" />
+                    <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
                   </Button>
                 </div>
 
