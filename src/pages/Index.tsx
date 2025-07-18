@@ -22,11 +22,11 @@ const Index = () => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkBackground ? 'text-white' : 'text-foreground'}`}></h1>
-              <span className={`px-2 py-1 ml-2 text-xs font-medium rounded-full transition-colors duration-300 ${isDarkBackground
+              <span className={`px-2 py-1 ml-2 tracking-wider text-xs font-medium rounded-full transition-colors duration-300 ${isDarkBackground
                 ? 'bg-white/20 text-white/90'
                 : 'bg-accent/20 text-accent'
                 }`}>
-                TEAM Revive
+                KUSTOMS
               </span>
             </div>
           </div>

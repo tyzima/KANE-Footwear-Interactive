@@ -130,3 +130,94 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* CRITICAL: Force drawer to have no rounded corners - placed outside Tailwind layers */
+.drawer-square {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  -webkit-border-radius: 0 !important;
+  -moz-border-radius: 0 !important;
+  -ms-border-radius: 0 !important;
+  -o-border-radius: 0 !important;
+}
+
+/* Override vaul library styles that might be causing rounded corners */
+[data-vaul-drawer] .drawer-square,
+[data-vaul-overlay] + .drawer-square,
+.drawer-square[data-state],
+.drawer-square[data-vaul-drawer-wrapper] {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Maximum specificity override for any possible CSS framework interference */
+html body div.drawer-square.fixed.top-0.right-0.h-screen {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Override any possible Tailwind rounded utilities */
+.drawer-square.rounded-none {
+  border-radius: 0 !important;
+}
+
+/* Force override with attribute selector */
+div[class*="drawer-square"] {
+  border-radius: 0 !important;
+}
+
+/* Nuclear option - override everything that could possibly affect the drawer */
+.drawer-square,
+.drawer-square::before,
+.drawer-square::after,
+.drawer-square > *,
+.drawer-square * {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Override any possible CSS framework or library styles */
+div.drawer-square[class] {
+  border-radius: 0 !important;
+}
+
+/* Override with highest possible specificity */
+html body div.drawer-square.fixed[class*="drawer"] {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Ultimate override - target by exact class combination */
+.drawer-square.fixed.top-0.right-0.h-screen.w-full {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Override any possible browser default styles */
+div[class*="drawer-square"][style*="border-radius"] {
+  border-radius: 0 !important;
+}
+
+/* Force with CSS custom property */
+.drawer-square {
+  --border-radius: 0px !important;
+  border-radius: var(--border-radius) !important;
+}
