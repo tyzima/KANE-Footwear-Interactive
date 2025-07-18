@@ -939,7 +939,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                       />
                     </svg>
-                  </motion.div> <p className='text-[8px] font-black pl-1.5 pr-1.5 -ml-1 -pt-1 -ml-2 rounded-sm bg-white/40' > AI </p>
+                  </motion.div> <p className='text-[8px] font-black -ml-2 rounded-sm' > AI </p>
                 </button>
               </motion.div>
             )}
