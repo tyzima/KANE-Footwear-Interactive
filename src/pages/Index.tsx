@@ -51,7 +51,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen max-h-screen bg-gradient-hero">
       {/* Main Viewer Section - Full Height */}
       <main className="h-screen relative">
         {/* Product Branding - Top Left */}
