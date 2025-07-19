@@ -59,12 +59,12 @@ const Index = () => {
   <img
     src="/mainkanelogo.png"
     alt="KANE Logo"
-    className={`h-6 md:h-8 w-auto ml-6 md:-ml-20 transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
+    className={`h-6 md:h-8 w-auto  md:-ml-20 transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
   />
   <div className="max-w-[280px]">
-    <div className="flex ml-16 md:ml-0 items-center gap-3 sm:gap-3">
-      <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
-      <span className={`px-2 py-[2px] md:py-1 mt-1 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${isDarkMode
+    <div className="flex md:ml-0 items-center gap-3 sm:gap-3">
+      <h1 className={`text-2xl mt-2 font-normal transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
+      <span className={`px-2 py-[2px] md:py-1 mt-2 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${isDarkMode
         ? 'bg-transparent border border-white/20 text-white/90'
         : 'bg-accent/20 text-accent'
         }`}>
@@ -72,7 +72,7 @@ const Index = () => {
       </span>
       <button
         onClick={() => setShowInfo(true)}
-        className={` md:hidden px-2.5 py-1 rounded-full text-sm font-bold transition-colors duration-300 ${isDarkMode ? 'bg-white/10 text-white' : 'bg-gray-200 text-gray-800'}`}
+        className={` md:hidden w-6 h-6 mt-1.5 rounded-full text-sm font-normal transition-colors duration-300 ${isDarkMode ? 'border border-white/10 text-white' : 'bg-gray-200 text-gray-800'}`}
       >
         +
       </button>
@@ -157,7 +157,7 @@ const Index = () => {
       {/* Features: Increased gap for better separation and a lighter text color. */}
       <div className={`flex flex-col gap-x-6 gap-y-3 pt-2 text-sm ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
         {features.map((feature, index) => (
-          <div key={index} className="flex items-center gap-2">
+          <div key={index} className="flex  gap-2">
             {feature.icon}
             <span>{feature.text}</span>
           </div>

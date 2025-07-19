@@ -231,7 +231,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
           variant="outline"
           size="sm"
           className={`rounded-full w-9 md:w-auto items-center gap-2 transition-all duration-300 ${isDarkMode
-            ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+            ? 'bg-black/40 border-white/20 text-white hover:bg-white/20'
             : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-white'
             }`}
           disabled={isGenerating}
