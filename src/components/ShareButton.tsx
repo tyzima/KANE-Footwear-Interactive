@@ -138,22 +138,57 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 
       ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
 
-      // Convert to blob and download
-      socialCanvas.toBlob((blob) => {
+      // Convert to blob and handle sharing/download
+      socialCanvas.toBlob(async (blob) => {
         if (blob) {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `kane-shoes-instagram-${Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+          const fileName = `kane-shoes-instagram-${Date.now()}.png`;
+          const file = new File([blob], fileName, { type: 'image/png' });
 
-          toast({
-            title: "Success!",
-            description: "Instagram post image downloaded successfully.",
-          });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: 'Custom Kane Shoes',
+                text: 'Check out my custom Kane shoes! Customize yours now.',
+              });
+              toast({
+                title: "Success!",
+                description: "Image shared successfully.",
+              });
+            } catch (error) {
+              if (error.name !== 'AbortError') {
+                // Fallback to download
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                toast({
+                  title: "Success!",
+                  description: "Instagram post image downloaded successfully.",
+                });
+              }
+            }
+          } else {
+            // Download
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            toast({
+              title: "Success!",
+              description: "Instagram post image downloaded successfully.",
+            });
+          }
         }
       }, 'image/png', 1.0);
 
@@ -195,21 +230,21 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         <Button
           variant="outline"
           size="sm"
-          className={`flex rounded-full items-center gap-2 transition-all duration-300 ${isDarkMode
+          className={`rounded-full w-9 md:w-auto items-center gap-2 transition-all duration-300 ${isDarkMode
             ? 'bg-white/10 border-white/20 text-white hover:bg-white/20'
             : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-white'
             }`}
           disabled={isGenerating}
         >
           <Share2 className="w-4 h-4" />
-          Share
+          <span className="hidden md:block">Share</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 rounded-2xl">
-<DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 rounded-2xl">
+        <DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 rounded-2xl">
           Instagram Post
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyShareLink}  className="hover:bg-gray-100 rounded-2xl" >
+        <DropdownMenuItem onClick={copyShareLink} className="hover:bg-gray-100 rounded-2xl">
           {copied ? (
             <Check className="w-4 h-4 mr-2 text-green-500" />
           ) : (

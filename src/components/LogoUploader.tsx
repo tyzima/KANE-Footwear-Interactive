@@ -145,7 +145,7 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
                 <ImageIcon size={12} className="text-muted-foreground" />
               )}
             </div>
-            <p className="text-xs font-medium text-foreground">
+            <p className="text-xs hidden md:block font-medium text-muted-foreground">
               {isProcessing ? 'Processing...' : 'Drop or click to upload'}
             </p>
           </div>

@@ -961,9 +961,9 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   style={{
                     width: 'calc(20% - 2px)',
                     left: `calc(${activeTab === 'upper' ? '0' :
-                      activeTab === 'sole' ? '20' :
-                        activeTab === 'laces' ? '39' :
-                          activeTab === 'logos' ? '59' : '0'
+                      activeTab === 'sole' ? '19' :
+                        activeTab === 'laces' ? '38.5' :
+                          activeTab === 'logos' ? '58.5' : '0'
                       }% + 1px)`
                   }}
                 />

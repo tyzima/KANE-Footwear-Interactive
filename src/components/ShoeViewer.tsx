@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useRef } from 'react';
+import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment, OrbitControls, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
@@ -27,6 +27,12 @@ const NATIONAL_PARK_COLORS = [
   { name: 'Mountain Peak', value: '#6d6d6d', speckleValue: '#202020' },
   { name: 'Meadow Green', value: '#94e600', speckleValue: '#2c4400' },
 ];
+
+// Define breakpoints for responsive design
+const DESKTOP_BREAKPOINT = 768;
+const DESKTOP_ZOOM = 0.8;
+const MOBILE_ZOOM = 0.6;
+
 
 // Helper function to get the appropriate color based on speckle state
 const getColorForSpeckle = (baseColor: string, hasSpeckle: boolean): string => {
@@ -79,7 +85,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(false);
-  const [zoom, setZoom] = useState(0.8); // Start at 80% zoom as requested
+  
+  // Responsive zoom state
+  const [zoom, setZoom] = useState(
+    typeof window !== 'undefined' && window.innerWidth >= DESKTOP_BREAKPOINT ? DESKTOP_ZOOM : MOBILE_ZOOM
+  );
+
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
   const [bottomColor, setBottomColor] = useState('#2d5016'); // Forest Green
   const [topColor, setTopColor] = useState('#8b4513'); // Redwood
@@ -146,6 +157,21 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   // Helper function to determine if current background should use dark mode styling
   const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
 
+  // Effect to handle responsive zoom
+  useEffect(() => {
+    const handleResize = () => {
+      const newZoom = window.innerWidth >= DESKTOP_BREAKPOINT ? DESKTOP_ZOOM : MOBILE_ZOOM;
+      setZoom(newZoom);
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Call handler right away so state is correct on initial render
+    handleResize(); 
+
+    // Remove event listener on cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []); // Empty array ensures effect is only run on mount and unmount
+
   // Function to get current color configuration
   const getColorConfiguration = () => {
     return {
@@ -211,7 +237,9 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const handleReset = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      setZoom(0.8); // Reset to 80% zoom
+      // Reset to the appropriate zoom level based on screen size
+      const newZoom = window.innerWidth >= DESKTOP_BREAKPOINT ? DESKTOP_ZOOM : MOBILE_ZOOM;
+      handleZoomChange(newZoom);
       setAutoRotate(true);
     }
   };
@@ -256,7 +284,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const handleCameraReset = () => {
     if (controlsRef.current) {
       controlsRef.current.reset();
-      setZoom(0.8);
+      const newZoom = window.innerWidth >= DESKTOP_BREAKPOINT ? DESKTOP_ZOOM : MOBILE_ZOOM;
+      setZoom(newZoom);
       setAutoRotate(true);
     }
   };
