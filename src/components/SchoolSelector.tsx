@@ -74,7 +74,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
             <GraduationCap className={`w-3 h-3 hidden md:block transition-all duration-300 ${
               isDarkMode ? 'text-white/80' : 'text-muted-foreground'
             }`} />
-            <h3 className={`text-xs font-medium transition-all duration-300 hidden md:block ${
+            <h3 className={`text-xs font-medium transition-all duration-300 hidden ${
               isDarkMode ? 'text-white/90' : 'text-foreground'
             }`}>
               Search Schools
@@ -83,12 +83,12 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
         </div>
         
         {/* Right: Search Bar and Results/Selected Container */}
-        <div className="flex-1 flex items-center gap-2">
+        <div className="flex-1 w-10 flex items-center gap-2">
           {/* Search Bar - shrinks when results appear or school is selected */}
           <div className={`relative transition-all duration-300 ${
-            (filteredSchools.length > 0 && !selectedSchool) || selectedSchool ? 'hidden md:w-56' : 'flex-1'
-          }`}>
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-all duration-300 ${
+  selectedSchool ? 'hidden md:w-56' : 'flex-1'
+}`}>
+            <Search className={`absolute  left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-all duration-300 ${
               isDarkMode ? 'text-white/60' : 'text-muted-foreground'
             }`} />
             <input
@@ -304,7 +304,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 onClick={() => handleApplyColors(selectedSchool)}
                 className={`h-8 px-3 flex items-center gap-1 transition-all duration-300 ${
                   isDarkMode 
-                    ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white' 
+                    ? 'border-white/30 text-white/80 bg-white/10 hover:text-white' 
                     : 'border-border text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -318,7 +318,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 onClick={() => handleApplyLogo(selectedSchool)}
                 className={`h-8 px-3 flex items-center gap-1 transition-all duration-300 ${
                   isDarkMode 
-                    ? 'border-white/30 text-white/80 hover:bg-white/10 hover:text-white' 
+                    ? 'border-white/30 text-white/80bg-white/10 hover:text-white' 
                     : 'border-border text-gray-600 hover:bg-gray-100'
                 }`}
               >
