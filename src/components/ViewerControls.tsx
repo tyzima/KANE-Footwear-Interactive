@@ -1,9 +1,8 @@
-import React from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, Trees } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, Trees, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
-
 
 interface ViewerControlsProps {
   autoRotate: boolean;
@@ -32,6 +31,21 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   backgroundType = 'light',
   onBackgroundToggle
 }) => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      setIsOpen(!mobile);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleZoomIn = () => {
     const newZoom = Math.min(zoom + 0.1, 2);
     onZoomChange(newZoom);
@@ -81,100 +95,126 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   };
 
   return (
-    <div className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 space-y-3 transition-all duration-300 w-20 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-border'}`}>
-      {/* Hotspot Controls */}
-      <div className="flex flex-col items-center gap-2">
-        <span className={`text-xs font-medium text-center transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
-          View
-        </span>
-        <HotspotControls
-          onHotspotSelect={onHotspotSelect}
-          activeHotspot={activeHotspot}
+    <>
+      {isMobile && !isOpen && (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className={`fixed top-32 right-8 rounded-full shadow-elegant backdrop-blur-sm p-3 transition-all duration-300 ease-in-out ${isDarkMode ? 'bg-black/40 text-white/80 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
+          title="Open controls"
           disabled={disabled}
-          onCameraMove={onCameraMove}
-          isDarkMode={isDarkMode}
-        />
-      </div>
-
-      {/* Divider */}
-      <div className={`h-px w-full transition-all duration-300 ${isDarkMode ? 'bg-white/20' : 'bg-border'}`} />
-
-      {/* View Controls - Vertical Layout */}
-      <div className="flex flex-col items-center gap-2">
-        {/* Auto Rotate */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onAutoRotateChange(!autoRotate)}
-          disabled={disabled}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
-            ? 'hover:bg-white/10 text-white/80 hover:text-white'
-            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-            }`}
-          title={autoRotate ? "Pause rotation" : "Start rotation"}
         >
-          {autoRotate ? (
-            <Pause className="h-4 w-4" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
+          <Camera className="h-5 w-5" />
         </Button>
-
-        {/* Zoom Out */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleZoomOut}
-          disabled={disabled || zoom <= 0.3}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
-            ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
-            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
-            }`}
-          title="Zoom out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-
-        {/* Zoom In */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleZoomIn}
-          disabled={disabled || zoom >= 2}
-          className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
-            ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
-            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
-            }`}
-          title="Zoom in"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-
-        {/* Zoom Percentage */}
-        <div className={`text-xs text-center py-1 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
-          {Math.round(zoom * 100)}%
-        </div>
-
-        {/* Background Toggle */}
-        {onBackgroundToggle && (
+      )}
+      <div 
+        className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 space-y-3 transition-all duration-300 ease-in-out w-20 
+          ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-border'} 
+          ${isMobile ? 'fixed top-1/2 right-4 -translate-y-1/2 z-50' : ''} 
+          ${isMobile ? (isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none') : ''}`}
+      >
+        {isMobile && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBackgroundToggle}
+            onClick={() => setIsOpen(false)}
+            className={`absolute top-[-10px] right-[-10px] h-6 w-6 rounded-full p-0 transition-all duration-300 ${isDarkMode ? 'bg-black/40 text-white/60 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+            title="Close controls"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Hotspot Controls */}
+        <div className="flex flex-col items-center gap-2">
+          <span className={`text-xs font-medium text-center transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+            View
+          </span>
+          <HotspotControls
+            onHotspotSelect={onHotspotSelect}
+            activeHotspot={activeHotspot}
+            disabled={disabled}
+            onCameraMove={onCameraMove}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className={`h-px w-full transition-all duration-300 ${isDarkMode ? 'bg-white/20' : 'bg-border'}`} />
+
+        {/* View Controls - Vertical Layout */}
+        <div className="flex flex-col items-center gap-2">
+          {/* Auto Rotate */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onAutoRotateChange(!autoRotate)}
             disabled={disabled}
             className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
               ? 'hover:bg-white/10 text-white/80 hover:text-white'
               : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
               }`}
-            title={getBackgroundTitle()}
+            title={autoRotate ? "Pause rotation" : "Start rotation"}
           >
-            {getBackgroundIcon()}
+            {autoRotate ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
           </Button>
-        )}
 
-     
+          {/* Zoom Out */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleZoomOut}
+            disabled={disabled || zoom <= 0.3}
+            className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
+              ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
+              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
+              }`}
+            title="Zoom out"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+
+          {/* Zoom In */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleZoomIn}
+            disabled={disabled || zoom >= 2}
+            className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
+              ? 'hover:bg-white/10 text-white/80 hover:text-white disabled:text-white/30'
+              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900 disabled:text-gray-300'
+              }`}
+            title="Zoom in"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+
+          {/* Zoom Percentage */}
+          <div className={`text-xs text-center py-1 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+            {Math.round(zoom * 100)}%
+          </div>
+
+          {/* Background Toggle */}
+          {onBackgroundToggle && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackgroundToggle}
+              disabled={disabled}
+              className={`h-8 w-full p-0 transition-all duration-300 ${isDarkMode
+                ? 'hover:bg-white/10 text-white/80 hover:text-white'
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                }`}
+              title={getBackgroundTitle()}
+            >
+              {getBackgroundIcon()}
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
-

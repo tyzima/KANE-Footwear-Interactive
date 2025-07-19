@@ -1037,7 +1037,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             <div className="flex items-center justify-between gap-2 sm:gap-4">
 
               {/* Left: Title */}
-              <div className="flex items-center">
+              <div className="flex items-center hidden lg:block">
                 <div className="flex items-center gap-2">
                   <h2 className={`text-base sm:text-lg font-bold transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                     Customize
@@ -1690,7 +1690,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     <div className="h-20">
                   
                       {/* Top Row: SVG Preview */}
-                      <div className="flex justify-center mb-2">
+                      <div className="flex justify-center mb-2 flex-col">
                         <div className={`p-2 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/20' : 'bg-white/50'}`}>
                           <svg 
                             width="100" 
@@ -1823,7 +1823,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       </div>
 
                       {/* Bottom Row: Color Swatches */}
-                      <div className="flex items-center justify-center gap-4">
+                      <div className="flex items-center -translate-y-[50px] translate-x-[50px] justify-center gap-4">
                         {/* Color Swatch 1 */}
                         <div className="flex flex-col items-center gap-1">
                           <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
@@ -1888,23 +1888,28 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   ) : (
                     /* Mobile Standard: Grid Layout */
                     <>
-                  <div className="grid grid-cols-6 gap-1.5 max-w-[200px] mx-auto">
-                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
-                      <div key={c.value} className="relative group">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-110 ${getCurrentColor() === c.value ? 'border-primary ring-1 ring-primary/20 scale-110' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
-                            }`}
-                          style={{ backgroundColor: c.value }}
-                          onClick={() => getCurrentColorChanger()(c.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
+               <div className="flex overflow-x-auto gap-1.5 max-w-[340px] mx-auto px-1 py-2 scrollbar-thin scrollbar-thumb-gray-400">
+  {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
+    <div key={c.value} className="relative group flex-shrink-0">
+      <Button
+        variant="outline"
+        size="sm"
+        className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-110 ${
+          getCurrentColor() === c.value
+            ? 'border-primary ring-1 ring-primary/20 scale-110'
+            : isDarkMode
+            ? 'border-white/30'
+            : 'border-gray-300'
+        }`}
+        style={{ backgroundColor: c.value }}
+        onClick={() => getCurrentColorChanger()(c.value)}
+      />
+    </div>
+  ))}
+</div>
 
                   {/* Mobile Custom Color Picker - Separate Row */}
-                  <div className="flex justify-center mt-2">
+                  <div className=" justify-center mt-2 hidden">
                     <input
                       type="color"
                       value={getCurrentColor()}
@@ -1941,7 +1946,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         setIsOpen(true);
                       }
                     }}
-                    className={`w-12 h-12 bg-black/5 p-0 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
+                    className={`w-12 h-12 bg-black/5 p-0 flex items-center hover:bg-gray-200 justify-center transition-all rounded-full duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
                       }`}
                   >
                     <img src="/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
@@ -1949,17 +1954,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 </div>
 
                 {/* Expand/Collapse */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsOpen(!isOpen)}
-                  className={`h-8 w-8 p-0 transition-all duration-300 ${isDarkMode
-                    ? 'hover:bg-white/10 text-white/80 hover:text-white'
-                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                    }`}
-                >
-                  {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                </Button>
+             
               </div>
             </div>
           </div>
@@ -2028,7 +2023,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         </div>
 
                         {/* SVG Preview */}
-                        <div className="flex justify-center mb-6  md:hidden">
+                        <div className=" justify-center mb-6 hidden">
                           <div className={`p-4 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}>
                             <svg 
                               width="80" 
@@ -2071,7 +2066,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         </div>
 
                         {/* Three Color Selectors in a Triangular Layout */}
-                        <div className="space-y-6 md:hidden">
+                        <div className="space-y-6 hidden">
                           {/* Color 1 - Center Top */}
                           <div className="text-center">
                             <div className="flex items-center justify-center gap-2 mb-3">

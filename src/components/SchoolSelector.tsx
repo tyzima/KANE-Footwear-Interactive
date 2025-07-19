@@ -71,10 +71,10 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
         {/* Left: Label */}
         <div className="flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            <GraduationCap className={`w-3 h-3 transition-all duration-300 ${
+            <GraduationCap className={`w-3 h-3 hidden md:block transition-all duration-300 ${
               isDarkMode ? 'text-white/80' : 'text-muted-foreground'
             }`} />
-            <h3 className={`text-xs font-medium transition-all duration-300 ${
+            <h3 className={`text-xs font-medium transition-all duration-300 hidden md:block ${
               isDarkMode ? 'text-white/90' : 'text-foreground'
             }`}>
               Search Schools
@@ -86,7 +86,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
         <div className="flex-1 flex items-center gap-2">
           {/* Search Bar - shrinks when results appear or school is selected */}
           <div className={`relative transition-all duration-300 ${
-            (filteredSchools.length > 0 && !selectedSchool) || selectedSchool ? 'w-48 md:w-56' : 'flex-1'
+            (filteredSchools.length > 0 && !selectedSchool) || selectedSchool ? 'hidden md:w-56' : 'flex-1'
           }`}>
             <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-all duration-300 ${
               isDarkMode ? 'text-white/60' : 'text-muted-foreground'
@@ -124,7 +124,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                   }}
                 />
                 <div className="min-w-0">
-                  <p className={`font-medium text-sm transition-all duration-300 truncate ${
+                  <p className={`font-medium text-xs transition-all duration-300 truncate ${
                     isDarkMode ? 'text-white/90' : 'text-foreground'
                   }`}>{selectedSchool["School Name"]}</p>
                 </div>
@@ -196,7 +196,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
           
           {/* Inline Results - Desktop Only (only show when no school is selected) */}
           {filteredSchools.length > 0 && !selectedSchool && (
-            <div className="hidden md:flex items-center gap-2 flex-1 overflow-x-auto">
+            <div className="flex items-center gap-2 flex-1 overflow-x-auto">
               {filteredSchools.slice(0, 4).map((school, index) => (
                 <button
                   key={index}
@@ -265,13 +265,13 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 }}
               />
               <div>
-                <p className={`font-medium text-sm transition-all duration-300 ${
-                  isDarkMode ? 'text-white/90' : 'text-foreground'
+                <p className={`font-medium text-xs transition-all duration-300 ${
+                  isDarkMode ? 'text-white/90' : 'text-foreground text-xs'
                 }`}>{selectedSchool["School Name"]}</p>
                 {selectedSchool.Conference && (
                   <p className={`text-xs transition-all duration-300 ${
                     isDarkMode ? 'text-white/60' : 'text-muted-foreground'
-                  }`}>{selectedSchool.Conference}</p>
+                  }`}></p>
                 )}
               </div>
               
@@ -345,7 +345,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
 
       {/* Search Results - Mobile Only (Desktop shows inline) */}
       {filteredSchools.length > 0 && (
-        <div className="md:hidden space-y-2">
+        <div className="hidden space-y-2">
           <p className={`text-sm font-medium transition-all duration-300 ${
             isDarkMode ? 'text-white/90' : 'text-foreground'
           }`}>

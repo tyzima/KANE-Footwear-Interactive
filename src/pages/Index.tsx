@@ -16,24 +16,24 @@ const Index = () => {
       {/* Main Viewer Section - Full Height */}
       <main className="h-screen relative">
         {/* Product Branding - Top Left */}
-        <div className="absolute top-10 left-10 z-30 flex items-center gap-4">
-          <img
-            src="/mainkanelogo.png"
-            alt="KANE Logo"
-            className={`h-8 w-auto transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
-          />
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}></h1>
-              <span className={`px-2 py-1 ml-2 tracking-wider text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode
-                ? 'bg-white/20 text-white/90'
-                : 'bg-accent/20 text-accent'
-                }`}>
-                CUSTOMS
-              </span>
-            </div>
-          </div>
-        </div>
+        <div className="absolute top-10 ml-10 md:ml-20 z-30 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+  <img
+    src="/mainkanelogo.png"
+    alt="KANE Logo"
+    className={`h-8 w-auto transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
+  />
+  <div>
+    <div className="flex items-center gap-3 sm:gap-3">
+      <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}></h1>
+      <span className={`px-2 py-1 ml-9 sm:ml-0 tracking-wider text-[10px] sm:text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode
+        ? 'bg-white/20 text-white/90'
+        : 'bg-accent/20 text-accent'
+        }`}>
+        CUSTOM
+      </span>
+    </div>
+  </div>
+</div>
 
         {/* Buy and Share Buttons - Top Right */}
         <div className="absolute top-8 right-8 z-30 flex flex-col gap-3">

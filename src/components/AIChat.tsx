@@ -409,28 +409,7 @@ export const AIChat: React.FC<AIChatProps> = ({
           )}
 
           {/* Input */}
-          <div className={`px-4 py-4 bg-transparent ${(visibleMessages.length > 0 || isProcessing) ? 'border-t' : ''} transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-100'}`}>
-            <div className={`flex items-center sm:hidden rounded-full px-4 py-4 shadow-sm focus-within:ring-2 focus-within:ring-primary/50 transition-all duration-300 ${isDarkMode
-              ? 'bg-black/40 border border-white/20'
-              : 'bg-white border border-gray-200'
-              }`}>
-              <Atom className={`w-5 h-5 mr-3 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-gray-400'}`} />
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={e => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Describe your shoe design..."
-                disabled={isProcessing}
-                className={`flex-1 bg-transparent focus:outline-none text-sm ${isDarkMode
-                  ? 'text-white placeholder-white/60'
-                  : 'text-gray-900 placeholder-gray-400'
-                  }`}
-              />
-              <span className={`text-sm mx-3 whitespace-nowrap ${isDarkMode ? 'text-white/70' : 'text-gray-500'}`}>Customize</span>
-
-            </div>
-          </div>
+        
         </div>
       )}
     </div>
