@@ -1990,7 +1990,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           <h4 className={`text-md font-semibold mb-2 transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                             Side Logos
                           </h4>
-                          <p className={`text-sm transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+                          <p className={`text-sm hidden md:block transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
                             Upload logos for the sides of your shoe
                           </p>
                         </div>
@@ -2006,7 +2006,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           <h4 className={`text-md font-semibold mb-2 transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                             Back Logo
                           </h4>
-                          <p className={`text-sm transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+                          <p className={`text-sm hidden md:block transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
                             Customize the heel logo colors and center image
                           </p>
                         </div>
