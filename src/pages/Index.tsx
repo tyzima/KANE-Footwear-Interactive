@@ -53,7 +53,7 @@ const Index = () => {
   return (
     <div className="min-h-screen max-h-screen bg-gradient-hero">
       {/* Main Viewer Section - Full Height */}
-      <main className="h-screen relative">
+      <main className="h-screen max-h-screen overflow-y-hidden relative">
         {/* Product Branding - Top Left */}
         <div className="absolute top-10 ml-10 md:ml-20 z-30 flex flex-col sm:flex-col items-start sm:items-center gap-2 sm:gap-4">
   <img
