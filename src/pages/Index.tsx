@@ -20,13 +20,13 @@ const Index = () => {
   <img
     src="/mainkanelogo.png"
     alt="KANE Logo"
-    className={`h-8 w-auto transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
+    className={`h-6 md:h-8 w-auto transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
   />
   <div>
     <div className="flex items-center gap-3 sm:gap-3">
       <h1 className={`text-2xl font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}></h1>
-      <span className={`px-2 py-1 ml-9 sm:ml-0 tracking-wider text-[10px] sm:text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode
-        ? 'bg-white/20 text-white/90'
+      <span className={`px-2 py-[2px] md:py-1 mt-1 md:mt-0 ml-7 sm:ml-0 tracking-wider text-[10px] sm:text-xs font-medium rounded-full transition-colors duration-300 ${isDarkMode
+        ? 'bg-transparent border border-white/20 text-white/90'
         : 'bg-accent/20 text-accent'
         }`}>
         CUSTOM

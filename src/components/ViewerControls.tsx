@@ -99,7 +99,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       {isMobile && !isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className={`fixed top-32 right-8 rounded-full shadow-elegant backdrop-blur-sm p-3 transition-all duration-300 ease-in-out ${isDarkMode ? 'bg-black/40 text-white/80 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
+          className={`fixed top-32 w-10  border border-white/20 right-8 rounded-full shadow-elegant backdrop-blur-sm p-3 transition-all duration-300 ease-in-out ${isDarkMode ? 'bg-black/40 text-white/80 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
           title="Open controls"
           disabled={disabled}
         >
@@ -117,7 +117,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(false)}
-            className={`absolute top-[-10px] right-[-10px] h-6 w-6 rounded-full p-0 transition-all duration-300 ${isDarkMode ? 'bg-black/40 text-white/60 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+            className={`absolute top-[-10px]  border-2 border-white/20 right-[-10px] h-6 w-6 rounded-full p-0 transition-all duration-300 ${isDarkMode ? 'bg-black/40 text-white/60 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
             title="Close controls"
           >
             <X className="h-4 w-4" />
