@@ -29,7 +29,7 @@ const Index = () => {
                 ? 'bg-white/20 text-white/90'
                 : 'bg-accent/20 text-accent'
                 }`}>
-                KUSTOMS
+                CUSTOMS
               </span>
             </div>
           </div>
