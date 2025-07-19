@@ -9,6 +9,7 @@ import { SchoolSelector } from './SchoolSelector';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
+
 interface ColorCustomizerProps {
   topColor: string;
   bottomColor: string;
@@ -28,11 +29,16 @@ interface ColorCustomizerProps {
   onSolePaintDensityChange: (density: number) => void;
   activeTab?: 'upper' | 'sole' | 'laces' | 'logos';
   onTabChange?: (tab: 'upper' | 'sole' | 'laces' | 'logos') => void;
-  // Lace and logo colors (single color for both left and right)
+  // Lace colors (single color for both left and right)
   laceColor?: string;
-  logoColor?: string;
   onLaceColorChange?: (color: string) => void;
-  onLogoColorChange?: (color: string) => void;
+  // Logo colors - now supporting 3 separate colors
+  logoColor1?: string; // Blue parts
+  logoColor2?: string; // Black parts  
+  logoColor3?: string; // Red parts
+  onLogoColor1Change?: (color: string) => void;
+  onLogoColor2Change?: (color: string) => void;
+  onLogoColor3Change?: (color: string) => void;
   upperHasGradient?: boolean;
   soleHasGradient?: boolean;
   upperGradientColor1?: string;
@@ -52,11 +58,16 @@ interface ColorCustomizerProps {
   // Logo props
   logoUrl?: string | null;
   onLogoChange?: (logoUrl: string | null) => void;
+  // Circle logo props (for SVG texture)
+  circleLogoUrl?: string | null;
+  onCircleLogoChange?: (logoUrl: string | null) => void;
   // Dark mode
   isDarkMode?: boolean;
   // Height callback for AIChat positioning
   onHeightChange?: (height: number) => void;
 }
+
+
 
 const NATIONAL_PARK_COLORS = [
   // Reds
@@ -134,14 +145,22 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   soleTexture = null,
   onUpperTextureChange = () => { },
   onSoleTextureChange = () => { },
-  // Lace and logo colors with defaults (single color for both left and right)
+  // Lace colors with defaults (single color for both left and right)
   laceColor = '#FFFFFF',
-  logoColor = '#FFFFFF',
   onLaceColorChange = () => { },
-  onLogoColorChange = () => { },
+  // Logo colors with defaults
+  logoColor1 = '#2048FF', // Blue parts (Royal Blue)
+  logoColor2 = '#000000', // Black parts
+  logoColor3 = '#C01030', // Red parts (Crimson)
+  onLogoColor1Change = () => { },
+  onLogoColor2Change = () => { },
+  onLogoColor3Change = () => { },
   // Logo props with defaults
   logoUrl = null,
   onLogoChange = () => { },
+  // Circle logo props with defaults
+  circleLogoUrl = null,
+  onCircleLogoChange = () => { },
   // Dark mode with default
   isDarkMode = false,
   // Height callback for AIChat positioning
@@ -158,6 +177,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ id: string; text: string; isUser: boolean; timestamp: Date }[]>([]);
   const [aiResponseVisible, setAiResponseVisible] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   // Initialize Gemini AI
@@ -196,7 +216,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       case 'upper': return topColor;
       case 'sole': return bottomColor;
       case 'laces': return laceColor;
-      case 'logos': return logoColor;
+      case 'logos': return logoColor1; // For logos, we'll show a special interface
       default: return topColor;
     }
   };
@@ -206,7 +226,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       case 'upper': return onTopColorChange;
       case 'sole': return onBottomColorChange;
       case 'laces': return onLaceColorChange;
-      case 'logos': return onLogoColorChange;
+      case 'logos': return onLogoColor1Change; // For logos, we'll show a special interface
       default: return onTopColorChange;
     }
   };
@@ -735,19 +755,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
           />
         );
 
-      case 'logo':
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
 
-            </div>
-
-            <LogoUploader
-              onLogoChange={onLogoChange}
-              currentLogo={logoUrl}
-            />
-          </div>
-        );
 
       default:
         return null;
@@ -999,7 +1007,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         </div>
 
         {/* Main Control Card */}
-        <div className={`backdrop-blur-sm max-w-6xl mx-auto rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
+        <div className={`backdrop-blur-sm max-w-6xl mx-auto min-h-[80px] rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
           {/* Main Control Bar */}
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
@@ -1085,8 +1093,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           }`}
                         sideOffset={5}
                       >
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
+                        <div className="space-y-4 ">
+                          <div className="flex items-center justify-between ">
                             <div className="flex items-center gap-2">
                               {/* Inline SVG for splatter within Popover as well */}
                               <svg
@@ -1193,7 +1201,372 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
 
 
-                  {/* Color Palette Container with Fade Mask */}
+                  {/* Logos Tab: Interactive SVG Preview + Color Swatches */}
+                  
+
+
+                  {activeTab === 'logos' ? (
+  <div className="flex-1 mx-2">
+    <div className="flex items-center justify-between p-2.5">
+      {/* Left: SVG Preview */}
+      <div className="flex items-center justify-center flex-1">
+        <div className={`rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/20' : 'bg-white/50'}`}>
+          <svg 
+            width="240" 
+            height="76" 
+            viewBox="0 0 465.12 145.92" 
+            className="drop-shadow-sm"
+          >
+            <rect width="465.12" height="145.92" fill="none"/>
+            
+            {/* Outer Ring - Color 3 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <path 
+                  d="M433.25,40.06h-135.58C285.37,15.77,260.26,0,232.56,0s-52.8,15.77-65.1,40.06H31.88C14.3,40.06,0,54.36,0,71.93s14.3,31.88,31.88,31.88h134.55c11.85,25.54,37.35,42.11,66.13,42.11s54.28-16.57,66.13-42.11h134.55c17.58,0,31.88-14.3,31.88-31.88s-14.3-31.88-31.88-31.88ZM452.12,71.93c0,10.38-8.49,18.88-18.88,18.88h-143.44c-7.62,24.37-30.4,42.11-57.25,42.11s-49.63-17.74-57.25-42.11H31.88c-10.38,0-18.88-8.49-18.88-18.88h0c0-10.38,8.49-18.88,18.88-18.88h144.14c8.23-23.31,30.46-40.06,56.55-40.06s48.32,16.75,56.55,40.06h144.14c10.38,0,18.88,8.49,18.88,18.88h0Z"
+                  fill={logoColor2}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </PopoverTrigger>
+              <PopoverContent 
+                className={`w-56 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+                sideOffset={5}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: logoColor2 }}
+                    />
+                    <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                      Outer Ring
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                      <Button
+                        key={c.value}
+                        variant="outline"
+                        size="sm"
+                        className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor2 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                        style={{ backgroundColor: c.value }}
+                        onClick={() => onLogoColor2Change(c.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Inner Ring - Color 2 */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <path 
+                  d="M433.25,53.06h-144.14c-8.23-23.31-30.46-40.06-56.55-40.06s-48.32,16.75-56.55,40.06H31.88c-10.38,0-18.88,8.49-18.88,18.88h0c0,10.38,8.49,18.88,18.88,18.88h143.44c7.62,24.37,30.4,42.11,57.25,42.11s49.63-17.74,57.25-42.11h143.44c10.38,0,18.88-8.49,18.88-18.88h0c0-10.38-8.49-18.88-18.88-18.88ZM232.56,122.42c-27.32,0-49.46-22.14-49.46-49.46s22.14-49.46,49.46-49.46,49.46,22.14,49.46,49.46-22.14,49.46-49.46,49.46Z"
+                  fill={logoColor3}
+                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                />
+              </PopoverTrigger>
+              <PopoverContent 
+                className={`w-56 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+                sideOffset={5}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: logoColor3 }}
+                    />
+                    <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                      Inner Ring
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                      <Button
+                        key={c.value}
+                        variant="outline"
+                        size="sm"
+                        className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor2 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                        style={{ backgroundColor: c.value }}
+                        onClick={() => onLogoColor3Change(c.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Center Circle with Image Upload */}
+            <defs>
+              <clipPath id="centerClip">
+                <circle cx="232.56" cy="72.96" r="49.46" />
+              </clipPath>
+            </defs>
+            <g 
+              clipPath="url(#centerClip)" 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {circleLogoUrl ? (
+                <g transform="translate(282.06,23.5) scale(-1,1)">
+                  <image 
+                    href={circleLogoUrl} 
+                    x="0" 
+                    y="0" 
+                    width="98.92" 
+                    height="98.92" 
+                    preserveAspectRatio="xMidYMid slice" 
+                    transform="rotate(-90 49.46 49.46)"
+                  />
+                </g>
+              ) : (
+                <rect 
+                  x="183.1" 
+                  y="23.5" 
+                  width="98.92" 
+                  height="98.92" 
+                  fill={logoColor1}
+                />
+              )}
+            </g>
+          </svg>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  if (event.target?.result) {
+                    // Create an image to transform
+                    const img = new Image();
+                    img.onload = () => {
+                      // Create canvas for transformation
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d')!;
+                      
+                      // Set canvas dimensions (swap width/height due to 90° rotation)
+                      canvas.width = img.height;
+                      canvas.height = img.width;
+                      
+                      // Apply transformations:
+                      // 1. Translate to center
+                      ctx.translate(canvas.width / 2, canvas.height / 2);
+                      // 2. Rotate 90 degrees counter-clockwise
+                      ctx.rotate(Math.PI / 2);
+                      // 3. Scale horizontally by -1 to mirror
+                      ctx.scale(-1, 1);
+                      
+                      // Draw the image (centered around origin)
+                      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                      
+                      // Convert back to data URL
+                      const transformedDataUrl = canvas.toDataURL('image/png');
+                      onCircleLogoChange(transformedDataUrl);
+                    };
+                    img.src = event.target.result as string;
+                  }
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Right: Color Swatches with Popover Color Swatches */}
+      <div className="flex items-center gap-3 px-3">
+        {/* Color Swatch 1 - Center Circle */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex flex-col items-center gap-1 cursor-pointer">
+              <div
+                className={`
+                  w-10 h-10 p-0 border-2 border-white
+                  rounded-lg shadow-sm
+                  hover:scale-105 transition-all duration-300
+                `}
+                style={{ backgroundColor: logoColor1 }}
+                title="Center Circle Color"
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className={`w-56 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+            sideOffset={5}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                  style={{ backgroundColor: logoColor1 }}
+                />
+                <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                  Center Circle
+                </span>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                  <Button
+                    key={c.value}
+                    variant="outline"
+                    size="sm"
+                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor1 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                    style={{ backgroundColor: c.value }}
+                    onClick={() => onLogoColor1Change(c.value)}
+                  />
+                ))}
+              </div>
+              <div className="pt-2">
+                <input
+                  type="color"
+                  value={logoColor1}
+                  onChange={(e) => onLogoColor1Change(e.target.value)}
+                  className={`
+                    w-10 h-10 p-0 cursor-pointer border-2 border-white
+                    rounded-lg appearance-none overflow-hidden shadow-sm
+                    [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                    [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                    hover:scale-105 transition-all duration-300
+                  `}
+                  title="Center Circle Color"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Color Swatch 2 - Inner Ring */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex flex-col items-center gap-1 cursor-pointer">
+              <div
+                className={`
+                  w-10 h-10 p-0 border-2 border-white
+                  rounded-lg shadow-sm
+                  hover:scale-105 transition-all duration-300
+                `}
+                style={{ backgroundColor: logoColor2 }}
+                title="Inner Ring Color"
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className={`w-56 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+            sideOffset={5}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                  style={{ backgroundColor: logoColor2 }}
+                />
+                <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                  Inner Ring
+                </span>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                  <Button
+                    key={c.value}
+                    variant="outline"
+                    size="sm"
+                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor2 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                    style={{ backgroundColor: c.value }}
+                    onClick={() => onLogoColor2Change(c.value)}
+                  />
+                ))}
+              </div>
+              <div className="pt-2">
+                <input
+                  type="color"
+                  value={logoColor2}
+                  onChange={(e) => onLogoColor2Change(e.target.value)}
+                  className={`
+                    w-10 h-10 p-0 cursor-pointer border-2 border-white
+                    rounded-lg appearance-none overflow-hidden shadow-sm
+                    [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                    [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                    hover:scale-105 transition-all duration-300
+                  `}
+                  title="Inner Ring Color"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Color Swatch 3 - Outer Ring */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <div className="flex flex-col items-center gap-1 cursor-pointer">
+              <div
+                className={`
+                  w-10 h-10 p-0 border-2 border-white
+                  rounded-lg shadow-sm
+                  hover:scale-105 transition-all duration-300
+                `}
+                style={{ backgroundColor: logoColor3 }}
+                title="Outer Ring Color"
+              />
+            </div>
+          </PopoverTrigger>
+          <PopoverContent
+            className={`w-56 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+            sideOffset={5}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                  style={{ backgroundColor: logoColor3 }}
+                />
+                <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                  Outer Ring
+                </span>
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                  <Button
+                    key={c.value}
+                    variant="outline"
+                    size="sm"
+                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor3 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                    style={{ backgroundColor: c.value }}
+                    onClick={() => onLogoColor3Change(c.value)}
+                  />
+                ))}
+              </div>
+              <div className="pt-2">
+                <input
+                  type="color"
+                  value={logoColor3}
+                  onChange={(e) => onLogoColor3Change(e.target.value)}
+                  className={`
+                    w-10 h-10 p-0 cursor-pointer border-2 border-white
+                    rounded-lg appearance-none overflow-hidden shadow-sm
+                    [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                    [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                    hover:scale-105 transition-all duration-300
+                  `}
+                  title="Outer Ring Color"
+                />
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  </div>
+) : (
+  
+
+
+                    /* Standard Color Palette for other tabs */
                   <div
                     className="relative flex-1 mx-2 overflow-hidden"
                     style={{
@@ -1210,7 +1583,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         msOverflowStyle: 'none'
                       }}
                     >
-                      <style jsx>{`
+                        <style>{`
                         #color-palette-container::-webkit-scrollbar {
                           display: none;
                         }
@@ -1259,6 +1632,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       </div>
                     </div>
                   </div>
+                  )}
 
                   {/* Right Scroll Arrow */}
                   <Button
@@ -1279,8 +1653,217 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   </Button>
                 </div>
 
-                {/* Mobile: Compact Grid Layout */}
+
+
+
+
+                
+
+                {/* Mobile: Different layouts for logos vs other tabs */}
                 <div className="md:hidden w-full">
+                  {activeTab === 'logos' ? (
+                    /* Mobile Logos: Interactive SVG Preview + Color Swatches */
+                    <div className="h-20">
+                  
+                      {/* Top Row: SVG Preview */}
+                      <div className="flex justify-center mb-2">
+                        <div className={`p-2 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/20' : 'bg-white/50'}`}>
+                          <svg 
+                            width="100" 
+                            height="32" 
+                            viewBox="0 0 465.12 145.92" 
+                            className="drop-shadow-sm"
+                          >
+                            <rect width="465.12" height="145.92" fill="none"/>
+                            
+                            {/* Outer Ring - Color 3 */}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <path 
+                                  d="M433.25,40.06h-135.58C285.37,15.77,260.26,0,232.56,0s-52.8,15.77-65.1,40.06H31.88C14.3,40.06,0,54.36,0,71.93s14.3,31.88,31.88,31.88h134.55c11.85,25.54,37.35,42.11,66.13,42.11s54.28-16.57,66.13-42.11h134.55c17.58,0,31.88-14.3,31.88-31.88s-14.3-31.88-31.88-31.88ZM452.12,71.93c0,10.38-8.49,18.88-18.88,18.88h-143.44c-7.62,24.37-30.4,42.11-57.25,42.11s-49.63-17.74-57.25-42.11H31.88c-10.38,0-18.88-8.49-18.88-18.88h0c0-10.38,8.49-18.88,18.88-18.88h144.14c8.23-23.31,30.46-40.06,56.55-40.06s48.32,16.75,56.55,40.06h144.14c10.38,0,18.88,8.49,18.88,18.88h0Z"
+                                  fill={logoColor3}
+                                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent 
+                                className={`w-48 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+                                sideOffset={5}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                      style={{ backgroundColor: logoColor3 }}
+                                    />
+                                    <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                      Outer Ring
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-1.5">
+                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                      <Button
+                                        key={c.value}
+                                        variant="outline"
+                                        size="sm"
+                                        className={`w-8 h-8 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor3 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                                        style={{ backgroundColor: c.value }}
+                                        onClick={() => onLogoColor3Change(c.value)}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+
+                            {/* Inner Ring - Color 2 */}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <path 
+                                  d="M433.25,53.06h-144.14c-8.23-23.31-30.46-40.06-56.55-40.06s-48.32,16.75-56.55,40.06H31.88c-10.38,0-18.88,8.49-18.88,18.88h0c0,10.38,8.49,18.88,18.88,18.88h143.44c7.62,24.37,30.4,42.11,57.25,42.11s49.63-17.74,57.25-42.11h143.44c10.38,0,18.88-8.49,18.88-18.88h0c0-10.38-8.49-18.88-18.88-18.88ZM232.56,122.42c-27.32,0-49.46-22.14-49.46-49.46s22.14-49.46,49.46-49.46,49.46,22.14,49.46,49.46-22.14,49.46-49.46,49.46Z"
+                                  fill={logoColor2}
+                                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent 
+                                className={`w-48 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+                                sideOffset={5}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                      style={{ backgroundColor: logoColor2 }}
+                                    />
+                                    <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                      Inner Ring
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-1.5">
+                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                      <Button
+                                        key={c.value}
+                                        variant="outline"
+                                        size="sm"
+                                        className={`w-8 h-8 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor2 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                                        style={{ backgroundColor: c.value }}
+                                        onClick={() => onLogoColor2Change(c.value)}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+
+                            {/* Center Circle - Color 1 */}
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <circle 
+                                  cx="232.56" 
+                                  cy="72.96" 
+                                  r="49.46" 
+                                  fill={logoColor1}
+                                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                                />
+                              </PopoverTrigger>
+                              <PopoverContent 
+                                className={`w-48 p-3 transition-all duration-300 ${isDarkMode ? 'bg-black/90 border-white/20 text-white/90' : 'bg-white border-gray-200'}`}
+                                sideOffset={5}
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                      style={{ backgroundColor: logoColor1 }}
+                                    />
+                                    <span className={`font-medium text-sm transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                      Center Circle
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-4 gap-1.5">
+                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                      <Button
+                                        key={c.value}
+                                        variant="outline"
+                                        size="sm"
+                                        className={`w-8 h-8 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor1 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')}`}
+                                        style={{ backgroundColor: c.value }}
+                                        onClick={() => onLogoColor1Change(c.value)}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Bottom Row: Color Swatches */}
+                      <div className="flex items-center justify-center gap-4">
+                        {/* Color Swatch 1 */}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
+                            Center
+                          </span>
+                          <input
+                            type="color"
+                            value={logoColor1}
+                            onChange={(e) => onLogoColor1Change(e.target.value)}
+                            className={`
+                              w-8 h-8 p-0 cursor-pointer border-2 border-white
+                              rounded-lg appearance-none overflow-hidden shadow-sm
+                              [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                              [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                              hover:scale-105 transition-all duration-300
+                            `}
+                            title="Center Circle Color"
+                          />
+                        </div>
+
+                        {/* Color Swatch 2 */}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
+                            Inner
+                          </span>
+                          <input
+                            type="color"
+                            value={logoColor2}
+                            onChange={(e) => onLogoColor2Change(e.target.value)}
+                            className={`
+                              w-8 h-8 p-0 cursor-pointer border-2 border-white
+                              rounded-lg appearance-none overflow-hidden shadow-sm
+                              [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                              [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                              hover:scale-105 transition-all duration-300
+                            `}
+                            title="Inner Ring Color"
+                          />
+                        </div>
+
+                        {/* Color Swatch 3 */}
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/70' : 'text-gray-600'}`}>
+                            Outer
+                          </span>
+                          <input
+                            type="color"
+                            value={logoColor3}
+                            onChange={(e) => onLogoColor3Change(e.target.value)}
+                            className={`
+                              w-8 h-8 p-0 cursor-pointer border-2 border-white
+                              rounded-lg appearance-none overflow-hidden shadow-sm
+                              [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch-wrapper]:rounded-none
+                              [&::-webkit-color-swatch]:border-none [&::-webkit-color-swatch]:rounded-lg
+                              hover:scale-105 transition-all duration-300
+                            `}
+                            title="Outer Ring Color"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Mobile Standard: Grid Layout */
+                    <>
                   <div className="grid grid-cols-6 gap-1.5 max-w-[200px] mx-auto">
                     {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
                       <div key={c.value} className="relative group">
@@ -1312,6 +1895,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       `}
                     />
                   </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1337,22 +1922,6 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   >
                     <img src="/teams.svg" alt="Schools" className="w-8 h-8 grayscale" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      if (isOpen && currentStep === 3) {
-                        setIsOpen(false);
-                      } else {
-                        setCurrentStep(3);
-                        setIsOpen(true);
-                      }
-                    }}
-                    className={`w-12 h-12 p-0 bg-black/5 flex items-center hover:bg-gray-200 justify-center transition-all duration-300 ${isDarkMode ? 'border-white/20 border text-white/80 hover:bg-white/10 hover:text-white' : ''
-                      }`}
-                  >
-                    <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
-                  </Button>
                 </div>
 
                 {/* Expand/Collapse */}
@@ -1371,9 +1940,206 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
             </div>
           </div>
 
-          {/* Expanded Content Area */}
+          {/* Logo Tab Content - Animated */}
+          <AnimatePresence mode="wait">
+            {activeTab === 'logos' && (
+              <motion.div
+                initial={{ scaleY: 0, opacity: 0 }}
+                animate={{ scaleY: 1, opacity: 1 }}
+                exit={{ scaleY: 0, opacity: 0 }}
+                transition={{
+                  duration: 0.3,
+                  ease: "easeInOut"
+                }}
+                style={{ 
+                  overflow: "hidden",
+                  transformOrigin: "top"
+                }}
+              >
+                <div className={`px-4 pb-4 border-t transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`}>
+                  <motion.div 
+                    className="pt-4"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -10, opacity: 0 }}
+                    transition={{ duration: 0.2, delay: 0.1 }}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Side Logos Section */}
+                      <div className={`p-4 rounded-lg border transition-all duration-300 ${isDarkMode ? 'bg-black/20 border-white/20' : 'bg-secondary/20 border-gray-200'}`}>
+                        <div className="text-center mb-4">
+                          <h4 className={`text-md font-semibold mb-2 transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                            Side Logos
+                          </h4>
+                          <p className={`text-sm transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+                            Upload logos for the sides of your shoe
+                          </p>
+                        </div>
+                        <LogoUploader
+                          onLogoChange={onLogoChange}
+                          currentLogo={logoUrl}
+                        />
+                      </div>
+
+                      {/* Back Logo Section */}
+                      <div className={`p-4 rounded-lg border transition-all duration-300 ${isDarkMode ? 'bg-black/20 border-white/20' : 'bg-secondary/20 border-gray-200'}`}>
+                        <div className="text-center mb-4">
+                          <h4 className={`text-md font-semibold mb-2 transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                            Back Logo
+                          </h4>
+                          <p className={`text-sm transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
+                            Customize the heel logo colors and center image
+                          </p>
+                        </div>
+
+                        {/* Circle Logo Uploader */}
+                        <div className="mb-4">
+                          <div className="text-center mb-3">
+                         
+                          </div>
+                          <LogoUploader
+                            onLogoChange={onCircleLogoChange}
+                            currentLogo={circleLogoUrl}
+                          />
+                        </div>
+
+                        {/* SVG Preview */}
+                        <div className="flex justify-center mb-6  md:hidden">
+                          <div className={`p-4 rounded-lg transition-all duration-300 ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}>
+                            <svg 
+                              width="80" 
+                              height="80" 
+                              viewBox="0 0 1024 1024" 
+                              className="drop-shadow-sm"
+                            >
+                              <rect width="1024" height="1024" fill="none"/>
+                              {circleLogoUrl ? (
+                                <>
+                                  <defs>
+                                    <clipPath id="previewCircleClip">
+                                      <circle cx="931.55" cy="427.23" r="49.96"/>
+                                    </clipPath>
+                                  </defs>
+                                  <image 
+                                    x={931.55 - 49.96} 
+                                    y={427.23 - 49.96} 
+                                    width={49.96 * 2} 
+                                    height={49.96 * 2} 
+                                    href={circleLogoUrl} 
+                                    clipPath="url(#previewCircleClip)" 
+                                    preserveAspectRatio="xMidYMid slice"
+                                  />
+                                  <circle cx="931.55" cy="427.23" r="49.96" fill="none" stroke={logoColor1} strokeWidth="2"/>
+                                </>
+                              ) : (
+                                <circle cx="931.55" cy="427.23" r="49.96" fill={logoColor1}/>
+                              )}
+                              <path
+                                d="M963.16,354.84l-.13-137.38c-5.1-38.17-55.76-37.96-61.03.04l-.17,134.83c-5.74,4.39-12.32,7.42-17.85,12.15-36.3,31.01-36.45,91.19-.51,122.54,5.66,4.94,12.27,8.36,18.37,12.63l.27,133.73c6.39,37.37,55.52,36.47,60.93-.85l-.08-134.87c56.69-28.83,57.21-114.2.2-142.83ZM951.13,488.63l-.26,139.74c-2.87,27.21-35.28,25.16-36.86-.89l-.15-137.85c-8.54-4.71-17.06-7.83-24.34-14.66-36.2-34-22.12-96.75,24.51-112.65l-.07-138.86c.65-26.62,33.99-29.64,36.91-1.84l.29,142.22c42.94,16.23,55.41,71.96,25.81,106.63-7.24,8.48-16.07,13.25-25.84,18.16Z"
+                                fill={logoColor2}
+                              />
+                              <path
+                                d="M951.16,363.84l-.29-142.22c-2.93-27.8-36.27-24.78-36.91,1.84l.07,138.86c-46.63,15.9-60.71,78.65-24.51,112.65,7.28,6.83,15.8,9.94,24.34,14.66l.15,137.85c1.58,26.06,33.99,28.1,36.86.89l.26-139.74c9.77-4.91,18.6-9.68,25.84-18.16,29.6-34.67,17.13-90.4-25.81-106.63ZM931.55,477.19c-27.59,0-49.96-22.37-49.96-49.96s22.37-49.96,49.96-49.96,49.96,22.37,49.96,49.96-22.37,49.96-49.96,49.96Z"
+                                fill={logoColor3}
+                              />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Three Color Selectors in a Triangular Layout */}
+                        <div className="space-y-6 md:hidden">
+                          {/* Color 1 - Center Top */}
+                          <div className="text-center">
+                            <div className="flex items-center justify-center gap-2 mb-3">
+                              <div 
+                                className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                style={{ backgroundColor: logoColor1 }}
+                              />
+                              <span className={`text-sm font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                Primary Element
+                              </span>
+                            </div>
+                            <div className="flex gap-1.5 justify-center flex-wrap max-w-xs mx-auto">
+                              {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                                <Button
+                                  key={c.value}
+                                  variant="outline"
+                                  size="sm"
+                                  className={`w-8 h-8 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor1 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                                    }`}
+                                  style={{ backgroundColor: c.value }}
+                                  onClick={() => onLogoColor1Change(c.value)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Color 2 & 3 - Side by Side */}
+                          <div className="grid grid-cols-2 gap-6">
+                            {/* Color 2 - Left */}
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-2 mb-3">
+                                <div 
+                                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                  style={{ backgroundColor: logoColor2 }}
+                                />
+                                <span className={`text-sm font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                  Outline
+                                </span>
+                              </div>
+                              <div className="flex gap-1 justify-center flex-wrap">
+                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                  <Button
+                                    key={c.value}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor2 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                                      }`}
+                                    style={{ backgroundColor: c.value }}
+                                    onClick={() => onLogoColor2Change(c.value)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Color 3 - Right */}
+                            <div className="text-center">
+                              <div className="flex items-center justify-center gap-2 mb-3">
+                                <div 
+                                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                                  style={{ backgroundColor: logoColor3 }}
+                                />
+                                <span className={`text-sm font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
+                                  Details
+                                </span>
+                              </div>
+                              <div className="flex gap-1 justify-center flex-wrap">
+                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                  <Button
+                                    key={c.value}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`w-7 h-7 p-0 border rounded-full transition-all duration-300 hover:scale-105 ${logoColor3 === c.value ? 'border-primary ring-2 ring-primary/20 scale-105' : (isDarkMode ? 'border-white/30' : 'border-gray-300')
+                                      }`}
+                                    style={{ backgroundColor: c.value }}
+                                    onClick={() => onLogoColor3Change(c.value)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Expanded Content Area - For Non-Logo Tabs */}
           <AnimatePresence>
-            {isOpen && (
+            {isOpen && activeTab !== 'logos' && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 80, opacity: 1 }}

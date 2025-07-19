@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Goldman&family=Inter:wght@100..900&display=swap" rel="stylesheet">
+        <title>TRUE Lacrosse Helmet Gallery</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+            padding: 20px;
+            margin: 0;
+            font-weight: 900;
+        }
+        .container {
+            width: 100%;
+            max-width: 960px;
+            margin: auto;
+            overflow: hidden;
+        }
+        .svg-title, .dark-logo {
+            width: 30%;
+            display: block;
+            padding-top: 25px;
+            margin: 10px auto 20px;
+        }
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-input, .dropdown-select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            outline-color: #91D400;
+
+        }
+        .instructions {
+            text-align: center;
+            margin-bottom: 50px;
+            margin-top: 30px;
+        }
+        .instruction-step {
+            background-color: #91D400; /* Red circle background */
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 5px;
+            font-weight: 500;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .card {
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .card-text {
+            padding: 10px;
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+            font-family: "Goldman", sans-serif;
+            text-transform: uppercase;
+        }
+        .image-popup {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .image-popup img {
+            width: 80%;
+            border-radius: 10px;
+        }
+        @media (max-width: 768px) {
+            .svg-title  {
+                width: 60%; /* Adjusts to fit mobile screens */
+            }
+
+            .dropdown-select {
+                width: 100%
+            }
+
+            .search-input {
+                display: none;
+            }
+
+            .gallery {
+                grid-template-columns: 1fr; /* Single column on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="Helmet Mockups SP24/truehg.svg" alt="TRUE Lacrosse Helmets" class="svg-title">
+        <div class="instructions">
+            <p><span class="instruction-step">1</span> Select your region, get your kit and helmet</p>
+            <p><span class="instruction-step">2</span> Wipe your helmet down with Rubbing Alcohol</p>
+            <p><span class="instruction-step">3</span> Match panels to helmet and apply</p>
+        </div>
+        <div class="search-container">
+            <select id="regionSelect" class="dropdown-select">
+                <option value="">Select a Region</option>
+                <!-- Options will be dynamically populated by JavaScript -->
+            </select>
+            <input type="text" id="searchInput" placeholder="or search by Region..." class="search-input">
+          
+        </div>
+        <div id="gallery" class="gallery">
+            <!-- Images will be loaded here by JavaScript -->
+        </div>
+        <div id="popup" class="image-popup">
+            <img src="" alt="Expanded Helmet Image">
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+         const images = [
+    "Ballers.png",
+    "Baltimore.png",
+    "Central_New_Jersey.png",
+    "Central.png",
+    "Chesapeake.png",
+    "Colorado.png",
+    "Dallas.png",
+    "Florida_State.png",
+    "Florida.png",
+    "Fredericksburg.png",
+    "Garden_State.png",
+    "Harco.png",
+    "Houston.png",
+    "HOWARD.png",
+    "Idaho.png",
+    "Illinois.png",
+    "Indiana.jpg",
+    "Indiana.png",
+    "Kzoo_State.png",
+    "Long_Island.png",
+    "Loudoun.png",
+    "Maryland_United.png",
+    "Michigan.png",
+    "Mid_Penn.png",
+    "Mid-Penn.png",
+    "Minnesota.png",
+    "National.png",
+    "NEW_JERSEY.png",
+"NJ Garden State.jpg",
+    "North_Carolina.png",
+    "NOVA.png",
+    "Ohio.png",
+    "Oregon.png",
+    "PA_Valley.png",
+    "Philadelphia.png",
+    "Pitt_Elite.png",
+    "Pitt_Grizzlies.png",
+    "Richmond_RVA.png",
+"Pittsburgh.jpg",
+    "Richmond.png",
+    "Roughriders.png",
+    "San_Diego.png",
+    "Texans.png",
+    "Upstate.png",
+    "Utah.png",
+    "Westchester.png",
+"Washington.jpg",
+    "Wisconsin.png"
+];
+            const gallery = document.getElementById('gallery');
+            const popup = document.getElementById('popup');
+            const popupImage = popup.querySelector('img');
+            const searchInput = document.getElementById('searchInput');
+            const regionSelect = document.getElementById('regionSelect');
+            const darkLogo = document.querySelector('.dark-logo');
+
+            images.forEach(image => {
+                const regionName = image.split('.')[0].replace(/_/g, ' ').replace(/%20/g, ' ');
+                const card = document.createElement('div');
+                card.className = 'card';
+                const imgElement = document.createElement('img');
+                imgElement.src = `Helmet Mockups SP24/${image}`;
+                imgElement.alt = regionName;
+                card.appendChild(imgElement);
+
+                const textDiv = document.createElement('div');
+                textDiv.className = 'card-text';
+                textDiv.textContent = regionName;
+                card.appendChild(textDiv);
+
+                gallery.appendChild(card);
+
+                const option = document.createElement('option');
+                option.value = regionName;
+                option.text = regionName;
+                regionSelect.appendChild(option);
+
+                card.onclick = function() {
+                    popupImage.src = imgElement.src;
+                    popup.style.display = 'flex';
+                    darkLogo.style.display = 'block'; // Show the dark logo on top of the overlay
+                };
+            });
+
+            popup.onclick = function() {
+                popup.style.display = 'none';
+                darkLogo.style.display = 'none'; // Hide the dark logo when popup closes
+            };
+
+            function filterImages(value) {
+                const searchValue = value.toLowerCase();
+                document.querySelectorAll('#gallery .card').forEach(card => {
+                    const matches = card.textContent.toLowerCase().includes(searchValue);
+                    card.style.display = matches ? 'block' : 'none';
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                filterImages(this.value);
+            });
+
+            regionSelect.addEventListener('change', function() {
+                filterImages(this.value);
+            });
+        });
+    </script>
+</body>
+</html>

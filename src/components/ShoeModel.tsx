@@ -31,10 +31,15 @@ interface ShoeModelProps {
   // Texture props
   upperTexture?: string | null;
   soleTexture?: string | null;
-  // Lace and logo colors (single color for both left and right)
+  // Lace colors (single color for both left and right)
   laceColor?: string;
-  logoColor?: string;
-  // Logo props
+  // Logo colors - now supporting 3 separate colors
+  logoColor1?: string; // Blue parts
+  logoColor2?: string; // Black parts
+  logoColor3?: string; // Red parts
+  // Circle logo in SVG texture
+  circleLogoUrl?: string | null;
+  // Logo props (Jibbit logos)
   logoUrl?: string | null;
   logoPosition?: [number, number, number];
   logoRotation?: [number, number, number];
@@ -133,8 +138,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
   soleTexture = null,
   // Lace and logo colors with defaults (single color for both left and right)
   laceColor = '#FFFFFF',
-  logoColor = '#FFFFFF',
-  // Logo props with defaults
+  logoColor1 = '#FFFFFF',
+  logoColor2 = '#FFFFFF',
+  logoColor3 = '#FFFFFF',
+  // Circle logo in SVG texture
+  circleLogoUrl = null,
+  // Logo props with defaults (Jibbit logos)
   logoUrl = null,
   logoPosition = [.8, 0.2, 0.5],
 
@@ -174,7 +183,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
               // Immediately apply the original material with proper settings
               // This ensures textures are visible from the start
               const material = originalMaterial.clone();
-              material.needsUpdate = true;
               child.material = material;
               currentMaterialsRef.current.set(child.name, material);
             }
@@ -669,6 +677,145 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     });
   }, []);
 
+  // Create logo texture from SVG with 3 colors and optional user logo
+  const createLogoTexture = useCallback((color1: string, color2: string, color3: string, originalTexture?: Texture | null, userLogoUrl?: string | null): Promise<Texture> => {
+    return new Promise((resolve, reject) => {
+      const cacheKey = `logo-${color1}-${color2}-${color3}-${userLogoUrl || 'no-logo'}`;
+
+      // Check cache first
+      if (textureCache.current.has(cacheKey)) {
+        resolve(textureCache.current.get(cacheKey)!);
+        return;
+      }
+
+      // Use exact original texture dimensions if available, otherwise default size
+      const originalWidth = originalTexture?.image?.width || 1024;
+      const originalHeight = originalTexture?.image?.height || 1024;
+      
+      console.log('Creating logo texture with original dimensions:', originalWidth, 'x', originalHeight, 'Colors:', color1, color2, color3, 'Logo URL:', userLogoUrl);
+      console.log('Original texture info:', originalTexture ? {
+        width: originalTexture.image?.width,
+        height: originalTexture.image?.height,
+        wrapS: originalTexture.wrapS,
+        wrapT: originalTexture.wrapT,
+        repeat: originalTexture.repeat,
+        offset: originalTexture.offset
+      } : 'No original texture');
+
+      const canvas = document.createElement('canvas');
+      canvas.width = originalWidth;
+      canvas.height = originalHeight;
+      const ctx = canvas.getContext('2d')!;
+
+      // Enable high-quality rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Fill with white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, originalWidth, originalHeight);
+
+      // Create circle content - either user logo or solid color
+      let circleContent = '';
+      if (userLogoUrl) {
+        // Create clipped image within the circle
+        circleContent = `
+  <!-- Define circular clip path for user logo -->
+  <defs>
+    <clipPath id="circleClip">
+      <circle cx="931.55" cy="599.53" r="49.96"/>
+    </clipPath>
+  </defs>
+  <!-- User logo image, clipped to circle -->
+  <image x="${931.55 - 49.96}" y="${599.53 - 49.96}" width="${49.96 * 2}" height="${49.96 * 2}" 
+         href="${userLogoUrl}" clip-path="url(#circleClip)" preserveAspectRatio="xMidYMid slice"/>
+  <!-- Circle border to ensure clean edge -->
+  <circle cx="931.55" cy="599.53" r="49.96" fill="none" stroke="${color1}" stroke-width="2" opacity="1"/>`;
+      } else {
+        // Fallback to solid color circle
+        circleContent = `
+  <!-- Circle, drawn last so it's in front of everything -->
+  <circle cx="931.55" cy="599.53" r="49.96" fill="${color1}" opacity="1"/>`;
+      }
+
+      // Create SVG string with the custom colors and circle content
+      const svgString = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${originalWidth}" height="${originalHeight}">
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+  <!-- Color2 path with stroke, drawn behind -->
+  <path d="M963.16,527.14l-.13-137.38c-5.1-38.17-55.76-37.96-61.03.04l-.17,134.83c-5.74,4.39-12.32,7.42-17.85,12.15-36.3,31.01-36.45,91.19-.51,122.54,5.66,4.94,12.27,8.36,18.37,12.63l.27,133.73c6.39,37.37,55.52,36.47,60.93-.85l-.08-134.87c56.69-28.83,57.21-114.2.2-142.83ZM951.13,660.93l-.26,139.74c-2.87,27.21-35.28,25.16-36.86-.89l-.15-137.85c-8.54-4.71-17.06-7.83-24.34-14.66-36.2-34-22.12-96.75,24.51-112.65l-.07-138.86c.65-26.62,33.99-29.64,36.91-1.84l.29,142.22c42.94,16.23,55.41,71.96,25.81,106.63-7.24,8.48-16.07,13.25-25.84,18.16Z"
+        fill="none" stroke="${color2}" stroke-width="100" opacity="1"/>
+  <!-- Color2 path with fill, drawn in front of stroke but behind color3 and circle -->
+  <path d="M963.16,527.14l-.13-137.38c-5.1-38.17-55.76-37.96-61.03.04l-.17,134.83c-5.74,4.39-12.32,7.42-17.85,12.15-36.3,31.01-36.45,91.19-.51,122.54,5.66,4.94,12.27,8.36,18.37,12.63l.27,133.73c6.39,37.37,55.52,36.47,60.93-.85l-.08-134.87c56.69-28.83,57.21-114.2.2-142.83ZM951.13,660.93l-.26,139.74c-2.87,27.21-35.28,25.16-36.86-.89l-.15-137.85c-8.54-4.71-17.06-7.83-24.34-14.66-36.2-34-22.12-96.75,24.51-112.65l-.07-138.86c.65-26.62,33.99-29.64,36.91-1.84l.29,142.22c42.94,16.23,55.41,71.96,25.81,106.63-7.24,8.48-16.07,13.25-25.84,18.16Z"
+        fill="${color2}" opacity="1"/>
+  <!-- Color3 path, drawn in front of color2 -->
+  <path d="M951.16,536.14l-.29-142.22c-2.93-27.8-36.27-24.78-36.91,1.84l.07,138.86c-46.63,15.9-60.71,78.65-24.51,112.65,7.28,6.83,15.8,9.94,24.34,14.66l.15,137.85c1.58,26.06,33.99,28.1,36.86.89l.26-139.74c9.77-4.91,18.6-9.68,25.84-18.16,29.6-34.67,17.13-90.4-25.81-106.63ZM931.55,649.49c-27.59,0-49.96-22.37-49.96-49.96s22.37-49.96,49.96-49.96,49.96,22.37,49.96,49.96-22.37,49.96-49.96,49.96Z"
+        fill="${color3}" opacity="1"/>
+  ${circleContent}
+</svg>
+`;
+
+      // Convert SVG to data URL and load as image
+      const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+      
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = () => {
+                  try {
+            // Clear canvas and redraw with white background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, originalWidth, originalHeight);
+            
+            // Draw the SVG image to fill the entire canvas
+            ctx.drawImage(img, 0, 0, originalWidth, originalHeight);
+          
+          // Create texture from canvas
+          const texture = new CanvasTexture(canvas);
+          
+          // Copy properties from original texture if available
+          if (originalTexture) {
+            texture.wrapS = originalTexture.wrapS;
+            texture.wrapT = originalTexture.wrapT;
+            texture.repeat.copy(originalTexture.repeat);
+            texture.offset.copy(originalTexture.offset);
+            texture.center.copy(originalTexture.center);
+            texture.rotation = originalTexture.rotation;
+            texture.generateMipmaps = originalTexture.generateMipmaps;
+            texture.minFilter = originalTexture.minFilter;
+            texture.magFilter = originalTexture.magFilter;
+            texture.anisotropy = originalTexture.anisotropy;
+          } else {
+            // Default texture settings
+            texture.generateMipmaps = true;
+            texture.minFilter = THREE.LinearMipmapLinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.anisotropy = 16;
+          }
+          
+          texture.needsUpdate = true;
+          
+                      console.log('Logo texture created successfully:', originalWidth + 'x' + originalHeight);
+          
+          // Cache the texture
+          textureCache.current.set(cacheKey, texture);
+          
+          resolve(texture);
+        } catch (error) {
+          console.error('Error creating logo texture:', error);
+          reject(error);
+        }
+      };
+
+      img.onerror = (error) => {
+        console.error('Error loading SVG image:', error);
+        reject(error);
+      };
+
+      img.src = svgDataUrl;
+    });
+  }, []);
+
   // Create lace material with color and texture overlay
   const createLaceTexture = useCallback((baseColor: string): Texture => {
     const cacheKey = `lace-${baseColor}`;
@@ -770,236 +917,45 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     currentMaterialsRef.current.clear();
   }, []);
 
-  // Update colors when they change with proper memory management
-  useEffect(() => {
+  // Helper function to update materials with proper cleanup
+  const updateMaterialsForParts = useCallback((
+    partFilter: (child: Mesh) => boolean,
+    updateFn: (child: Mesh, material: MeshStandardMaterial, originalMaterial?: MeshStandardMaterial) => void
+  ) => {
     if (!gltf) return;
 
-    // Don't cleanup materials immediately - let them finish rendering first
     const materialsToCleanup: MeshStandardMaterial[] = [];
 
     gltf.scene.traverse((child) => {
-      if (child instanceof Mesh && child.name) {
-        // Log ALL part names to see what's actually in the model
-        console.log('Model part found:', child.name);
-
-        const isBottomPart = child.name.includes('bottom') || child.name.includes('sole');
-        const isTopPart = child.name.includes('top') || child.name.includes('upper');
-
-        // VERY comprehensive lace and logo detection
-        const lowerName = child.name.toLowerCase();
-
-        // Lace detection - check for many possible variations
-        const isLeftLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
-          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
-        const isRightLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
-          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
-        const isLace = lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace') ||
-          lowerName.includes('cord') || lowerName.includes('tie') || lowerName.includes('eyelet');
-
-        // Logo detection - check for many possible variations  
-        const isLeftLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
-          (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
-        const isRightLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
-          (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
-        const isLogo = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
-          lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
-
-        // Debug logging for lace/logo parts
-        if (isLace || isLogo || isLeftLace || isRightLace || isLeftLogo || isRightLogo) {
-          console.log('🎯 FOUND LACE/LOGO PART:', child.name, {
-            isLace, isLogo, isLeftLace, isRightLace, isLeftLogo, isRightLogo
-          });
-        }
-
-        // Get the original material for this part
+      if (child instanceof Mesh && child.name && partFilter(child)) {
         const originalMaterial = originalMaterialsRef.current.get(child.name);
+        
+        // Get or create material for this part
+        const existingMaterial = currentMaterialsRef.current.get(child.name);
         let material: MeshStandardMaterial;
-
-        if (isBottomPart) {
-          // Get or create material for this part
-          const existingMaterial = currentMaterialsRef.current.get(child.name);
-          if (existingMaterial) {
-            material = existingMaterial;
-            // Store old material for cleanup later
-            if (child.material !== material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
-          } else {
-            material = new MeshStandardMaterial({
-              roughness: 0.9,
-              metalness: 0.05,
-            });
-            currentMaterialsRef.current.set(child.name, material);
-            // Store old material for cleanup later
-            if (child.material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
-          }
-
-          // Add inner shadow effect for sole parts
-          // This creates a darker shadow on the inside/top of the sole
-          material.transparent = true;
-          material.opacity = 0.95;
-
-          // Update material properties without disposing textures immediately
-          if (soleTexture) {
-            const newTexture = createTextureFromDataUrl(soleTexture);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.4; // Reduced for more vibrant appearance
-              material.metalness = 0.1; // Slight metalness for better reflections
-              material.color.setHex(0xffffff); // Ensure white base color for texture
-              material.needsUpdate = true;
-            }
-          } else if (soleHasGradient) {
-            const newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.8;
-              material.needsUpdate = true;
-            }
-          } else if (soleHasSplatter) {
-            const newTexture = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.95;
-              material.needsUpdate = true;
-            }
-          } else {
-            // Solid color mode with inner shadow
-            const shadowTexture = createInnerShadowTexture(bottomColor);
-            if (material.map !== shadowTexture) {
-              material.map = shadowTexture;
-              material.roughness = 0.9;
-              material.metalness = 0.05;
-              material.color.setHex(0xffffff); // White base to let texture show through
-              material.needsUpdate = true;
-            }
-          }
-
-          // Only assign material if it's different to prevent flashing
+        
+        if (existingMaterial) {
+          material = existingMaterial;
+          // Store old material for cleanup later
           if (child.material !== material) {
-            child.material = material;
-          }
-        } else if (isTopPart) {
-          // Always use the existing material if it exists, otherwise create new one
-          const existingMaterial = currentMaterialsRef.current.get(child.name);
-          if (existingMaterial) {
-            material = existingMaterial;
-          } else {
-            // Clone original material to preserve original textures and properties
-            material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
-            material.roughness = 1;
-            material.metalness = 0;
-            currentMaterialsRef.current.set(child.name, material);
-          }
-
-          // Store old material for cleanup later only if it's different
-          if (child.material && child.material !== material) {
             materialsToCleanup.push(child.material as MeshStandardMaterial);
           }
-
-          // Update material properties without disposing textures immediately
-          if (upperTexture) {
-            const newTexture = createTextureFromDataUrl(upperTexture);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.4; // Reduced for more vibrant appearance
-              material.metalness = 0.1; // Slight metalness for better reflections
-              material.color.setHex(0xffffff); // Ensure white base color for texture
-              material.needsUpdate = true;
-            }
-          } else if (upperHasGradient) {
-            const newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.8;
-              material.needsUpdate = true;
-            }
-          } else if (upperHasSplatter) {
-            const newTexture = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
-            if (material.map !== newTexture) {
-              material.map = newTexture;
-              material.roughness = 0.95;
-              material.needsUpdate = true;
-            }
-          } else {
-            // Solid color mode - ALWAYS preserve original texture and tint it
-            const originalTexture = originalMaterial?.map || null;
-            if (material.map !== originalTexture) {
-              material.map = originalTexture;
-              material.needsUpdate = true;
-            }
-            // Tint the original texture with the selected color
-            material.color.set(topColor);
-            // Ensure proper material properties for texture visibility
-            if (originalTexture) {
-              material.roughness = originalMaterial?.roughness ?? 0.8;
-              material.metalness = originalMaterial?.metalness ?? 0.1;
-            }
-          }
-
-          // Only assign material if it's different to prevent flashing
-          if (child.material !== material) {
-            child.material = material;
-          }
-        } else if (isLeftLace || isRightLace || isLace) {
-          // Handle ALL laces (left, right, or generic) - Apply color with lace texture overlay
-          console.log('Applying lace color and texture to:', child.name, 'Color:', laceColor);
-
-          // Get or create material for this part
-          const existingMaterial = currentMaterialsRef.current.get(child.name);
-          if (existingMaterial) {
-            material = existingMaterial;
-            // Store old material for cleanup later
-            if (child.material !== material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
-          } else {
-            material = new MeshStandardMaterial({
-              roughness: 0.9,
-              metalness: 0,
-            });
-            currentMaterialsRef.current.set(child.name, material);
-            // Store old material for cleanup later
-            if (child.material) {
-              materialsToCleanup.push(child.material as MeshStandardMaterial);
-            }
-          }
-
-          // Apply lace texture with color overlay
-          const laceTexture = createLaceTexture(laceColor);
-          if (material.map !== laceTexture) {
-            material.map = laceTexture;
-            material.color.setHex(0xffffff); // White base to let texture show through
-            material.needsUpdate = true;
-          }
-
-          // Only assign material if it's different to prevent flashing
-          if (child.material !== material) {
-            child.material = material;
-          }
-
-        } else if (isLeftLogo || isRightLogo || isLogo) {
-          // Handle ALL logos (left, right, or generic) - FORCE solid color only
-          console.log('Applying logo color to:', child.name, 'Color:', logoColor);
-
-          // Always create a completely fresh material to avoid any texture inheritance
-          material = new MeshStandardMaterial({
-            roughness: 0.3,
-            metalness: 0.2,
-            color: logoColor,
-            map: null, // Force no texture
-          });
-
-          // Store old material for cleanup
+        } else {
+          // Clone original material to preserve original textures and properties
+          material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
+          currentMaterialsRef.current.set(child.name, material);
+          // Store old material for cleanup later
           if (child.material) {
             materialsToCleanup.push(child.material as MeshStandardMaterial);
           }
+        }
 
-          // Always assign the new material
+        // Apply the specific update function
+        updateFn(child, material, originalMaterial);
+
+        // Only assign material if it's different to prevent flashing
+        if (child.material !== material) {
           child.material = material;
-          currentMaterialsRef.current.set(child.name, material);
         }
       }
     });
@@ -1027,12 +983,176 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         clearTimeout(timeoutId);
       };
     }
+  }, [gltf]);
 
-    // Cleanup function for this effect
-    return () => {
-      // Don't cleanup here as materials are still in use
+  // Update sole/bottom parts only when sole-related props change
+  useEffect(() => {
+    const soleFilter = (child: Mesh) => 
+      child.name.includes('bottom') || child.name.includes('sole');
+
+    const soleUpdate = (child: Mesh, material: MeshStandardMaterial) => {
+      console.log('Updating sole part:', child.name);
+      
+      // Add inner shadow effect for sole parts
+      material.transparent = true;
+      material.opacity = 0.95;
+      material.roughness = 0.9;
+      material.metalness = 0.05;
+
+      if (soleTexture) {
+        const newTexture = createTextureFromDataUrl(soleTexture);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.4;
+          material.metalness = 0.1;
+          material.color.setHex(0xffffff);
+        }
+      } else if (soleHasGradient) {
+        const newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.8;
+        }
+      } else if (soleHasSplatter) {
+        const newTexture = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.95;
+        }
+      } else {
+        const shadowTexture = createInnerShadowTexture(bottomColor);
+        if (material.map !== shadowTexture) {
+          material.map = shadowTexture;
+          material.roughness = 0.9;
+          material.metalness = 0.05;
+          material.color.setHex(0xffffff);
+        }
+      }
     };
-  }, [gltf, bottomColor, topColor, upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor, upperPaintDensity, solePaintDensity, upperHasGradient, soleHasGradient, upperGradientColor1, upperGradientColor2, soleGradientColor1, soleGradientColor2, upperTexture, soleTexture, laceColor, logoColor, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createLaceTexture, cleanupMaterials]);
+
+    updateMaterialsForParts(soleFilter, soleUpdate);
+  }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
+
+  // Update upper/top parts only when upper-related props change
+  useEffect(() => {
+    const upperFilter = (child: Mesh) => 
+      child.name.includes('top') || child.name.includes('upper');
+
+    const upperUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial?: MeshStandardMaterial) => {
+      console.log('Updating upper part:', child.name);
+      
+      material.roughness = 1;
+      material.metalness = 0;
+
+      if (upperTexture) {
+        const newTexture = createTextureFromDataUrl(upperTexture);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.4;
+          material.metalness = 0.1;
+          material.color.setHex(0xffffff);
+        }
+      } else if (upperHasGradient) {
+        const newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.8;
+        }
+      } else if (upperHasSplatter) {
+        const newTexture = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
+          material.roughness = 0.95;
+        }
+      } else {
+        // Solid color mode - preserve original texture and tint it
+        const originalTexture = originalMaterial?.map || null;
+        if (material.map !== originalTexture) {
+          material.map = originalTexture;
+        }
+        material.color.set(topColor);
+        if (originalTexture) {
+          material.roughness = originalMaterial?.roughness ?? 0.8;
+          material.metalness = originalMaterial?.metalness ?? 0.1;
+        }
+      }
+    };
+
+    updateMaterialsForParts(upperFilter, upperUpdate);
+  }, [gltf, topColor, upperHasSplatter, upperSplatterColor, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
+
+  // Update lace parts only when lace-related props change
+  useEffect(() => {
+    const laceFilter = (child: Mesh) => {
+      const lowerName = child.name.toLowerCase();
+      const isLeftLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+        (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+      const isRightLace = (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('cord') || lowerName.includes('tie')) &&
+        (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+      const isLace = lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace') ||
+        lowerName.includes('cord') || lowerName.includes('tie') || lowerName.includes('eyelet');
+      
+      return isLeftLace || isRightLace || isLace;
+    };
+
+    const laceUpdate = (child: Mesh, material: MeshStandardMaterial) => {
+      console.log('Updating lace part:', child.name, 'Color:', laceColor);
+      
+      material.roughness = 0.9;
+      material.metalness = 0;
+
+      const laceTexture = createLaceTexture(laceColor);
+      if (material.map !== laceTexture) {
+        material.map = laceTexture;
+        material.color.setHex(0xffffff);
+      }
+    };
+
+    updateMaterialsForParts(laceFilter, laceUpdate);
+  }, [gltf, laceColor, createLaceTexture, updateMaterialsForParts]);
+
+  // Update logo parts only when logo-related props change
+  useEffect(() => {
+    const logoFilter = (child: Mesh) => {
+      const lowerName = child.name.toLowerCase();
+      const isLeftLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+        (lowerName.includes('left') || lowerName.includes('l_') || lowerName.includes('_l') || lowerName.includes('001'));
+      const isRightLogo = (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') || lowerName.includes('swoosh') || lowerName.includes('mark')) &&
+        (lowerName.includes('right') || lowerName.includes('r_') || lowerName.includes('_r') || lowerName.includes('002'));
+      const isLogo = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
+        lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
+      
+      return isLeftLogo || isRightLogo || isLogo;
+    };
+
+    const logoUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial?: MeshStandardMaterial) => {
+      console.log('Updating logo part:', child.name, 'Colors:', logoColor1, logoColor2, logoColor3);
+      
+      material.roughness = 0.4;
+      material.metalness = 0.1;
+
+      // Apply logo texture with the 3 colors and optional user logo (async)
+      const originalTexture = originalMaterial?.map || null;
+      createLogoTexture(logoColor1, logoColor2, logoColor3, originalTexture, circleLogoUrl)
+        .then((logoTexture) => {
+          if (material.map !== logoTexture) {
+            material.map = logoTexture;
+            material.color.setHex(0xffffff);
+            material.transparent = true;
+            material.opacity = 1.0;
+            material.needsUpdate = true;
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to create logo texture:', error);
+          material.map = null;
+          material.color.set(logoColor1);
+          material.needsUpdate = true;
+        });
+    };
+
+    updateMaterialsForParts(logoFilter, logoUpdate);
+  }, [gltf, logoColor1, logoColor2, logoColor3, circleLogoUrl, createLogoTexture, updateMaterialsForParts]);
 
   // Animation frame loop
   useFrame((_state, delta) => {

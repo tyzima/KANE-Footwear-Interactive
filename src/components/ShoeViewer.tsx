@@ -96,7 +96,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
 
   // Lace and logo colors (single color for both left and right)
   const [laceColor, setLaceColor] = useState('#FFFFFF');
-  const [logoColor, setLogoColor] = useState('#FFFFFF');
+  // Logo colors - now supporting 3 separate colors  
+  const [logoColor1, setLogoColor1] = useState('#2048FF'); // Blue parts (Royal Blue)
+  const [logoColor2, setLogoColor2] = useState('#000000'); // Black parts  
+  const [logoColor3, setLogoColor3] = useState('#C01030'); // Red parts (Crimson)
 
   // Gradient state
   const [upperHasGradient, setUpperHasGradient] = useState(false);
@@ -110,11 +113,14 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [upperTexture, setUpperTexture] = useState<string | null>(null);
   const [soleTexture, setSoleTexture] = useState<string | null>(null);
 
-  // Logo state
+  // Logo state (Jibbit logos)
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoPlacementMode, setLogoPlacementMode] = useState(false);
   const [logoPosition, setLogoPosition] = useState<[number, number, number]>([0.668, 0.159, -0.490]);
   const [logoRotation, setLogoRotation] = useState<[number, number, number]>([1.171, -4.300, -1.100]);
+
+  // Circle logo state (for SVG texture)
+  const [circleLogoUrl, setCircleLogoUrl] = useState<string | null>(null);
 
   // Second logo state
   const [logo2Position, setLogo2Position] = useState<[number, number, number]>([-0.661, 0.163, -0.488]);
@@ -167,7 +173,9 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         color: laceColor
       },
       logo: {
-        color: logoColor,
+        color1: logoColor1,
+        color2: logoColor2,
+        color3: logoColor3,
         url: logoUrl,
         position: logoPosition,
         rotation: logoRotation
@@ -181,7 +189,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
       onColorConfigurationChange(getColorConfiguration());
     }
   }, [
-    topColor, bottomColor, laceColor, logoColor,
+    topColor, bottomColor, laceColor, logoColor1, logoColor2, logoColor3,
     upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor,
     upperPaintDensity, solePaintDensity,
     upperHasGradient, soleHasGradient,
@@ -446,7 +454,11 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               soleTexture={soleTexture}
               // Lace and logo colors (single color for both left and right)
               laceColor={laceColor}
-              logoColor={logoColor}
+              logoColor1={logoColor1}
+              logoColor2={logoColor2}
+              logoColor3={logoColor3}
+              // Circle logo prop
+              circleLogoUrl={circleLogoUrl}
               // Logo props
               logoUrl={logoUrl}
               logoPosition={logoPosition}
@@ -549,11 +561,16 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           onSolePaintDensityChange={setSolePaintDensity}
           activeTab={activeColorTab}
           onTabChange={setActiveColorTab}
-          // Lace and logo colors (single color for both left and right)
+          // Lace and logo colors
           laceColor={laceColor}
-          logoColor={logoColor}
           onLaceColorChange={setLaceColor}
-          onLogoColorChange={setLogoColor}
+          // Logo colors - now supporting 3 separate colors
+          logoColor1={logoColor1}
+          logoColor2={logoColor2}
+          logoColor3={logoColor3}
+          onLogoColor1Change={setLogoColor1}
+          onLogoColor2Change={setLogoColor2}
+          onLogoColor3Change={setLogoColor3}
           // Gradient props
           upperHasGradient={upperHasGradient}
           soleHasGradient={soleHasGradient}
@@ -575,6 +592,9 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           // Logo props
           logoUrl={logoUrl}
           onLogoChange={setLogoUrl}
+          // Circle logo props
+          circleLogoUrl={circleLogoUrl}
+          onCircleLogoChange={setCircleLogoUrl}
           // Dark mode
           isDarkMode={isDarkMode}
           // Height callback for AIChat positioning
