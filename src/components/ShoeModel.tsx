@@ -373,6 +373,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
+    // Create a neutral background instead of transparent to prevent flashing
+    ctx.fillStyle = '#808080'; // Medium gray as placeholder
+    ctx.fillRect(0, 0, 2048, 2048);
+
     // Create texture immediately with placeholder
     const texture = new CanvasTexture(canvas);
 
@@ -431,6 +435,14 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       const sharpenedImageData = new ImageData(sharpened, width, height);
       ctx.putImageData(sharpenedImageData, 0, 0);
 
+      texture.needsUpdate = true;
+    };
+
+    img.onerror = () => {
+      console.error('Failed to load AI texture image');
+      // Create a fallback pattern instead of leaving it blank
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, 2048, 2048);
       texture.needsUpdate = true;
     };
 
@@ -936,7 +948,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         
         if (existingMaterial) {
           material = existingMaterial;
-          // Store old material for cleanup later
+          // Store old material for cleanup later if it's different
           if (child.material !== material) {
             materialsToCleanup.push(child.material as MeshStandardMaterial);
           }
@@ -950,6 +962,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           }
         }
 
+        // Store the current texture before applying updates to prevent flashing
+        const previousTexture = material.map;
+        
         // Apply the specific update function
         updateFn(child, material, originalMaterial);
 
@@ -957,10 +972,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         if (child.material !== material) {
           child.material = material;
         }
+        
+        // Force material update to ensure texture is properly applied
+        material.needsUpdate = true;
       }
     });
 
-    // Schedule cleanup of old materials after a delay to prevent flashing
+    // Schedule cleanup of old materials after a longer delay to prevent flashing
     if (materialsToCleanup.length > 0) {
       const timeoutId = setTimeout(() => {
         materialsToCleanup.forEach((material) => {
@@ -977,7 +995,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             material.dispose();
           }
         });
-      }, 100); // Small delay to ensure rendering is complete
+      }, 200); // Increased delay to ensure rendering is complete
 
       return () => {
         clearTimeout(timeoutId);
@@ -999,8 +1017,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       material.roughness = 0.9;
       material.metalness = 0.05;
 
+      // Store current texture to prevent flashing
+      const currentTexture = material.map;
+      let newTexture = currentTexture;
+
       if (soleTexture) {
-        const newTexture = createTextureFromDataUrl(soleTexture);
+        newTexture = createTextureFromDataUrl(soleTexture);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.4;
@@ -1008,25 +1030,31 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           material.color.setHex(0xffffff);
         }
       } else if (soleHasGradient) {
-        const newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
+        newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.8;
         }
       } else if (soleHasSplatter) {
-        const newTexture = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
+        newTexture = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.95;
         }
       } else {
-        const shadowTexture = createInnerShadowTexture(bottomColor);
-        if (material.map !== shadowTexture) {
-          material.map = shadowTexture;
+        // Solid color mode with shadow texture
+        newTexture = createInnerShadowTexture(bottomColor);
+        if (material.map !== newTexture) {
+          material.map = newTexture;
           material.roughness = 0.9;
           material.metalness = 0.05;
           material.color.setHex(0xffffff);
         }
+      }
+      
+      // Ensure the material updates properly
+      if (newTexture !== currentTexture) {
+        material.needsUpdate = true;
       }
     };
 
@@ -1044,8 +1072,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       material.roughness = 1;
       material.metalness = 0;
 
+      // Store current texture to prevent flashing
+      const currentTexture = material.map;
+      let newTexture = currentTexture;
+
       if (upperTexture) {
-        const newTexture = createTextureFromDataUrl(upperTexture);
+        newTexture = createTextureFromDataUrl(upperTexture);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.4;
@@ -1053,13 +1085,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           material.color.setHex(0xffffff);
         }
       } else if (upperHasGradient) {
-        const newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
+        newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.8;
         }
       } else if (upperHasSplatter) {
-        const newTexture = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
+        newTexture = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
         if (material.map !== newTexture) {
           material.map = newTexture;
           material.roughness = 0.95;
@@ -1067,6 +1099,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
       } else {
         // Solid color mode - preserve original texture and tint it
         const originalTexture = originalMaterial?.map || null;
+        newTexture = originalTexture;
         if (material.map !== originalTexture) {
           material.map = originalTexture;
         }
@@ -1075,6 +1108,11 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
           material.roughness = originalMaterial?.roughness ?? 0.8;
           material.metalness = originalMaterial?.metalness ?? 0.1;
         }
+      }
+      
+      // Ensure the material updates properly
+      if (newTexture !== currentTexture) {
+        material.needsUpdate = true;
       }
     };
 

@@ -223,11 +223,29 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
   const getCurrentColorChanger = () => {
     switch (activeTab) {
-      case 'upper': return onTopColorChange;
-      case 'sole': return onBottomColorChange;
+      case 'upper': return (color: string) => {
+        onTopColorChange(color);
+        // Clear AI texture when manually changing color
+        if (upperTexture) {
+          onUpperTextureChange(null);
+        }
+      };
+      case 'sole': return (color: string) => {
+        onBottomColorChange(color);
+        // Clear AI texture when manually changing color
+        if (soleTexture) {
+          onSoleTextureChange(null);
+        }
+      };
       case 'laces': return onLaceColorChange;
       case 'logos': return onLogoColor1Change; // For logos, we'll show a special interface
-      default: return onTopColorChange;
+      default: return (color: string) => {
+        onTopColorChange(color);
+        // Clear AI texture when manually changing color
+        if (upperTexture) {
+          onUpperTextureChange(null);
+        }
+      };
     }
   };
 
@@ -563,6 +581,12 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       // Clear any existing textures when applying school colors
       onUpperTextureChange(null);
       onSoleTextureChange(null);
+      
+      // Also disable gradients and splatters to ensure clean solid colors
+      onUpperGradientToggle(false);
+      onSoleGradientToggle(false);
+      onUpperSplatterToggle(false);
+      onSoleSplatterToggle(false);
     }
   };
 
