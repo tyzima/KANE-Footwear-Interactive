@@ -1888,7 +1888,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   ) : (
                     /* Mobile Standard: Grid Layout */
                     <>
-               <div className="flex overflow-x-auto gap-1.5 max-w-[340px] mx-auto px-1 py-2 scrollbar-thin scrollbar-thumb-gray-400">
+               <div className="flex overflow-x-auto gap-1 max-w-[260px] mx-auto px-1 py-2 scrollbar-thin scrollbar-thumb-gray-400">
   {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
     <div key={c.value} className="relative group flex-shrink-0">
       <Button

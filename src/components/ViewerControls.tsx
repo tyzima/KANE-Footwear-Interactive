@@ -126,9 +126,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
 
         {/* Hotspot Controls */}
         <div className="flex flex-col items-center gap-2">
-          <span className={`text-xs font-medium text-center transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>
-            View
-          </span>
+        
           <HotspotControls
             onHotspotSelect={onHotspotSelect}
             activeHotspot={activeHotspot}

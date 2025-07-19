@@ -265,7 +265,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 }}
               />
               <div>
-                <p className={`font-medium text-xs transition-all duration-300 ${
+                <p className={`font-medium text-xs truncate max-w-[40px] transition-all duration-300 ${
                   isDarkMode ? 'text-white/90' : 'text-foreground text-xs'
                 }`}>{selectedSchool["School Name"]}</p>
                 {selectedSchool.Conference && (
@@ -309,7 +309,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 }`}
               >
                 <Palette className="w-3 h-3" />
-                Colors
+            <span className="hidden md:block">    Colors</span>
               </Button>
               
               <Button
@@ -323,7 +323,7 @@ export const SchoolSelector: React.FC<SchoolSelectorProps> = ({
                 }`}
               >
                 <Upload className="w-3 h-3" />
-                Logo
+                <span className="hidden md:block">Logo</span>
               </Button>
               
               <Button

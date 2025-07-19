@@ -496,7 +496,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         )}
 
         {/* ViewerControls - Right Side Under Share Button */}
-        <div className="absolute top-12 md:top-32  right-8 z-10 hidden md:block">
+        <div className="absolute top-12 md:top-32  right-8 hidden md:block">
           <ViewerControls
             autoRotate={autoRotate}
             onAutoRotateChange={setAutoRotate}
@@ -513,7 +513,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         </div>
 
         {/* ViewerControls - Mobile: Right Side Lower */}
-        <div className="absolute top-32 right-8 z-10 md:hidden">
+        <div className="absolute top-32 right-8 z-9990 md:hidden">
           <ViewerControls
             autoRotate={autoRotate}
             onAutoRotateChange={setAutoRotate}
