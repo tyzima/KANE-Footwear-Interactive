@@ -481,13 +481,13 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 89px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 159px)' }}>
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Stepper - Simplified titles for less text */}
             <div className="flex items-center justify-between mb-4">
               {steps.map((step, index) => (
                 <React.Fragment key={index}>
-                  <div className="flex flex-col items-center">
+                  <div className="flex  flex-col items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${isStepComplete(index)
                         ? 'bg-green-500 text-white'
                         : currentStep === index
@@ -512,12 +512,9 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
             {/* Step Content */}
             <form onSubmit={(e) => { if (currentStep === steps.length - 1) handleSubmit(e); else e.preventDefault(); }} className="space-y-6">
               {currentStep === 0 && (
-                <div className="space-y-6">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">Size & Quantity</h3>
-                    <div className="text-sm text-gray-500">
-                      Min. 8 pairs
-                    </div>
+                 
                   </div>
 
                   {/* Enhanced Tab Bar with Sliding Indicator */}
@@ -568,16 +565,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                             }`}>
                             <span className="font-medium text-sm">{size}</span>
                             <div className="flex items-center gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => updateQuantity(size, Math.max(0, quantity - 1))}
-                                disabled={quantity === 0}
-                              >
-                                <Minus className="w-4 h-4" />
-                              </Button>
+                          
                               <input
                                 type="number"
                                 value={quantity}
