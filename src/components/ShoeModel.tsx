@@ -578,12 +578,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     ctx.fillRect(0, 0, 1024, 1024);
 
     // Calculate number of splatters based on density
-    const baseSplatters = isUpper ? 2000 : 1000;
+    const baseSplatters = isUpper ? 1000 : 1000;
     const numSplatters = Math.floor((baseSplatters * paintDensity) / 10);
 
     // Adjusted for higher resolution canvas
-    const minRadius = isUpper ? 0.05 : 0.1; // Even smaller minimum radius for tiny dots
-    const maxRadius = isUpper ? 1.0 : 1.5; // Reduced maximum size further
+    const minRadius = isUpper ? 0.4 : 0.1; // Even smaller minimum radius for tiny dots
+    const maxRadius = isUpper ? 2.0 : 1.5; // Reduced maximum size further
     ctx.globalCompositeOperation = 'source-over';
 
     for (let i = 0; i < numSplatters; i++) {

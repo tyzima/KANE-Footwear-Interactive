@@ -732,7 +732,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   <div>
                     <p className={`text-sm mb-3 transition-all duration-300 ${isDarkMode ? 'text-white/60' : 'text-muted-foreground'}`}>Splatter Color:</p>
                     <div className="flex gap-2 flex-wrap">
-                      {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                      {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                         <Button
                           key={c.value}
                           variant="outline"
@@ -1180,7 +1180,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                             <div>
 
                               <div className="flex gap-1.5 pb-20 flex-wrap">
-                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                   <Button
                                     key={c.value}
                                     variant="outline"
@@ -1267,7 +1267,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     </span>
                   </div>
                   <div className="grid grid-cols-6 gap-1.5">
-                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                       <Button
                         key={c.value}
                         variant="outline"
@@ -1306,7 +1306,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     </span>
                   </div>
                   <div className="grid grid-cols-6 gap-1.5">
-                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                       <Button
                         key={c.value}
                         variant="outline"
@@ -1434,7 +1434,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
-                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                   <Button
                     key={c.value}
                     variant="outline"
@@ -1494,7 +1494,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
-                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                   <Button
                     key={c.value}
                     variant="outline"
@@ -1554,7 +1554,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
-                {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                   <Button
                     key={c.value}
                     variant="outline"
@@ -1724,7 +1724,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-4 gap-1.5">
-                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                       <Button
                                         key={c.value}
                                         variant="outline"
@@ -1763,7 +1763,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-4 gap-1.5">
-                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                       <Button
                                         key={c.value}
                                         variant="outline"
@@ -1804,7 +1804,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-4 gap-1.5">
-                                    {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                       <Button
                                         key={c.value}
                                         variant="outline"
@@ -1889,7 +1889,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                     /* Mobile Standard: Grid Layout */
                     <>
                   <div className="grid grid-cols-6 gap-1.5 max-w-[200px] mx-auto">
-                    {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                    {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                       <div key={c.value} className="relative group">
                         <Button
                           variant="outline"
@@ -2084,7 +2084,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                               </span>
                             </div>
                             <div className="flex gap-1.5 justify-center flex-wrap max-w-xs mx-auto">
-                              {NATIONAL_PARK_COLORS.slice(0, 12).map(c => (
+                              {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                 <Button
                                   key={c.value}
                                   variant="outline"
@@ -2112,7 +2112,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                                 </span>
                               </div>
                               <div className="flex gap-1 justify-center flex-wrap">
-                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                   <Button
                                     key={c.value}
                                     variant="outline"
@@ -2138,7 +2138,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                                 </span>
                               </div>
                               <div className="flex gap-1 justify-center flex-wrap">
-                                {NATIONAL_PARK_COLORS.slice(0, 8).map(c => (
+                                {NATIONAL_PARK_COLORS.slice(0, 30).map(c => (
                                   <Button
                                     key={c.value}
                                     variant="outline"
