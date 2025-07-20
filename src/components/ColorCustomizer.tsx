@@ -995,7 +995,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 5 }}
                 transition={{ duration: 0.2 }}
-                className={`flex rounded-3xl p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-gray-100 border border-gray-200'}`}
+                className={`flex rounded-3xl p-1 relative backdrop-blur-sm transition-all duration-300 ${isDarkMode ? 'bg-black/40 borde' : 'bg-gray-100 border border-gray-200'}`}
               >
                 {/* Dynamic background for active tab */}
                 <div
@@ -1073,16 +1073,16 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
         </div>
 
         {/* Main Control Card */}
-        <div className={`backdrop-blur-sm max-w-6xl mx-auto min-h-[80px] rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-gray-200'}`}>
+        <div className={`backdrop-blur-sm max-w-6xl mx-auto min-h-[80px] rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/40 ' : 'bg-white/95'}`}>
           {/* Main Control Bar */}
           <div className="px-4 py-3">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
 
               {/* Left: Title */}
-              <div className="flex items-center hidden lg:block">
+              <div className=" items-center hidden lg:block">
                 <div className="flex items-center gap-2">
                   <h2 className={`text-base sm:text-lg font-bold transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
-                    Customize
+                    
                   </h2>
                 </div>
               </div>
@@ -1636,8 +1636,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   <div
                     className="relative flex-1 mx-2 overflow-hidden"
                     style={{
-                      maskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)',
-                      WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 16px, black calc(100% - 16px), transparent 100%)'
+                      maskImage: 'linear-gradient(to right, transparent 0px, black 46px, black calc(100% - 66px), transparent 100%)',
+                      WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 46px, black calc(100% - 66px), transparent 100%)'
                     }}
                   >
                     {/* Scrollable Color Container */}

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ShoeViewer } from '@/components/ShoeViewer';
 import { ShareButton } from '@/components/ShareButton';
 import { BuyButton } from '@/components/BuyButton';
+import FeatureIconsBar from '@/components/feature-icons-bar';
 
 const Index = () => {
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
@@ -82,20 +83,15 @@ const Index = () => {
         A transformative, sustainably designed injection molded shoe for active recovery.
       </p>
       <div className={`flex flex-wrap gap-3 mt-2 transition-colors duration-300`}>
-  {features.map((feature, index) => (
-    <div key={index} className="relative group cursor-help">
-      {feature.icon}
-      <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-white text-black border border-white/20' : 'bg-gray-900 text-white'}`}>
-        {feature.text}
-        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-white/90' : 'border-t-gray-900'}`}></div>
-      </div>
-    </div>
-  ))}
+     
 </div>
-      <p className={`text-lg font-bold mt-2 border border-gray/20 w-fit pr-3 rounded-full px-2 py-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
-        $75
+
+      <p className={`text-lg font-bold mt-2  border border-gray-500/20 w-12 h-12 flex items-center justify-center pr-3 rounded-full px-2 py-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
+        <span className={`text-xs relative top-[-2px] mr-.5 ${isDarkMode ? 'text-white/80' : 'text-foreground/70'}`}>$</span>75
       </p>
+  
     </div>
+    <FeatureIconsBar isDarkMode={isDarkMode}/>
   </div>
 </div>
 
