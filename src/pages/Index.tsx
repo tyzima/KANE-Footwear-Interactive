@@ -16,7 +16,7 @@ const Index = () => {
     {
       text: 'Sustainable',
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="gray" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
           <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
         </svg>
@@ -25,7 +25,7 @@ const Index = () => {
     {
       text: 'Washable',
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="rotate-180" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="rotate-180" width="16" height="16" viewBox="0 0 16 16" fill="gray">
           <path d="M8 2a5.5 5.5 0 0 0-5.5 5.5c0 5 5.5 8 5.5 8s5.5-3 5.5-8A5.5 5.5 0 0 0 8 2z"/>
         </svg>
       )
@@ -33,7 +33,7 @@ const Index = () => {
     {
       text: 'Quick drying',
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="20" viewBox="0 0 24 24" fill="none" stroke="gray" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 6c5 0 9-4 18 0"/>
         <path d="M3 12c5 0 8-3 14 0"/>
         <path d="M3 18c4 0 7-2 12 0"/>
@@ -43,7 +43,7 @@ const Index = () => {
     {
       text: 'Ultra durable',
       icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="gray" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
       )
@@ -85,9 +85,9 @@ const Index = () => {
   {features.map((feature, index) => (
     <div key={index} className="relative group cursor-help">
       {feature.icon}
-      <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-black/40 text-white border border-white/20' : 'bg-gray-900 text-white'}`}>
+      <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-2 py-1 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 whitespace-nowrap ${isDarkMode ? 'bg-white text-black border border-white/20' : 'bg-gray-900 text-white'}`}>
         {feature.text}
-        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-black/90' : 'border-t-gray-900'}`}></div>
+        <div className={`absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent ${isDarkMode ? 'border-t-white/90' : 'border-t-gray-900'}`}></div>
       </div>
     </div>
   ))}
