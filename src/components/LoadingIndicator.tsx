@@ -6,7 +6,7 @@ export const LoadingIndicator: React.FC = () => {
     <div className="absolute inset-0 flex items-center justify-center bg-viewer-bg/80 backdrop-blur-sm z-10">
       <div className="text-center">
         {/* Main Loading Animation */}
-        <div className="relative mb-6 flex justify-center">
+        <div className="relative mb-6 scale-50 flex justify-center">
           <motion.svg
             width="128"
             height="104"
