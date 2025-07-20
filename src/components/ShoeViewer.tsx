@@ -399,7 +399,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   };
 
   return (
-    <div className={`relative w-full h-full bg-gradient-viewer rounded-lg overflow-hidden ${className}`}>
+    <div className={`relative w-full h-full bg-gradient-viewer overflow-hidden ${className}`}>
       <ErrorBoundary onError={handleModelError}>
         <Canvas
           ref={canvasRef}
@@ -509,7 +509,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         {/* Error Display */}
         {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="text-center p-6 bg-card rounded-lg border border-destructive">
+            <div className="text-center p-6 bg-card border border-destructive">
               <h3 className="text-lg font-semibold text-destructive mb-2">
                 Error Loading Model
               </h3>
