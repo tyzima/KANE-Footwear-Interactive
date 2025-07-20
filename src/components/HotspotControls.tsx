@@ -103,13 +103,13 @@ export const HotspotControls: React.FC<HotspotControlsProps> = ({
             onClick={() => handleHotspotClick(hotspot)}
             disabled={disabled}
             className={`
-              w-16 h-16 p-1 aspect-square
+              w-16 h-16 p-1 rounded-2xl aspect-square
               transition-all duration-300
               ${isActive
-                ? 'bg-white text-primary-foreground shadow-md'
+                ? 'bg-gray-200/20 text-primary-foreground shadow-inner  border border-primary/10 hover:bg-transparent hover:border-white/20'
                 : isDarkMode
-                  ? 'border-white/30 bg-transparent text-white/80 hover:bg-white/90 hover:text-white hover:shadow-sm'
-                  : 'border-border text-gray-600 hover:bg-secondary hover:shadow-sm'
+                  ? 'border-white/30 bg-transparent text-white/80 hover:bg-white/20 hover:text-white hover:shadow-sm'
+                  : 'border-border text-gray-600 hover:bg-secondary/20 hover:shadow-sm'
               }
               ${isCustom ? 'border-dashed' : ''}
               ${disabled && isDarkMode ? 'disabled:text-white/30 disabled:border-white/10' : ''}

@@ -1197,7 +1197,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                               </div>
                             </div>
 
-                            <div className={`pt-3 border-t transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`}>
+                            <div className={`pt-3 border-t hidden transition-all duration-300 ${isDarkMode ? 'border-white/20' : 'border-gray-200'}`}>
                               <div className="flex items-center justify-between mb-2">
                                 <span className={`text-xs font-medium transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                                   Intensity
@@ -1210,8 +1210,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                               <Slider
                                 value={[getCurrentPaintDensity()]}
                                 onValueChange={v => getCurrentPaintDensityChanger()(v[0])}
-                                min={500}
-                                max={1000}
+                                min={1000}
+                                max={2000}
                                 step={100}
                                 className="w-full"
                               />

@@ -107,7 +107,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
         </Button>
       )}
       <div 
-        className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 space-y-3 transition-all duration-300 ease-in-out w-20 
+        className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 pt-2 space-y-3 transition-all duration-300 ease-in-out w-20 
           ${isDarkMode ? 'bg-black/40 border border-white/20' : 'bg-white/95 border border-border'} 
           ${isMobile ? 'fixed top-1/2 right-4 -translate-y-1/2 z-50' : ''} 
           ${isMobile ? (isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none') : ''}`}
