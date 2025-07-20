@@ -7,6 +7,7 @@ import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Textu
 import { useGLTF, useBounds } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { JibbitLogo } from './JibbitLogo';
+import gsap from 'gsap';
 
 interface ShoeModelProps {
   onLoad?: () => void;
@@ -1274,11 +1275,20 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         const originalEmissive = event.object.material.emissive?.clone();
         event.object.material.emissive?.setHex(0x444444);
 
-        setTimeout(() => {
-          if (originalEmissive && event.object.material.emissive) {
-            event.object.material.emissive.copy(originalEmissive);
+        gsap.to(event.object.material.emissive, {
+          r: 0.17,
+          g: 0.17,
+          b: 0.17,
+          duration: 0.2,
+          onComplete: () => {
+            gsap.to(event.object.material.emissive, {
+              r: originalEmissive.r,
+              g: originalEmissive.g,
+              b: originalEmissive.b,
+              duration: 0.5
+            });
           }
-        }, 200);
+        });
       }
 
       // Fit the clicked part in view
@@ -1286,6 +1296,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         bounds.refresh(event.object).fit();
       }
     }
+
+
   };
 
   const handlePointerOver = (event: any) => {
@@ -1293,7 +1305,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Highlight hovered part
     if (event.object && event.object.material) {
-      event.object.material.emissive?.setHex(0x222222);
+      const originalEmissive = event.object.material.emissive?.clone();
+      event.object.material.emissive?.setHex(0x111111);
     }
   };
 
