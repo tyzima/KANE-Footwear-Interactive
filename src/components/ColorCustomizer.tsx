@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { Palette, Droplets, ChevronDown, ChevronUp, School, Upload, Paintbrush, ChevronLeft, ChevronRight, MessageCircle, X, Send, Bot, Settings } from 'lucide-react';
+import { Palette, Droplets, ChevronDown, ChevronUp, School, Upload, Paintbrush, ChevronLeft, ChevronRight, MessageCircle, X, Send, Bot, Settings, Copy } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { LogoUploader } from './LogoUploader';
 import { SchoolSelector } from './SchoolSelector';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 interface ColorCustomizerProps {
@@ -178,8 +179,49 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [chatMessages, setChatMessages] = useState<{ id: string; text: string; isUser: boolean; timestamp: Date }[]>([]);
   const [aiResponseVisible, setAiResponseVisible] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCopyingLogo, setIsCopyingLogo] = useState(false);
 
+  const handleCopyLogo = async () => {
+    if (!logoUrl || isCopyingLogo) return;
 
+    setIsCopyingLogo(true);
+
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = logoUrl;
+      });
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+      
+      canvas.width = img.height;
+      canvas.height = img.width;
+
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.scale(-1, 1);
+      
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      const transformedDataUrl = canvas.toDataURL('image/png');
+      onCircleLogoChange(transformedDataUrl);
+
+    } catch (error) {
+      console.error("Failed to transform and copy logo:", error);
+      onCircleLogoChange(logoUrl); 
+    } finally {
+      setIsCopyingLogo(false);
+    }
+  };
   // Initialize Gemini AI
   const genAI = useMemo(() => {
     const apiKey = "AIzaSyDr_8GiHPH6yJaFsTQeoaDQ6cLJPgtn0XE";
@@ -1994,6 +2036,28 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                             Upload logos for the sides of your shoe
                           </p>
                         </div>
+
+             <TooltipProvider>
+             <Tooltip>
+             <TooltipTrigger asChild>
+             <Button
+      variant="outline"
+      size="icon"
+      onClick={handleCopyLogo}
+      disabled={!logoUrl || logoUrl === circleLogoUrl}
+      title="Copy side logo to back"
+      className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full transition-all duration-300
+        ${isDarkMode ? 'bg-black/30 border-white/20 text-white/70 hover:bg-white/10' : 'bg-white border-gray-300 text-gray-500 hover:bg-white hover:text-indigo-500'}
+        disabled:opacity-40 disabled:pointer-events-none disabled:scale-100 hover:scale-105`}
+    >
+      <Copy className="w-4 h-4" />
+    </Button>
+    </TooltipTrigger>
+    <TooltipContent>
+      <p>Copy side logo to back</p>
+    </TooltipContent>
+    </Tooltip>
+    </TooltipProvider>
                         <LogoUploader
                           onLogoChange={onLogoChange}
                           currentLogo={logoUrl}
@@ -2002,6 +2066,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
 
                       {/* Back Logo Section */}
                       <div className={`p-4 rounded-lg border transition-all duration-300 ${isDarkMode ? 'bg-black/20 border-white/20' : 'bg-secondary/20 border-gray-200'}`}>
+                   
                         <div className="text-center mb-4">
                           <h4 className={`text-md font-semibold mb-2 transition-all duration-300 ${isDarkMode ? 'text-white/90' : 'text-foreground'}`}>
                             Back Logo
