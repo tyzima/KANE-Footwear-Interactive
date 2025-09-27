@@ -247,23 +247,32 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {
-    if (productContext?.isCustomerEmbed && productContext.productId && isUsingDynamicData) {
-      // For customer embeds, filter to show only colorways for this specific product
-      const productColorways = colorways.filter(colorway => 
-        colorway.id.includes(`product-${productContext.productId}`) ||
-        colorway.id === `product-${productContext.productId}` ||
-        colorway.productId === productContext.productId
-      );
-      
-      console.log('ColorCustomizer: Customer embed colorway filtering:', {
-        productId: productContext.productId,
-        allColorways: colorways.length,
-        filteredColorways: productColorways.length,
-        productColorways: productColorways.map(c => ({ id: c.id, name: c.name }))
-      });
-      
-      // If we found product-specific colorways, use them; otherwise fallback to all colorways
-      return productColorways.length > 0 ? productColorways : colorways;
+    if (productContext?.isCustomerEmbed && isUsingDynamicData) {
+      // For customer embeds with specific productId, filter to that product
+      if (productContext.productId && productContext.productId !== '') {
+        const productColorways = colorways.filter(colorway => 
+          colorway.id.includes(`product-${productContext.productId}`) ||
+          colorway.id === `product-${productContext.productId}` ||
+          colorway.productId === productContext.productId
+        );
+        
+        console.log('ColorCustomizer: Customer embed colorway filtering (specific product):', {
+          productId: productContext.productId,
+          allColorways: colorways.length,
+          filteredColorways: productColorways.length,
+          productColorways: productColorways.map(c => ({ id: c.id, name: c.name }))
+        });
+        
+        // If we found product-specific colorways, use them; otherwise fallback to all colorways
+        return productColorways.length > 0 ? productColorways : colorways;
+      } else {
+        // For customer embeds without specific productId, show all dynamic colorways
+        console.log('ColorCustomizer: Customer embed showing all colorways:', {
+          allColorways: colorways.length,
+          colorways: colorways.map(c => ({ id: c.id, name: c.name }))
+        });
+        return colorways;
+      }
     }
     
     // For admin or standalone use, show all colorways

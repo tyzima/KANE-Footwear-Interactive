@@ -60,20 +60,27 @@ const Index = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const productId = urlParams.get('productId');
       const shop = urlParams.get('shop');
+      const customer = urlParams.get('customer');
       const title = urlParams.get('title');
       const handle = urlParams.get('handle');
       
-      if (productId && shop) {
-        // Load specific product colorways for this product
+      // Set product context for customer embeds (with or without specific productId)
+      if (shop && (customer === 'true' || productId)) {
         setProductContext({
-          productId,
+          productId: productId || '', // Empty string if no specific product
           shop,
           title: title || undefined,
           handle: handle || undefined,
           isCustomerEmbed: true
         });
         
-        console.log('Loading product context for customer embed:', { productId, shop, title, handle });
+        console.log('Loading product context for customer embed:', { 
+          productId: productId || '(all products)', 
+          shop, 
+          title, 
+          handle, 
+          customer 
+        });
       }
     }
   }, [isEmbedded]);
