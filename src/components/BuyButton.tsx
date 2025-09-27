@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
 import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
+import { processCheckout, mapSizeQuantitiesToLineItems, type CheckoutData } from '@/lib/shopify-checkout';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -563,60 +564,121 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Prepare the data to send to n8n webhook
-      const webhookData = {
-        customerInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          address: {
-            line1: formData.addressLine1,
-            line2: formData.addressLine2,
-            city: formData.city,
-            state: formData.state,
-            zip: formData.zip,
-            country: formData.country
-          },
-          notes: formData.notes
-        },
-        orderDetails: {
-          sizeQuantities: formData.sizeQuantities,
-          totalPairs: getTotalPairs(),
-          totalPrice: getTotalPrice(),
-          pricePerPair: PRICE_PER_PAIR,
-          timestamp: new Date().toISOString(),
-          modelScreenshot: screenshot,
-          colorConfiguration: getColorInfo()
+      // Check if this is a customer context with Shopify integration
+      if (isCustomerContext && shopDomain && currentProduct) {
+        console.log('Processing Shopify checkout for customer...');
+        
+        // Map size quantities to Shopify variant line items
+        const lineItems = mapSizeQuantitiesToLineItems(
+          formData.sizeQuantities,
+          currentProduct.variants
+        );
+        
+        if (lineItems.length === 0) {
+          throw new Error('No valid product variants found for selected sizes');
         }
-      };
+        
+        // Prepare checkout data
+        const checkoutData: CheckoutData = {
+          lineItems,
+          customerInfo: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: {
+              line1: formData.addressLine1,
+              line2: formData.addressLine2,
+              city: formData.city,
+              state: formData.state,
+              zip: formData.zip,
+              country: formData.country
+            }
+          },
+          colorConfiguration: getColorInfo(),
+          notes: formData.notes,
+          screenshot
+        };
+        
+        // Process checkout (cart permalink for customers, draft order for admins)
+        const result = await processCheckout(
+          shopDomain,
+          checkoutData,
+          isConnected // Use admin methods if connected
+        );
+        
+        console.log(`Checkout created via ${result.method}:`, result.checkoutUrl);
+        
+        // Show success message
+        toast({
+          title: "Redirecting to Checkout",
+          description: `Taking you to Shopify to complete your order of ${getTotalPairs()} pairs!`,
+        });
+        
+        // Redirect to Shopify checkout
+        setTimeout(() => {
+          window.open(result.checkoutUrl, '_blank');
+        }, 1000);
+        
+        setIsOpen(false);
+        
+      } else {
+        // Fallback to n8n webhook for non-Shopify contexts
+        console.log('Processing order via webhook...');
+        
+        const webhookData = {
+          customerInfo: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phone,
+            address: {
+              line1: formData.addressLine1,
+              line2: formData.addressLine2,
+              city: formData.city,
+              state: formData.state,
+              zip: formData.zip,
+              country: formData.country
+            },
+            notes: formData.notes
+          },
+          orderDetails: {
+            sizeQuantities: formData.sizeQuantities,
+            totalPairs: getTotalPairs(),
+            totalPrice: getTotalPrice(),
+            pricePerPair: PRICE_PER_PAIR,
+            timestamp: new Date().toISOString(),
+            modelScreenshot: screenshot,
+            colorConfiguration: getColorInfo()
+          }
+        };
 
-      // Replace with your actual n8n webhook URL
-      const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
+        const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
 
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookData),
-      });
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(webhookData),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to submit order');
+        if (!response.ok) {
+          throw new Error('Failed to submit order');
+        }
+
+        toast({
+          title: "Order Submitted!",
+          description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
+        });
+
+        setIsOpen(false);
       }
-
-      toast({
-        title: "Order Submitted!",
-        description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
-      });
-
-      setIsOpen(false);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
         title: "Submission Failed",
-        description: "There was an error submitting your order. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error submitting your order. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -1160,15 +1222,31 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     </div>
                   </div>
 
-                  {/* Invoice Info Card */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  {/* Checkout Info Card */}
+                  <div className={`border rounded-lg p-2 ${
+                    isCustomerContext && shopDomain 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-blue-50 border-blue-200'
+                  }`}>
                     <div className="flex items-start gap-3">
-                      <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      {isCustomerContext && shopDomain ? (
+                        <ShoppingCart className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      )}
                       <div className="space-y-1">
-                        <h4 className="font-medium text-blue-900">Next Steps</h4>
-                        <p className="text-xs text-blue-800">
-                          We'll reach out to you with an official invoice within 24 hours.
-
+                        <h4 className={`font-medium ${
+                          isCustomerContext && shopDomain ? 'text-green-900' : 'text-blue-900'
+                        }`}>
+                          {isCustomerContext && shopDomain ? 'Secure Checkout' : 'Next Steps'}
+                        </h4>
+                        <p className={`text-xs ${
+                          isCustomerContext && shopDomain ? 'text-green-800' : 'text-blue-800'
+                        }`}>
+                          {isCustomerContext && shopDomain 
+                            ? 'You\'ll be redirected to Shopify\'s secure checkout to complete your purchase with live inventory and payment processing.'
+                            : 'We\'ll reach out to you with an official invoice within 24 hours.'
+                          }
                         </p>
                       </div>
                     </div>
@@ -1229,12 +1307,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   {isSubmitting ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Submitting...
+                      {isCustomerContext && shopDomain ? 'Creating Checkout...' : 'Submitting...'}
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      Submit
+                      <ShoppingCart className="w-4 h-4" />
+                      {isCustomerContext && shopDomain ? 'Checkout with Shopify' : 'Submit Order'}
                     </>
                   )}
                 </Button>
