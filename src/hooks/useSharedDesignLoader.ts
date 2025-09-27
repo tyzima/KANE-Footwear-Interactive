@@ -51,9 +51,11 @@ export const useSharedDesignLoader = (onDesignLoaded?: (design: SavedDesign) => 
           onDesignLoaded(design);
         }
 
-        // Optional: Clean URL after loading (removes ?design=token)
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, '', cleanUrl);
+        // Optional: Clean URL after loading with a delay to ensure design is applied
+        setTimeout(() => {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        }, 2000); // 2 second delay to allow design to fully load and apply
       } else {
         setLoadResult({
           design: null,

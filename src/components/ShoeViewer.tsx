@@ -131,6 +131,7 @@ interface ShoeViewerProps {
   onBackgroundTypeChange?: (type: 'light' | 'dark' | 'turf') => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   onColorConfigurationChange?: (config: any) => void;
+  colorConfiguration?: any; // External color configuration to apply (for shared designs)
 }
 
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({
@@ -138,7 +139,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   backgroundType: externalBackgroundType = 'light',
   onBackgroundTypeChange,
   canvasRef,
-  onColorConfigurationChange
+  onColorConfigurationChange,
+  colorConfiguration: externalColorConfiguration
 }) => {
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -222,6 +224,87 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   // Second logo state
   const [logo2Position, setLogo2Position] = useState<[number, number, number]>([-0.661, 0.163, -0.488]);
   const [logo2Rotation, setLogo2Rotation] = useState<[number, number, number]>([1.163, -1.905, 1.183]);
+
+  // Apply external color configuration (for shared designs)
+  useEffect(() => {
+    if (externalColorConfiguration) {
+      console.log('Applying external color configuration:', externalColorConfiguration);
+      
+      // Apply upper/top colors
+      if (externalColorConfiguration.upper?.baseColor) {
+        setTopColor(externalColorConfiguration.upper.baseColor);
+      }
+      if (externalColorConfiguration.upper?.hasSplatter !== undefined) {
+        setUpperHasSplatter(externalColorConfiguration.upper.hasSplatter);
+      }
+      if (externalColorConfiguration.upper?.splatterColor) {
+        setUpperSplatterColor(externalColorConfiguration.upper.splatterColor);
+      }
+      if (externalColorConfiguration.upper?.hasGradient !== undefined) {
+        setUpperHasGradient(externalColorConfiguration.upper.hasGradient);
+      }
+      if (externalColorConfiguration.upper?.gradientColor1) {
+        setUpperGradientColor1(externalColorConfiguration.upper.gradientColor1);
+      }
+      if (externalColorConfiguration.upper?.gradientColor2) {
+        setUpperGradientColor2(externalColorConfiguration.upper.gradientColor2);
+      }
+      if (externalColorConfiguration.upper?.texture !== undefined) {
+        setUpperTexture(externalColorConfiguration.upper.texture);
+      }
+      if (externalColorConfiguration.upper?.paintDensity !== undefined) {
+        setUpperPaintDensity(externalColorConfiguration.upper.paintDensity);
+      }
+
+      // Apply sole/bottom colors
+      if (externalColorConfiguration.sole?.baseColor) {
+        setBottomColor(externalColorConfiguration.sole.baseColor);
+      }
+      if (externalColorConfiguration.sole?.hasSplatter !== undefined) {
+        setSoleHasSplatter(externalColorConfiguration.sole.hasSplatter);
+      }
+      if (externalColorConfiguration.sole?.splatterColor) {
+        setSoleSplatterColor(externalColorConfiguration.sole.splatterColor);
+      }
+      if (externalColorConfiguration.sole?.hasGradient !== undefined) {
+        setSoleHasGradient(externalColorConfiguration.sole.hasGradient);
+      }
+      if (externalColorConfiguration.sole?.gradientColor1) {
+        setSoleGradientColor1(externalColorConfiguration.sole.gradientColor1);
+      }
+      if (externalColorConfiguration.sole?.gradientColor2) {
+        setSoleGradientColor2(externalColorConfiguration.sole.gradientColor2);
+      }
+      if (externalColorConfiguration.sole?.texture !== undefined) {
+        setSoleTexture(externalColorConfiguration.sole.texture);
+      }
+      if (externalColorConfiguration.sole?.paintDensity !== undefined) {
+        setSolePaintDensity(externalColorConfiguration.sole.paintDensity);
+      }
+
+      // Apply lace colors
+      if (externalColorConfiguration.laces?.color) {
+        setLaceColor(externalColorConfiguration.laces.color);
+      }
+
+      // Apply logo colors
+      if (externalColorConfiguration.logos?.color1) {
+        setLogoColor1(externalColorConfiguration.logos.color1);
+      }
+      if (externalColorConfiguration.logos?.color2) {
+        setLogoColor2(externalColorConfiguration.logos.color2);
+      }
+      if (externalColorConfiguration.logos?.color3) {
+        setLogoColor3(externalColorConfiguration.logos.color3);
+      }
+      if (externalColorConfiguration.logos?.logoUrl !== undefined) {
+        setLogoUrl(externalColorConfiguration.logos.logoUrl);
+      }
+      if (externalColorConfiguration.logos?.circleLogoUrl !== undefined) {
+        setCircleLogoUrl(externalColorConfiguration.logos.circleLogoUrl);
+      }
+    }
+  }, [externalColorConfiguration]);
 
   const [lightingIntensity, setLightingIntensity] = useState(1.0);
   const [shadowIntensity, setShadowIntensity] = useState(0.5);

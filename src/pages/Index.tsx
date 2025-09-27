@@ -259,6 +259,7 @@ const Index = () => {
             onBackgroundTypeChange={setBackgroundType}
             canvasRef={canvasRef}
             onColorConfigurationChange={setColorConfiguration}
+            colorConfiguration={colorConfiguration}
           />
         </div>
 

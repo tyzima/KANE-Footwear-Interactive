@@ -229,14 +229,58 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         const baseUrl = window.location.origin + window.location.pathname;
         const shareUrl = `${baseUrl}?design=${result.shareToken}`;
         
-        await navigator.clipboard.writeText(shareUrl);
+    // Try to copy to clipboard, with fallback for Safari and other browsers
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+
+      toast({
+        title: "Design saved and link copied!",
+        description: "Anyone can view your custom design with this link.",
+      });
+    } catch (clipboardError) {
+      console.warn('Clipboard API failed, using fallback:', clipboardError);
+      
+      // Fallback method for Safari and other browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        if (successful) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          
+          toast({
+            title: "Design saved and link copied!",
+            description: "Anyone can view your custom design with this link.",
+          });
+        } else {
+          throw new Error('execCommand failed');
+        }
+      } catch (fallbackError) {
+        document.body.removeChild(textArea);
+        
+        // If both methods fail, just show the link for manual copying
+        toast({
+          title: "Design saved!",
+          description: `Copy this link: ${shareUrl}`,
+          duration: 10000, // Show longer so user can copy manually
+        });
+        
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-
-        toast({
-          title: "Design saved and link copied!",
-          description: "Anyone can view your custom design with this link.",
-        });
+      }
+    }
       }
     } catch (error) {
       console.error('Error saving and sharing design:', error);
