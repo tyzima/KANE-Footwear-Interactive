@@ -1,0 +1,71 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "KANE Footwear Configurator"
+client_id = "d4d69ee44cf2dd4522f73989a961c273"
+application_url = "https://kaneconfig.netlify.app"
+embedded = true
+
+[access_scopes]
+# https://shopify.dev/docs/api/usage/access-scopes
+scopes = "write_products,read_products,write_orders,read_orders,write_customers,read_customers,write_draft_orders,read_draft_orders"
+
+[auth]
+redirect_urls = [
+  "https://kaneconfig.netlify.app/auth/shopify/callback",
+  "https://kaneconfig.netlify.app/shopify-callback"
+]
+
+[webhooks]
+api_version = "2024-01"
+
+[pos]
+embedded = false
+
+[app_proxy]
+# App proxy configuration for public product page embeds
+url = "https://kaneconfig.netlify.app"
+subpath = "kane"
+prefix = "apps"
+
+# This creates URLs like: https://yourstore.com/apps/kane/configurator
+# Which proxy to: https://kaneconfig.netlify.app/configurator
+
+[[app_proxy.extensions]]
+type = "product-embed"
+name = "KANE 3D Configurator"
+handle = "kane-3d-configurator"
+settings = [
+  {
+    type = "product_reference",
+    id = "product",
+    label = "Product to Configure",
+    info = "Select which product this configurator should customize"
+  },
+  {
+    type = "checkbox",
+    id = "show_buy_button",
+    label = "Show Buy Button",
+    default = true,
+    info = "Display the buy now button in the configurator"
+  },
+  {
+    type = "checkbox",
+    id = "show_share_button", 
+    label = "Show Share Button",
+    default = true,
+    info = "Allow customers to share their custom designs"
+  },
+  {
+    type = "select",
+    id = "embed_size",
+    label = "Embed Size",
+    options = [
+      { value = "small", label = "Small (400px)" },
+      { value = "medium", label = "Medium (600px)" },
+      { value = "large", label = "Large (800px)" },
+      { value = "full", label = "Full Width" }
+    ],
+    default = "medium",
+    info = "Choose the size of the configurator embed"
+  }
+]
