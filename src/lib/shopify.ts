@@ -43,15 +43,16 @@ export const getShopifyConfig = () => {
   return shopifyConfig;
 };
 
-// Helper function to make GraphQL requests to Shopify
+// Helper function to make GraphQL requests to Shopify via Netlify function
 const makeShopifyRequest = async (query: string, variables?: any) => {
   const config = getShopifyConfig();
   
-  const response = await fetch(`https://${config.storeDomain}/admin/api/${config.apiVersion}/graphql.json`, {
+  const response = await fetch('/.netlify/functions/shopify-api', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Shopify-Access-Token': config.accessToken,
+      'X-Shop-Domain': config.storeDomain,
     },
     body: JSON.stringify({
       query,
@@ -60,7 +61,8 @@ const makeShopifyRequest = async (query: string, variables?: any) => {
   });
 
   if (!response.ok) {
-    throw new Error(`Shopify API request failed: ${response.status} ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || `Shopify API request failed: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();

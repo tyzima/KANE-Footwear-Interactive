@@ -30,6 +30,28 @@ export const ShopifyAdminPanel: React.FC = () => {
   useEffect(() => {
     console.log('ShopifyAdminPanel - Connection state:', { isConnected, shop });
   }, [isConnected, shop]);
+
+  // Suppress Shopify script errors
+  useEffect(() => {
+    const originalError = window.onerror;
+    window.onerror = (message, source, lineno, colno, error) => {
+      if (
+        (source && source.includes('share-modal.js')) ||
+        (typeof message === 'string' && message.includes('addEventListener'))
+      ) {
+        console.warn('Suppressed Shopify script error:', message);
+        return true; // Prevent default error handling
+      }
+      if (originalError) {
+        return originalError(message, source, lineno, colno, error);
+      }
+      return false;
+    };
+
+    return () => {
+      window.onerror = originalError;
+    };
+  }, []);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
