@@ -101,7 +101,53 @@ const Index = () => {
   
   const embedType = getEmbedType();
   
+  // State declarations (must be before callbacks that use them)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedColorway, setSelectedColorway] = useState<any>(null);
+  const [colorConfiguration, setColorConfiguration] = useState<{
+    upper: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+      paintDensity: number;
+    };
+    sole: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+      paintDensity: number;
+    };
+    laces: {
+      color: string;
+    };
+    logo: {
+      color: string;
+      url: string | null;
+      color1?: string;
+      color2?: string;
+      color3?: string;
+      logoUrl?: string | null;
+      circleLogoUrl?: string | null;
+    };
+  } | null>(null);
+  
   // Shared design loading callback (memoized to prevent infinite re-renders)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onDesignLoaded = useCallback((design: any) => {
     console.log('Loading shared design:', design);
     
@@ -172,43 +218,6 @@ const Index = () => {
       setBackgroundType('light');
     }
   }, [isDark]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedColorway, setSelectedColorway] = useState<any>(null);
-  const [colorConfiguration, setColorConfiguration] = useState<{
-    upper: {
-      baseColor: string;
-      hasSplatter: boolean;
-      splatterColor: string;
-      splatterColor2?: string | null;
-      splatterBaseColor?: string | null;
-      useDualSplatter?: boolean;
-      hasGradient: boolean;
-      gradientColor1: string;
-      gradientColor2: string;
-      texture: string | null;
-      paintDensity: number;
-    };
-    sole: {
-      baseColor: string;
-      hasSplatter: boolean;
-      splatterColor: string;
-      splatterColor2?: string | null;
-      splatterBaseColor?: string | null;
-      useDualSplatter?: boolean;
-      hasGradient: boolean;
-      gradientColor1: string;
-      gradientColor2: string;
-      texture: string | null;
-      paintDensity: number;
-    };
-    laces: {
-      color: string;
-    };
-    logo: {
-      color: string;
-      url: string | null;
-    };
-  } | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   
   // Helper to determine if current background should use dark mode styling
@@ -249,13 +258,13 @@ const Index = () => {
     // Capture the current design state from colorConfiguration
     return {
       colorwayId: 'custom-design', // Use custom since we're capturing current state
-      logoColor1: colorConfiguration?.logos?.color1 || '#2048FF',
-      logoColor2: colorConfiguration?.logos?.color2 || '#000000', 
-      logoColor3: colorConfiguration?.logos?.color3 || '#C01030',
+      logoColor1: colorConfiguration?.logo?.color1 || '#2048FF',
+      logoColor2: colorConfiguration?.logo?.color2 || '#000000', 
+      logoColor3: colorConfiguration?.logo?.color3 || '#C01030',
       logoPosition: [0.8, 0.2, 0.5],
       logoRotation: [0, -0.3, 0],
       logoScale: 1.0,
-      circleLogoUrl: colorConfiguration?.logos?.circleLogoUrl || null,
+      circleLogoUrl: colorConfiguration?.logo?.circleLogoUrl || null,
       customColors: {
         upperBaseColor: colorConfiguration?.upper?.baseColor,
         soleBaseColor: colorConfiguration?.sole?.baseColor,
