@@ -44,12 +44,20 @@ export const useShopifyCustomer = (shopDomain?: string) => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load colorways';
       console.error('Error loading colorways from Storefront API:', err);
       
+      // If it's a "not configured" error, don't set it as an error state
+      // This allows fallback to static colorways
+      const isConfigError = errorMessage.includes('not configured') || errorMessage.includes('SHOPIFY_STOREFRONT_ACCESS_TOKEN');
+      
       setState(prev => ({
         ...prev,
-        error: errorMessage,
+        error: isConfigError ? null : errorMessage,
         isLoading: false,
         colorways: [], // Clear colorways on error
       }));
+      
+      if (isConfigError) {
+        console.log('Storefront API not configured, will fallback to static colorways');
+      }
     }
   }, [shopDomain]);
 

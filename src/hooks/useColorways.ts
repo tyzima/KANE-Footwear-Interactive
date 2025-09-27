@@ -37,25 +37,8 @@ export const useColorways = (shopDomain?: string, isCustomerContext = false) => 
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Load dynamic colorways from Shopify
-  const loadDynamicColorways = useCallback(async () => {
-    // For customer context, use Storefront API
-    if (isCustomerContext && shopDomain) {
-      console.log('Customer context detected, using Storefront API');
-      setIsLoading(customerAPI.isLoading);
-      setError(customerAPI.error);
-      
-      if (customerAPI.colorways.length > 0) {
-        setColorways(customerAPI.colorways);
-        setLastUpdated(new Date());
-      } else if (!customerAPI.isLoading && !customerAPI.error) {
-        // Fallback to static if no customer colorways and not loading
-        setColorways(colorwaysData.colorways);
-      }
-      return;
-    }
-    
-    // For admin context, use Admin API
+  // Load dynamic colorways from Shopify Admin API only
+  const loadAdminColorways = useCallback(async () => {
     if (!isConnected) {
       console.log('Not connected to Shopify admin, using static colorways');
       setColorways(colorwaysData.colorways);
@@ -88,26 +71,45 @@ export const useColorways = (shopDomain?: string, isCustomerContext = false) => 
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, getColorways, isCustomerContext, shopDomain, customerAPI]);
+  }, [isConnected, getColorways]);
 
-  // Load colorways when connected
+  // Sync customer API state
   useEffect(() => {
-    if (isConnected) {
-      loadDynamicColorways();
-    } else {
-      // Use static colorways when not connected
+    if (isCustomerContext && shopDomain) {
+      console.log('Customer context detected, syncing Storefront API state');
+      setIsLoading(customerAPI.isLoading);
+      setError(customerAPI.error);
+      
+      if (customerAPI.colorways.length > 0) {
+        setColorways(customerAPI.colorways);
+        setLastUpdated(new Date());
+      } else if (!customerAPI.isLoading && !customerAPI.error) {
+        // Fallback to static if no customer colorways and not loading
+        setColorways(colorwaysData.colorways);
+      }
+    }
+  }, [isCustomerContext, shopDomain, customerAPI.colorways, customerAPI.isLoading, customerAPI.error]);
+
+  // Load admin colorways when connected
+  useEffect(() => {
+    if (!isCustomerContext && isConnected) {
+      loadAdminColorways();
+    } else if (!isCustomerContext && !isConnected) {
+      // Use static colorways when not connected and not in customer context
       setColorways(colorwaysData.colorways);
       setLastUpdated(null);
       setError(null);
     }
-  }, [isConnected, loadDynamicColorways]);
+  }, [isConnected, isCustomerContext, loadAdminColorways]);
 
   // Manual refresh function
   const refreshColorways = useCallback(async () => {
-    if (isConnected) {
-      await loadDynamicColorways();
+    if (isCustomerContext && shopDomain) {
+      await customerAPI.refreshColorways();
+    } else if (isConnected) {
+      await loadAdminColorways();
     }
-  }, [isConnected, loadDynamicColorways]);
+  }, [isConnected, isCustomerContext, shopDomain, customerAPI.refreshColorways, loadAdminColorways]);
 
   return {
     colorways,
@@ -115,7 +117,7 @@ export const useColorways = (shopDomain?: string, isCustomerContext = false) => 
     error,
     lastUpdated,
     refreshColorways,
-    isUsingDynamicData: isConnected && !error,
+    isUsingDynamicData: (isCustomerContext && customerAPI.isUsingStorefront) || (isConnected && !error),
     totalCount: colorways.length
   };
 };
