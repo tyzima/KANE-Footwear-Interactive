@@ -208,22 +208,47 @@ export const ShopifyAdminPanel: React.FC = () => {
                     You'll be taken to Shopify to authorize the connection, then redirected back
                   </p>
                   
-                  {/* Debug button */}
-                  <Button 
-                    onClick={() => {
-                      console.log('Manual localStorage check:', {
-                        shopify_connection: localStorage.getItem('shopify_connection'),
-                        shopify_domain: localStorage.getItem('shopify_domain'),
-                        shopify_access_token: localStorage.getItem('shopify_access_token'),
-                        allKeys: Object.keys(localStorage)
-                      });
-                    }} 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-2"
-                  >
-                    Debug Storage
-                  </Button>
+                  {/* Debug buttons */}
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      onClick={() => {
+                        console.log('Manual localStorage check:', {
+                          shopify_connection: localStorage.getItem('shopify_connection'),
+                          shopify_domain: localStorage.getItem('shopify_domain'),
+                          shopify_access_token: localStorage.getItem('shopify_access_token'),
+                          allKeys: Object.keys(localStorage)
+                        });
+                      }} 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                    >
+                      Debug Storage
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        const testData = { test: 'data', timestamp: Date.now() };
+                        localStorage.setItem('test_persistence', JSON.stringify(testData));
+                        console.log('Stored test data:', testData);
+                        
+                        setTimeout(() => {
+                          const retrieved = localStorage.getItem('test_persistence');
+                          console.log('Retrieved test data:', retrieved);
+                          if (retrieved) {
+                            console.log('✅ localStorage is working');
+                          } else {
+                            console.log('❌ localStorage failed');
+                          }
+                        }, 1000);
+                      }} 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                    >
+                      Test Storage
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ) : (

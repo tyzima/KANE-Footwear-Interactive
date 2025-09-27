@@ -89,6 +89,9 @@ export const useShopify = () => {
 
   // Disconnect from Shopify
   const disconnect = useCallback(() => {
+    console.log('🚨 DISCONNECT CALLED - Clearing all stored credentials');
+    console.trace('Disconnect call stack');
+    
     // Clear both old and new storage formats
     localStorage.removeItem('shopify_domain');
     localStorage.removeItem('shopify_access_token');

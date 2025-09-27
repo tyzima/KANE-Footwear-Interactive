@@ -84,16 +84,25 @@ const ShopifyCallback: React.FC = () => {
         // The user might land on this callback page outside of the iframe
         const isEmbedded = window.self !== window.top;
         
+        console.log('OAuth callback redirect logic:', {
+          isEmbedded,
+          shopDomain,
+          currentUrl: window.location.href
+        });
+        
         if (isEmbedded) {
           // If still embedded, redirect back to the shopify-admin route
+          console.log('Redirecting to /shopify-admin within iframe');
           setTimeout(() => {
             navigate('/shopify-admin');
           }, 2000);
         } else {
           // If not embedded (OAuth broke out of iframe), redirect back to Shopify admin
           // which will load our app in the iframe again, now with stored credentials
+          console.log('Redirecting back to Shopify admin to reload embedded app');
           setTimeout(() => {
             const shopifyAdminUrl = `https://${shopDomain}/admin/apps`;
+            console.log('Redirecting to:', shopifyAdminUrl);
             window.location.href = shopifyAdminUrl;
           }, 2000);
         }
