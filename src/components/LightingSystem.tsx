@@ -1,19 +1,62 @@
 import React from 'react';
 import { Environment, ContactShadows } from '@react-three/drei';
 import { LightingPreset } from './LightingControls';
+import * as THREE from 'three';
 
 interface LightingSystemProps {
   preset: LightingPreset;
   intensity: number;
   shadowIntensity: number;
+  useHDRI?: boolean;
+  hdriPath?: string;
 }
 
 export const LightingSystem: React.FC<LightingSystemProps> = ({
   preset,
   intensity,
-  shadowIntensity
+  shadowIntensity,
+  useHDRI = false,
+  hdriPath
 }) => {
   const renderLighting = () => {
+    // If HDRI is enabled, use it for environment lighting
+    if (useHDRI && hdriPath) {
+      return (
+        <>
+          <Environment 
+            files={hdriPath}
+            background={false}
+            environmentIntensity={intensity * 1.5}
+          />
+          
+          {/* Moonlight - primary light source from above */}
+          <directionalLight
+            position={[2, 12, 4]}
+            intensity={0.8 * intensity}
+            color="#e6f3ff"
+            castShadow
+          />
+          
+          {/* Secondary moonlight from side for depth */}
+          <directionalLight
+            position={[-3, 8, 2]}
+            intensity={0.4 * intensity}
+            color="#f0f8ff"
+          />
+          
+          {/* Soft fill light to reduce harsh shadows */}
+          <directionalLight
+            position={[1, 6, -3]}
+            intensity={0.3 * intensity}
+            color="#f8f8ff"
+          />
+          
+          {/* Ambient moonlight for overall illumination */}
+          <ambientLight intensity={0.3 * intensity} color="#e6f3ff" />
+        </>
+      );
+    }
+    
     if (preset === 'dark_optimized') {
       // Dark background optimized lighting - brighter but smoother
       return (

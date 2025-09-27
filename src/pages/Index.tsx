@@ -1,13 +1,52 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ShoeViewer } from '@/components/ShoeViewer';
 import { ShareButton } from '@/components/ShareButton';
 import { BuyButton } from '@/components/BuyButton';
 import FeatureIconsBar from '@/components/feature-icons-bar';
+import { useTheme } from '@/hooks/use-theme';
 
 const Index = () => {
+  const { isDark } = useTheme();
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
+
+  // Set initial background type based on system dark mode preference
+  useEffect(() => {
+    if (isDark) {
+      setBackgroundType('dark');
+    } else {
+      setBackgroundType('light');
+    }
+  }, [isDark]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [colorConfiguration, setColorConfiguration] = useState<any>(null);
+  const [colorConfiguration, setColorConfiguration] = useState<{
+    upper: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+      paintDensity: number;
+    };
+    sole: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+      paintDensity: number;
+    };
+    laces: {
+      color: string;
+    };
+    logo: {
+      color: string;
+      url: string | null;
+    };
+  } | null>(null);
   const [showInfo, setShowInfo] = useState(false);
   
   // Helper to determine if current background should use dark mode styling
@@ -86,7 +125,7 @@ const Index = () => {
      
 </div>
 
-      <p className={`text-lg font-bold mt-2  border border-gray-500/20 w-12 h-12 flex items-center justify-center pr-3 rounded-full px-2 py-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
+      <p className={`text-lg font-bold mt-2 bg-slate-400/10  border border-slate-500/10 w-12 h-12 flex items-center justify-center pr-3 rounded-lg px-2 py-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
         <span className={`text-xs relative top-[-2px] mr-.5 ${isDarkMode ? 'text-white/80' : 'text-foreground/70'}`}>$</span>75
       </p>
   

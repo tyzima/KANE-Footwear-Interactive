@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import * as THREE from 'three';
 import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture } from 'three';
-import { useGLTF, useBounds } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { JibbitLogo } from './JibbitLogo';
 import gsap from 'gsap';
@@ -20,6 +20,12 @@ interface ShoeModelProps {
     soleHasSplatter?: boolean;
     upperSplatterColor?: string;
     soleSplatterColor?: string;
+    upperSplatterColor2?: string;
+    soleSplatterColor2?: string;
+    upperSplatterBaseColor?: string;
+    soleSplatterBaseColor?: string;
+    upperUseDualSplatter?: boolean;
+    soleUseDualSplatter?: boolean;
     upperPaintDensity?: number;
     solePaintDensity?: number;
     // Gradient props
@@ -125,6 +131,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     soleHasSplatter = false,
     upperSplatterColor = '#f8f8ff',
     soleSplatterColor = '#f8f8f8ff',
+    upperSplatterColor2 = null,
+    soleSplatterColor2 = null,
+    upperSplatterBaseColor = null,
+    soleSplatterBaseColor = null,
+    upperUseDualSplatter = false,
+    soleUseDualSplatter = false,
     upperPaintDensity = 100,
     solePaintDensity = 100,
     // Gradient props with defaults
@@ -157,7 +169,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     const groupRef = useRef<Group>(null);
     const mixerRef = useRef<AnimationMixer | null>(null);
     const [gltf, setGltf] = useState<GLTF | null>(null);
-    const bounds = useBounds();
     const originalMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
     const currentMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
     const textureCache = useRef<Map<string, Texture>>(new Map());
@@ -165,6 +176,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     // REFACTOR: Add a ref to hold persistent, updatable canvas textures for each logo part.
     // This is the key to preventing the flashing effect.
     const logoTexturesRef = useRef<Map<string, CanvasTexture>>(new Map());
+    const logoUpdateTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
     // Use preloaded model to prevent stuttering during animations
     useEffect(() => {
@@ -231,6 +243,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             // REFACTOR: Dispose of the persistent logo textures on unmount to prevent memory leaks.
             logoTexturesRef.current.forEach((texture) => texture.dispose());
             logoTexturesRef.current.clear();
+
+            // Clear any pending logo update timeouts
+            logoUpdateTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+            logoUpdateTimeoutsRef.current.clear();
 
             // Clear lace texture
             if (laceTextureRef.current) {
@@ -572,9 +588,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     }, []);
 
     // Memoized splatter texture creation with caching
-    const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, isUpper: boolean = false, paintDensity: number = 20): Texture => {
+    const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, splatterBaseColor: string | null = null, splatterColor2: string | null = null, useDualSplatter: boolean = false, isUpper: boolean = false, paintDensity: number = 20): Texture => {
+        // Use splatterBaseColor if provided, otherwise fall back to baseColor
+        const textureBaseColor = splatterBaseColor || baseColor;
+        
         // Create cache key
-        const cacheKey = `${baseColor}-${splatterColor}-${isUpper}-${paintDensity}`;
+        const cacheKey = `${textureBaseColor}-${splatterColor}-${splatterColor2 || 'none'}-${useDualSplatter}-${isUpper}-${paintDensity}`;
 
         // Check cache first
         if (textureCache.current.has(cacheKey)) {
@@ -590,30 +609,44 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Use the base color directly (user should select darkened color from palette)
-        ctx.fillStyle = baseColor;
+        // Use the splatter base color (darker version) for the texture background
+        ctx.fillStyle = textureBaseColor;
         ctx.fillRect(0, 0, 1024, 1024);
 
         // Calculate number of splatters based on density
+        // Reduce density for both single and dual color splatter
         const baseSplatters = isUpper ? 1000 : 1000;
-        const numSplatters = Math.floor((baseSplatters * paintDensity) / 10);
+        const densityMultiplier = useDualSplatter ? 0.6 : 0.3; // 40% less density for dual, 70% less for single
+        const numSplatters = Math.floor((baseSplatters * paintDensity * densityMultiplier) / 10);
 
         // Adjusted for higher resolution canvas
-        const minRadius = isUpper ? 0.4 : 0.1; // Even smaller minimum radius for tiny dots
-        const maxRadius = isUpper ? 2.0 : 1.5; // Reduced maximum size further
+        const minRadius = useDualSplatter 
+            ? (isUpper ? 0.1 : 0.02) // Very small dots for dual splatter
+            : (isUpper ? 0.4 : 0.1); // Standard small dots for single splatter
+        // Different max sizes for single vs dual splatter
+        const maxRadius = useDualSplatter 
+            ? (isUpper ? 4.0 : 3.5) // Bigger dots for dual splatter
+            : (isUpper ? 2.5 : 2.0); // Smaller dots for single splatter
         ctx.globalCompositeOperation = 'source-over';
 
         for (let i = 0; i < numSplatters; i++) {
             const x = Math.random() * 1024;
             const y = Math.random() * 1024;
 
-            // Use stronger exponential distribution to heavily favor smaller dots
-            const sizeRandom = Math.pow(Math.random(), 3.5);
+            // Use stronger exponential distribution to heavily favor smaller dots, but allow occasional larger ones
+            const sizeRandom = Math.pow(Math.random(), 4.0); // Increased from 3.5 to 4.0 for more extreme distribution
             const baseSize = minRadius + sizeRandom * (maxRadius - minRadius);
 
             // Use varying opacity for more natural look
             ctx.globalAlpha = 0.7 + Math.random() * 0.3;
-            ctx.fillStyle = splatterColor;
+            
+            // Choose splatter color based on dual splatter setting
+            if (useDualSplatter && splatterColor2) {
+                // Use both colors with some randomness
+                ctx.fillStyle = Math.random() < 0.6 ? splatterColor : splatterColor2;
+            } else {
+                ctx.fillStyle = splatterColor;
+            }
 
             ctx.beginPath();
 
@@ -756,6 +789,15 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             material.color.set(0xffffff); // Ensure material color doesn't tint the texture
             material.transparent = true; // The SVG may have transparency
             material.needsUpdate = true;
+        } else {
+            // Ensure the existing texture is still assigned to the material
+            // This prevents other effects from overwriting the logo texture
+            if (material.map !== canvasTexture) {
+                material.map = canvasTexture;
+                material.color.set(0xffffff);
+                material.transparent = true;
+                material.needsUpdate = true;
+            }
         }
 
         // The texture object now exists and is assigned.
@@ -794,24 +836,54 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                 ${circleContent}
             </svg>`;
 
-        const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
+        // Clear any existing timeout for this part to prevent rapid updates
+        const existingTimeout = logoUpdateTimeoutsRef.current.get(partName);
+        if (existingTimeout) {
+            clearTimeout(existingTimeout);
+        }
 
-        img.onload = () => {
-            // Update the canvas that the EXISTING texture is using.
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, width, height);
-            ctx.drawImage(img, 0, 0, width, height);
-            // This is the crucial step: signal to three.js that the texture's content has changed.
-            canvasTexture!.needsUpdate = true;
-        };
+        // Debounce the texture update to prevent rapid changes
+        const updateTimeout = setTimeout(() => {
+            const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
 
-        img.onerror = (err) => {
-            console.error('Failed to load SVG for logo texture update:', err);
-        };
+            img.onload = () => {
+                // Update the canvas that the EXISTING texture is using.
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                // This is the crucial step: signal to three.js that the texture's content has changed.
+                canvasTexture!.needsUpdate = true;
+                
+                // Force a render update to ensure the texture is applied immediately
+                if (canvasTexture!.source) {
+                    canvasTexture!.source.needsUpdate = true;
+                }
+            };
 
-        img.src = svgDataUrl;
+            img.onerror = (err) => {
+                console.error('Failed to load SVG for logo texture update:', err);
+                // Fallback: create a solid color circle if image loading fails
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw a simple circle as fallback
+                ctx.fillStyle = color1;
+                ctx.beginPath();
+                ctx.arc(931.55, 599.53, 49.96, 0, Math.PI * 2);
+                ctx.fill();
+                
+                canvasTexture!.needsUpdate = true;
+                if (canvasTexture!.source) {
+                    canvasTexture!.source.needsUpdate = true;
+                }
+            };
+
+            img.src = svgDataUrl;
+        }, 50); // Small delay to debounce rapid changes
+
+        logoUpdateTimeoutsRef.current.set(partName, updateTimeout);
     }, []);
 
     // Create lace material with color and texture overlay
@@ -1014,7 +1086,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.roughness = 0.8;
                 }
             } else if (soleHasSplatter) {
-                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, false, solePaintDensity);
+                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, soleSplatterBaseColor, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
@@ -1035,12 +1107,17 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(soleFilter, soleUpdate);
-    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
+    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleSplatterBaseColor, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
 
     // Update upper/top parts only when upper-related props change
     useEffect(() => {
-        const upperFilter = (child: Mesh) =>
-        child.name.includes('top') || child.name.includes('upper');
+        const upperFilter = (child: Mesh) => {
+            const lowerName = child.name.toLowerCase();
+            // Exclude logo parts from upper splatter effects
+            const isLogoPart = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
+                lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
+            return (child.name.includes('top') || child.name.includes('upper')) && !isLogoPart;
+        };
 
         const upperUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial ? : MeshStandardMaterial) => {
             material.roughness = 1;
@@ -1064,7 +1141,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.roughness = 0.8;
                 }
             } else if (upperHasSplatter) {
-                newTexture = createSplatterTexture(topColor, upperSplatterColor, true, upperPaintDensity);
+                newTexture = createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
@@ -1088,7 +1165,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(upperFilter, upperUpdate);
-    }, [gltf, topColor, upperHasSplatter, upperSplatterColor, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
+    }, [gltf, topColor, upperHasSplatter, upperSplatterColor, upperSplatterColor2, upperSplatterBaseColor, upperUseDualSplatter, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
 
     // Update lace parts only when lace-related props change
     useEffect(() => {
@@ -1140,7 +1217,42 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(logoFilter, logoUpdate);
-    }, [gltf, logoColor1, logoColor2, logoColor3, circleLogoUrl, getOrCreateAndUpdateLogoTexture, updateMaterialsForParts]);
+    }, [gltf, logoColor1, logoColor2, logoColor3, circleLogoUrl, getOrCreateAndUpdateLogoTexture, updateMaterialsForParts, topColor, upperHasSplatter, upperTexture, upperHasGradient]);
+
+    // Secondary logo effect to ensure logos are restored after any material changes
+    useEffect(() => {
+        if (!gltf || !circleLogoUrl) return;
+
+        // Small delay to run after other material effects
+        const timeoutId = setTimeout(() => {
+            const logoFilter = (child: Mesh) => {
+                const lowerName = child.name.toLowerCase();
+                return lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
+                    lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
+            };
+
+            const logoRestoreUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial?: MeshStandardMaterial) => {
+                if (!child.name) return;
+
+                // Force restore the logo texture
+                getOrCreateAndUpdateLogoTexture(
+                    child.name,
+                    material,
+                    originalMaterial?.map || null,
+                    {
+                        color1: logoColor1,
+                        color2: logoColor2,
+                        color3: logoColor3
+                    },
+                    circleLogoUrl
+                );
+            };
+
+            updateMaterialsForParts(logoFilter, logoRestoreUpdate);
+        }, 100); // Small delay to ensure it runs after other effects
+
+        return () => clearTimeout(timeoutId);
+    }, [gltf, circleLogoUrl, logoColor1, logoColor2, logoColor3, getOrCreateAndUpdateLogoTexture, updateMaterialsForParts, topColor, upperHasSplatter, upperTexture]);
 
     // Animation frame loop
     useFrame((_state, delta) => {
@@ -1169,91 +1281,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         }
     }, []);
 
-    const handleClick = (event: any) => {
-        event.stopPropagation();
-
-        if (logoPlacementMode && onLogoPositionSet && event.point && event.face) {
-            const position: [number, number, number] = [
-                Math.round(event.point.x * 1000) / 1000,
-                Math.round(event.point.y * 1000) / 1000,
-                Math.round(event.point.z * 1000) / 1000
-            ];
-            const normal: [number, number, number] = [
-                Math.round(event.face.normal.x * 1000) / 1000,
-                Math.round(event.face.normal.y * 1000) / 1000,
-                Math.round(event.face.normal.z * 1000) / 1000
-            ];
-            onLogoPositionSet(position, normal);
-            return;
-        }
-
-        if (event.object instanceof Mesh && event.object.userData) {
-            if (event.object.name) {
-                const lowerName = event.object.name.toLowerCase();
-                if (lowerName.includes('bottom') || lowerName.includes('sole')) onPartClick?.('sole');
-                else if (lowerName.includes('top') || lowerName.includes('upper')) onPartClick?.('upper');
-                else if (lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace')) onPartClick?.('laces');
-                else if (lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem')) onPartClick?.('logos');
-            }
-
-            makeMaterialUnique(event.object);
-
-            if (event.object.material && 'color' in event.object.material) {
-                const material = event.object.material as MeshStandardMaterial;
-                const originalColor = material.color.clone();
-                const grayscale = originalColor.r * 0.299 + originalColor.g * 0.587 + originalColor.b * 0.114;
-
-                gsap.to(material.color, {
-                    r: grayscale,
-                    g: grayscale,
-                    b: grayscale,
-                    duration: 0.3,
-                    onComplete: () => {
-                        gsap.to(material.color, {
-                            r: originalColor.r,
-                            g: originalColor.g,
-                            b: originalColor.b,
-                            duration: 0.6,
-                            delay: 0.2
-                        });
-                    }
-                });
-            }
-
-            if (bounds && event.object) {
-                bounds.refresh(event.object).fit();
-            }
-        }
-    };
-
-    const handlePointerOver = (event: any) => {
-        event.stopPropagation();
-        document.body.style.cursor = 'pointer';
-
-        if (event.object instanceof Mesh && event.object.material) {
-            makeMaterialUnique(event.object);
-            const material = event.object.material as MeshStandardMaterial;
-            if (material.emissive) {
-                if (event.object.userData.originalEmissive === undefined) {
-                    event.object.userData.originalEmissive = material.emissive.getHex();
-                }
-                material.emissive.setHex(0x444444);
-            }
-        }
-    };
-
-    const handlePointerOut = (event: any) => {
-        event.stopPropagation();
-        document.body.style.cursor = 'auto';
-
-        if (event.object instanceof Mesh && event.object.material) {
-            const material = event.object.material as MeshStandardMaterial;
-            if (material.emissive && event.object.userData.originalEmissive !== undefined) {
-                material.emissive.setHex(event.object.userData.originalEmissive);
-                delete event.object.userData.originalEmissive;
-            }
-        }
-    };
 
     if (!gltf) {
         return null;
@@ -1262,9 +1289,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return (
         <group
             ref={groupRef}
-            onClick={handleClick}
-            onPointerOver={handlePointerOver}
-            onPointerOut={handlePointerOut}
             position={[0, .1, 0]}
         >
             <primitive

@@ -11,6 +11,8 @@ import { AIChat } from './AIChat';
 import { LightingControls, LightingPreset } from './LightingControls';
 import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
+import { useTheme } from '@/hooks/use-theme';
+import colorwaysData from '../data/colorways.json';
 
 // National Park inspired color palette with specific darkened speckle base colors
 const NATIONAL_PARK_COLORS = [
@@ -47,21 +49,77 @@ const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'turf' }> =
   const { scene } = useThree();
 
   React.useEffect(() => {
-    let backgroundColor: string;
-    switch (backgroundType) {
-      case 'dark':
-        backgroundColor = '#1a1a1a';
-        break;
-      case 'turf':
-        // Turf field green - nice dark green grass color
-        backgroundColor = '#1b4f2a';
-        break;
-      case 'light':
-      default:
-        backgroundColor = '#f8f9fa';
-        break;
+    if (backgroundType === 'turf') {
+      // Load forest/turf image as background
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        '/rogland_moonlit_night.jpg',
+        (texture) => {
+          // Configure texture for background
+          texture.wrapS = THREE.RepeatWrapping;
+          texture.wrapT = THREE.RepeatWrapping;
+          texture.repeat.set(1, 1);
+          texture.offset.set(0, 0);
+          
+          // Enhance texture quality and color
+          texture.generateMipmaps = true;
+          texture.minFilter = THREE.LinearMipmapLinearFilter;
+          texture.magFilter = THREE.LinearFilter;
+          texture.anisotropy = 16; // Maximum anisotropic filtering for better quality
+          texture.colorSpace = THREE.SRGBColorSpace; // Ensure proper color space
+          
+          // Create a sphere geometry for the background
+          const geometry = new THREE.SphereGeometry(10, 12, 32);
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            side: THREE.BackSide,
+            // Enhance color saturation and contrast
+            color: new THREE.Color(1.2, 1.2, 1.2), // Brighten the texture
+            transparent: false,
+            opacity: 1.0
+          });
+          
+          // Remove existing background
+          scene.background = null;
+          
+          // Remove existing background sphere if it exists
+          const existingBackground = scene.getObjectByName('backgroundSphere');
+          if (existingBackground) {
+            scene.remove(existingBackground);
+          }
+          
+          // Create new background sphere
+          const backgroundSphere = new THREE.Mesh(geometry, material);
+          backgroundSphere.name = 'backgroundSphere';
+          scene.add(backgroundSphere);
+        },
+        undefined,
+        (error) => {
+          console.warn('Failed to load forest background image, falling back to solid color:', error);
+          // Fallback to solid color if image fails to load
+          scene.background = new THREE.Color('#1b4f2a');
+        }
+      );
+    } else {
+      // Remove background sphere for non-turf backgrounds
+      const existingBackground = scene.getObjectByName('backgroundSphere');
+      if (existingBackground) {
+        scene.remove(existingBackground);
+      }
+      
+      // Set solid color background
+      let backgroundColor: string;
+      switch (backgroundType) {
+        case 'dark':
+          backgroundColor = '#1a1a1a';
+          break;
+        case 'light':
+        default:
+          backgroundColor = '#f8f9fa';
+          break;
+      }
+      scene.background = new THREE.Color(backgroundColor);
     }
-    scene.background = new THREE.Color(backgroundColor);
   }, [scene, backgroundType]);
 
   return null;
@@ -82,6 +140,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   canvasRef,
   onColorConfigurationChange
 }) => {
+  const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(false);
@@ -98,9 +157,36 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [soleHasSplatter, setSoleHasSplatter] = useState(false);
   const [upperSplatterColor, setUpperSplatterColor] = useState('#f8f8ff'); // Glacier White
   const [soleSplatterColor, setSoleSplatterColor] = useState('#f8f8ff'); // Glacier White
+  const [upperSplatterColor2, setUpperSplatterColor2] = useState<string | null>(null);
+  const [soleSplatterColor2, setSoleSplatterColor2] = useState<string | null>(null);
+  const [upperSplatterBaseColor, setUpperSplatterBaseColor] = useState<string | null>(null);
+  const [soleSplatterBaseColor, setSoleSplatterBaseColor] = useState<string | null>(null);
+  const [upperUseDualSplatter, setUpperUseDualSplatter] = useState(false);
+  const [soleUseDualSplatter, setSoleUseDualSplatter] = useState(false);
   const [upperPaintDensity, setUpperPaintDensity] = useState(500); // 50% default
   const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
-  const [activeColorTab, setActiveColorTab] = useState<'upper' | 'sole' | 'laces' | 'logos'>('upper');
+  const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
+  
+  // Colorway state
+  const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
+  
+  // Get current colorway data
+  const colorways = colorwaysData.colorways;
+  const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
+
+  // Handle colorway changes
+  const handleColorwayChange = (colorway: any) => {
+    setSelectedColorwayId(colorway.id);
+    // Update splatter base colors from the colorway
+    setUpperSplatterBaseColor(colorway.upper.splatterBaseColor);
+    setSoleSplatterBaseColor(colorway.sole.splatterBaseColor);
+    // Update dual splatter colors and settings
+    setUpperSplatterColor2(colorway.upper.splatterColor2);
+    setSoleSplatterColor2(colorway.sole.splatterColor2);
+    setUpperUseDualSplatter(colorway.upper.useDualSplatter);
+    setSoleUseDualSplatter(colorway.sole.useDualSplatter);
+    // The ColorCustomizer will handle updating the individual color states
+  };
 
   // ColorCustomizer height tracking for AIChat positioning
   const [customizerHeight, setCustomizerHeight] = useState(100);
@@ -224,6 +310,16 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
     onColorConfigurationChange
   ]);
 
+  // Effect to initialize splatter base colors from selected colorway
+  useEffect(() => {
+    setUpperSplatterBaseColor(selectedColorway.upper.splatterBaseColor);
+    setSoleSplatterBaseColor(selectedColorway.sole.splatterBaseColor);
+    setUpperSplatterColor2(selectedColorway.upper.splatterColor2);
+    setSoleSplatterColor2(selectedColorway.sole.splatterColor2);
+    setUpperUseDualSplatter(selectedColorway.upper.useDualSplatter);
+    setSoleUseDualSplatter(selectedColorway.sole.useDualSplatter);
+  }, [selectedColorway]);
+
   const handleModelLoad = () => {
     setIsLoading(false);
     setError(null);
@@ -269,7 +365,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   };
 
   const handlePartClick = (partType: 'upper' | 'sole' | 'laces' | 'logos') => {
-    setActiveColorTab(partType);
+    // Map all part clicks to colorways tab since we now use colorway system
+    setActiveColorTab('colorways');
   };
 
   const handleHotspotAdd = (hotspot: any) => {
@@ -432,6 +529,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             preset={lightingPreset}
             intensity={lightingIntensity}
             shadowIntensity={shadowIntensity}
+            useHDRI={backgroundType === 'turf'}
+            hdriPath={backgroundType === 'turf' ? '/rogland_moonlit_night.jpg' : undefined}
           />
 
           {/* Controls */}
@@ -469,6 +568,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               soleHasSplatter={soleHasSplatter}
               upperSplatterColor={upperSplatterColor}
               soleSplatterColor={soleSplatterColor}
+              upperSplatterColor2={upperSplatterColor2}
+              soleSplatterColor2={soleSplatterColor2}
+              upperSplatterBaseColor={upperSplatterBaseColor}
+              soleSplatterBaseColor={soleSplatterBaseColor}
+              upperUseDualSplatter={upperUseDualSplatter}
+              soleUseDualSplatter={soleUseDualSplatter}
               upperPaintDensity={upperPaintDensity}
               solePaintDensity={solePaintDensity}
               // Gradient props
@@ -572,6 +677,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
 
         {/* Color Customizer - Bottom Panel */}
         <ColorCustomizer
+          selectedColorwayId={selectedColorwayId}
+          onColorwayChange={handleColorwayChange}
           topColor={topColor}
           bottomColor={bottomColor}
           onTopColorChange={setTopColor}
@@ -580,12 +687,22 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           soleHasSplatter={soleHasSplatter}
           upperSplatterColor={upperSplatterColor}
           soleSplatterColor={soleSplatterColor}
+          upperSplatterColor2={upperSplatterColor2}
+          soleSplatterColor2={soleSplatterColor2}
+          upperSplatterBaseColor={upperSplatterBaseColor}
+          soleSplatterBaseColor={soleSplatterBaseColor}
+          upperUseDualSplatter={upperUseDualSplatter}
+          soleUseDualSplatter={soleUseDualSplatter}
           upperPaintDensity={upperPaintDensity}
           solePaintDensity={solePaintDensity}
           onUpperSplatterToggle={setUpperHasSplatter}
           onSoleSplatterToggle={setSoleHasSplatter}
           onUpperSplatterColorChange={setUpperSplatterColor}
           onSoleSplatterColorChange={setSoleSplatterColor}
+          onUpperSplatterColor2Change={setUpperSplatterColor2}
+          onSoleSplatterColor2Change={setSoleSplatterColor2}
+          onUpperUseDualSplatterChange={setUpperUseDualSplatter}
+          onSoleUseDualSplatterChange={setSoleUseDualSplatter}
           onUpperPaintDensityChange={setUpperPaintDensity}
           onSolePaintDensityChange={setSolePaintDensity}
           activeTab={activeColorTab}

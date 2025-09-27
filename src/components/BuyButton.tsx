@@ -1,16 +1,43 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ShoppingCart, Send, Plus, Minus, X, User, MessageSquare, Check, MapPin, Info, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
+import { ExpandingButton } from '@/components/ExpandingButton';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   isDarkMode?: boolean;
   // Optional callback to get current color configuration
-  getColorConfiguration?: () => any;
+  getColorConfiguration?: () => {
+    upper: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+    };
+    sole: {
+      baseColor: string;
+      hasSplatter: boolean;
+      splatterColor: string;
+      hasGradient: boolean;
+      gradientColor1: string;
+      gradientColor2: string;
+      texture: string | null;
+    };
+    laces: {
+      color: string;
+    };
+    logo: {
+      color: string;
+      url: string | null;
+    };
+  };
 }
 
 interface SizeQuantity {
@@ -30,6 +57,7 @@ interface FormData {
   country: string;
   sizeQuantities: SizeQuantity;
   notes: string;
+  website: string; // Honeypot field
 }
 
 interface AddressValidation {
@@ -72,7 +100,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   const [screenshot, setScreenshot] = useState<string>('');
   const [sizeFilter, setSizeFilter] = useState<SizeFilter>('mens');
   const [currentStep, setCurrentStep] = useState(0);
-  const [showNotes, setShowNotes] = useState(false);
   const [addressValidation, setAddressValidation] = useState<AddressValidation>({
     isValidating: false,
     isValid: null,
@@ -91,7 +118,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     zip: '',
     country: '',
     sizeQuantities: {},
-    notes: ''
+    notes: '',
+    website: '' // Honeypot field
   });
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -156,7 +184,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         zip: '',
         country: '',
         sizeQuantities: {},
-        notes: ''
+        notes: '',
+        website: '' // Honeypot field
       });
       setScreenshot('');
       setCurrentStep(0);
@@ -240,7 +269,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   };
 
   // Address validation using Nominatim (OpenStreetMap) - Free service
-  const validateAddress = async () => {
+  const validateAddress = useCallback(async () => {
     const { addressLine1, city, state, zip, country } = formData;
 
     // Don't validate if required fields are empty
@@ -302,7 +331,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         error: 'Unable to validate address. Please ensure it\'s correct.'
       });
     }
-  };
+  }, [formData]);
 
   // Debounced address validation
   useEffect(() => {
@@ -313,9 +342,21 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     }, 1000); // Wait 1 second after user stops typing
 
     return () => clearTimeout(timer);
-  }, [formData.addressLine1, formData.city, formData.state, formData.zip, formData.country]);
+  }, [formData.addressLine1, formData.city, formData.state, formData.zip, formData.country, validateAddress]);
 
-  const applySuggestion = (suggestion: any) => {
+  const applySuggestion = (suggestion: {
+    display_name: string;
+    address: {
+      house_number?: string;
+      road?: string;
+      city?: string;
+      town?: string;
+      village?: string;
+      state?: string;
+      postcode?: string;
+      country?: string;
+    };
+  }) => {
     const addr = suggestion.address;
     setFormData(prev => ({
       ...prev,
@@ -366,6 +407,17 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Honeypot check - if filled, it's likely spam
+    if (formData.website.trim() !== '') {
+      console.log('Spam detected - honeypot field filled');
+      toast({
+        title: "Submission Blocked",
+        description: "Invalid submission detected.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!isFormValid()) {
       toast({
@@ -463,12 +515,36 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-white rounded-l-3xl rounded-r-none shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-white rounded-bl-[40px] rounded-r-none shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
         {/* Header */}
         <div className="flex items-center justify-center pl-6 pt-3 pb-2 bg-transparent flex-shrink-0">
           <div className="flex items-center gap-3">
-            <img src="/kustom_1icon.svg" alt="Kustom Icon" className="w-auto h-12 -ml-4 opacity-50" />
+            <svg 
+              className="w-auto h-12 -ml-4 opacity-100 fill-slate-500/80" 
+              viewBox="0 0 71.3 21.09" 
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g>
+                <g opacity="0.5">
+                  <g>
+                    <path d="M1.14,6.66c.27.11.53.21.8.31.83.31,1.65.62,2.48.93.21.08.41.19.56.36.22.24.31.52.31.84,0,1.76,0,3.51,0,5.27,0,.02,0,.03,0,.06-.02,0-.03,0-.04-.01-.85-.35-1.71-.7-2.55-1.07-.9-.4-1.4-1.1-1.54-2.07-.01-.09-.02-.18-.02-.28,0-1.43,0-2.85,0-4.28,0-.02,0-.04,0-.06Z"/>
+                    <path d="M5.92,14.43v-.09c0-1.73,0-3.46,0-5.19,0-.61.28-1.02.85-1.24.92-.35,1.84-.69,2.76-1.04.16-.06.31-.12.47-.19.02,0,.05-.02.08-.03v.08c0,1.4,0,2.81,0,4.21,0,1.09-.62,2.01-1.63,2.43-.81.34-1.63.68-2.44,1.02-.02.01-.05.02-.08.03Z"/>
+                  </g>
+                  <g>
+                    <g>
+                      <path d="M28.1,14.19c-2.63,0-3.27-.79-3.27-1.95v-4.74c0-.24.12-.35.38-.35h1.66c.27,0,.38.11.38.35v4.37c0,.26.13.45.87.45s.88-.19.88-.45v-4.37c0-.24.11-.35.38-.35h1.61c.26,0,.38.11.38.35v4.74c0,1.17-.65,1.95-3.27,1.95Z"/>
+                      <path d="M32.98,14.05c-.27,0-.38-.11-.38-.35v-1.12c0-.24.12-.35.38-.35h2.85c.18,0,.28-.12.28-.28,0-.22-.1-.31-.28-.33l-1.59-.2c-1-.13-1.64-.52-1.64-1.59v-1.01c0-1.09.82-1.69,2.19-1.69h2.97c.26,0,.38.11.38.35v1.14c0,.24-.12.35-.38.35h-2.47c-.18,0-.29.12-.29.29s.11.29.29.31l1.58.19c1,.13,1.65.52,1.65,1.59v1.01c0,1.09-.83,1.69-2.19,1.69h-3.35Z"/>
+                      <path d="M41.46,14.05c-.26,0-.38-.11-.38-.35v-4.71h-1.56c-.26,0-.38-.11-.38-.35v-1.16c0-.24.12-.35.38-.35h5.6c.26,0,.38.11.38.35v1.16c0,.24-.12.35-.38.35h-1.56v4.71c0,.24-.12.35-.38.35h-1.72Z"/>
+                      <path d="M49.65,14.19c-2.65,0-3.3-.79-3.3-1.95v-3.27c0-1.17.65-1.96,3.3-1.96s3.28.8,3.28,1.96v3.27c0,1.17-.64,1.95-3.28,1.95ZM49.65,12.34c.77,0,.89-.19.89-.45v-2.58c0-.25-.12-.44-.89-.44s-.89.19-.89.44v2.58c0,.26.13.45.89.45Z"/>
+                      <path d="M54.66,14.05c-.26,0-.38-.11-.38-.35v-6.21c0-.24.12-.35.38-.35h1.71c.22,0,.36.08.49.29l.95,1.56c.07.11.11.16.19.16h.1c.09,0,.12-.05.19-.16l.94-1.56c.13-.21.27-.29.49-.29h1.72c.26,0,.38.11.38.35v6.21c0,.24-.12.35-.38.35h-1.63c-.28,0-.38-.11-.38-.35v-3.37l-.62,1.04c-.13.22-.29.31-.56.31h-.42c-.28,0-.43-.09-.56-.31l-.63-1.04v3.37c0,.24-.12.35-.38.35h-1.58Z"/>
+                      <path d="M63.47,14.05c-.27,0-.38-.11-.38-.35v-1.12c0-.24.12-.35.38-.35h2.85c.18,0,.28-.12.28-.28,0-.22-.1-.31-.28-.33l-1.59-.2c-1-.13-1.64-.52-1.64-1.59v-1.01c0-1.09.82-1.69,2.19-1.69h2.97c.26,0,.38.11.38.35v1.14c0,.24-.12.35-.38.35h-2.47c-.18,0-.29.12-.29.29s.11.29.29.31l1.58.19c1,.13,1.65.52,1.65,1.59v1.01c0,1.09-.83,1.69-2.19,1.69h-3.35Z"/>
+                    </g>
+                    <path d="M15.64,7.05h.08c.73,0,1.47,0,2.2,0,.26,0,.45.19.45.45,0,.67,0,1.35,0,2.02v.09c.15,0,.3,0,.44,0,.13.01.2-.04.27-.14.53-.72,1.07-1.44,1.6-2.16.13-.18.3-.26.52-.26.71,0,1.42,0,2.12,0,.08,0,.16.01.23.04.11.05.16.15.12.27-.02.06-.06.13-.1.18-.76.98-1.52,1.96-2.29,2.94-.04.05-.04.08,0,.12.77.98,1.53,1.96,2.29,2.94.04.05.08.12.1.18.04.11,0,.22-.12.27-.06.03-.13.04-.19.04-.74,0-1.48,0-2.22,0-.2,0-.34-.09-.46-.24-.55-.75-1.11-1.5-1.66-2.25-.04-.05-.07-.07-.14-.07-.17,0-.35,0-.52,0v2.56s-.05,0-.08,0c-.74,0-1.48,0-2.22,0-.27,0-.43-.16-.43-.43,0-2.17,0-4.33,0-6.5v-.07Z"/>
+                  </g>
+                </g>
+              </g>
+            </svg>
           </div>
           <Button
             variant="ghost"
@@ -481,38 +557,125 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 159px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 59px)' }}>
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Stepper - Simplified titles for less text */}
-            <div className="flex items-center justify-between mb-4">
-              {steps.map((step, index) => (
-                <React.Fragment key={index}>
-                  <div className="flex  flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${isStepComplete(index)
-                        ? 'bg-green-500 text-white'
-                        : currentStep === index
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}>
-                      {isStepComplete(index) ? (
-                        <Check className="w-5 h-5" />
-                      ) : (
-                        index + 1
+            <nav className="mb-2">
+              <ol
+                className="flex items-center justify-between w-full relative"
+                style={{ marginTop: '-20px', minHeight: 70 }}
+              >
+                {steps.map((step, index) => {
+                  const isCompleted = isStepComplete(index);
+                  const isActive = currentStep === index;
+                  // For the "liquid fill" effect: bars fill only after step is completed (i.e., after clicking "Next")
+                  // So, bar before step 1 is never filled, after step 1 is completed, first bar fills, etc.
+                  return (
+                    <React.Fragment key={index}>
+                      <li className="flex flex-col items-center flex-1 min-w-0 z-10">
+                        <div
+                          className={`
+                            flex items-center justify-center
+                            w-11 h-11
+                            rounded-full
+                            border-2
+                            transition-all
+                            duration-200
+                            relative
+                            ${isCompleted
+                              ? 'bg-green-500 border-green-500 shadow-lg text-white'
+                              : isActive
+                                ? 'bg-primary border-primary shadow text-white'
+                                : 'bg-white border-gray-300 text-gray-400'
+                            }
+                          `}
+                          style={{
+                            boxShadow: isActive
+                              ? '0 0 0 6px rgba(59,130,246,0.10)'
+                              : isCompleted
+                                ? '0 0 0 6px rgba(34,197,94,0.10)'
+                                : undefined
+                          }}
+                        >
+                          {isCompleted ? (
+                            <Check className="w-5 h-5" />
+                          ) : (
+                            <span className="font-semibold">{index + 1}</span>
+                          )}
+                        </div>
+                        <span
+                          className={`
+                            mt-2 text-xs font-semibold text-center transition-colors
+                            ${isActive
+                              ? 'text-primary'
+                              : isCompleted
+                                ? 'text-green-600'
+                                : 'text-gray-500'
+                            }
+                          `}
+                          style={{
+                            maxWidth: 80,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {step.title}
+                        </span>
+                      </li>
+                      {index < steps.length - 1 && (
+                        <div
+                          className="relative flex-1 flex items-center"
+                          style={{
+                            // Move the lines up so they're closer to the middle of the circle
+                            marginTop: '0.4rem',
+                            marginBottom: 0,
+                            minWidth: 32,
+                            height: 10,
+                          }}
+                        >
+                          {/* Track */}
+                          <div
+                            className="absolute w-full h-2 rounded-full bg-gray-200"
+                            style={{
+                              // Move the bar up to align with the center of the step circle
+                              top: '-0.65rem',
+                              left: 0,
+                              zIndex: 0,
+                            }}
+                          />
+                          {/* "Liquid fill" bar: only fills after step is completed */}
+                          <div
+                            className={`
+                              absolute h-2 rounded-full transition-all duration-700
+                              ${isStepComplete(index + 1)
+                                ? 'bg-green-500'
+                                : 'bg-primary/30'
+                              }
+                            `}
+                            style={{
+                              width: isStepComplete(index + 1) ? '100%' : '0%',
+                              left: 0,
+                              top: '-0.65rem',
+                              zIndex: 1,
+                              transitionTimingFunction: 'cubic-bezier(.4,1.6,.6,1)',
+                              boxShadow: isStepComplete(index + 1)
+                                ? '0 2px 8px 0 rgba(34,197,94,0.10)'
+                                : undefined,
+                            }}
+                          />
+                        </div>
                       )}
-                    </div>
-                    <span className="text-xs mt-1 text-center font-medium">{step.title}</span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className="flex-1 h-0.5 bg-gray-200 mx-2" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+                    </React.Fragment>
+                  );
+                })}
+              </ol>
+            </nav>
 
             {/* Step Content */}
             <form onSubmit={(e) => { if (currentStep === steps.length - 1) handleSubmit(e); else e.preventDefault(); }} className="space-y-6">
               {currentStep === 0 && (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
                  
                   </div>
@@ -556,12 +719,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   </div>
 
                   {/* Size Grid with fade out */}
-                  <div className="relative">
-                    <div className="grid grid-cols-2 gap-4 max-h-[45vh] pb-4 overflow-y-auto pr-2">
+                  <div className="relative pt-3">
+                    <div className="grid grid-cols-2 gap-4 max-h-[50vh] pb-4 overflow-y-auto pr-2">
                       {getFilteredSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
                         return (
-                          <div key={size} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${quantity > 0 ? 'border-primary bg-primary/5' : 'border-gray-200 hover:border-gray-300'
+                          <div key={size} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${quantity > 0 ? 'border-slate-500/20 bg-slate-400/5' : 'border-gray-200 hover:border-gray-300'
                             }`}>
                             <span className="font-medium text-sm">{size}</span>
                             <div className="flex items-center gap-1">
@@ -591,7 +754,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
                   {/* Quick Summary - Moved to bottom, simplified */}
                   {getTotalPairs() > 0 && (
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-50 py-2 px-4 rounded-lg border border-gray-200">
                       <div className="flex justify-between items-center font-medium">
                         <span>Total Pairs</span>
                         <span className="text-primary">{getTotalPairs()}</span>
@@ -607,8 +770,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
               )}
 
               {currentStep === 1 && (
-                <div className="space-y-6">
-                  <h3 className="font-semibold text-lg">Contact Info</h3>
+                <div className="space-y-4">
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -634,44 +796,70 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                       </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="email" className="text-sm">Email *</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="email" className="text-sm">Email *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          placeholder="john@example.com"
+                          autoComplete="email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone" className="text-sm">Phone</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="(555) 123-4567"
+                          autoComplete="tel"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Honeypot field - hidden from users but accessible to bots */}
+                    <div style={{ 
+                      position: 'absolute', 
+                      left: '-9999px', 
+                      opacity: 0, 
+                      pointerEvents: 'none'
+                    }}>
+                      <Label htmlFor="website" className="sr-only">Website (leave blank)</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        placeholder="john@example.com"
-                        autoComplete="email"
+                        id="website"
+                        type="text"
+                        value={formData.website}
+                        onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+                        placeholder=""
+                        autoComplete="off"
+                        tabIndex={-1}
+                        aria-hidden="true"
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="phone" className="text-sm">Phone</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        placeholder="(555) 123-4567"
-                        autoComplete="tel"
-                      />
-                    </div>
-
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="font-medium text-base flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        Shipping Address
-                        {addressValidation.isValidating && (
-                          <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
-                        )}
-                        {addressValidation.isValid === true && (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        )}
-                        {addressValidation.isValid === false && (
-                          <AlertCircle className="w-4 h-4 text-red-500" />
-                        )}
-                      </h4>
+                    <div className="space-y-4 pt-4">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-medium text-base flex items-center gap-2 mb-0">
+                          <MapPin className="w-4 h-4" />
+                          Shipping Address
+                          {addressValidation.isValidating && (
+                            <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+                          )}
+                          {addressValidation.isValid === true && (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          )}
+                          {addressValidation.isValid === false && (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                        </h4>
+                        <div className="flex-1 ml-2">
+                          <div className="border-t border-gray-200 w-full" />
+                        </div>
+                      </div>
 
                       <div>
                         <Label htmlFor="addressLine1" className="text-sm">Address Line 1 *</Label>
@@ -787,7 +975,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
               )}
 
               {currentStep === 2 && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Screenshot Preview - Made larger for better visibility */}
                   {screenshot && (
                     <div className="space-y-2">
@@ -796,85 +984,68 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                         <img
                           src={screenshot}
                           alt="Custom shoe design"
-                          className="w-full h-56 object-contain"
+                          className="w-full h-40 object-contain"
                         />
                       </div>
                     </div>
                   )}
 
                   {/* Order Summary - Simplified */}
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">Summary</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
-                      <div className="flex justify-between">
-                        <span>Pairs</span>
-                        <span className="font-medium">{getTotalPairs()}</span>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-lg -mt-2">Order Summary</h3>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="flex-1 text-gray-700 text-sm">Quantity</span>
+                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ml-2">
+                          <span className="font-bold">{getTotalPairs()}</span>
+                        </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Price/Pair</span>
-                        <span className="font-medium">${PRICE_PER_PAIR}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="flex-1 text-gray-700 text-sm">Price / Pair</span>
+                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ml-2">
+                          <span className="font-bold">${PRICE_PER_PAIR}</span>
+                        </span>
                       </div>
-                      <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                        <span>Total</span>
-                        <span className="text-primary">${getTotalPrice()}</span>
+                      <div className="flex items-center justify-between border-t pt-2 text-md font-bold">
+                        <span className="flex-1">Total</span>
+                        <span className="text-primary flex items-center gap-1 ml-2">
+                          <span className="text-xl">${getTotalPrice()}</span>
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Invoice Info Card */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                     <div className="flex items-start gap-3">
                       <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
                         <h4 className="font-medium text-blue-900">Next Steps</h4>
-                        <p className="text-sm text-blue-800">
-                          We'll reach out to you with an official invoice and payment details within 24 hours.
+                        <p className="text-xs text-blue-800">
+                          We'll reach out to you with an official invoice within 24 hours.
 
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Additional Notes - Collapsible */}
+                  {/* Additional Notes - Expanding Button */}
                   <div className="space-y-2">
-                    {!showNotes ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowNotes(true)}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-                      >
-                        <Plus className="w-4 h-4" />
-                        Add Special Notes
-                      </Button>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="notes" className="text-sm">Special Notes</Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setShowNotes(false);
-                              setFormData(prev => ({ ...prev, notes: '' }));
-                            }}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <Textarea
-                          id="notes"
-                          value={formData.notes}
-                          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                          placeholder="Any special instructions or requests..."
-                          rows={3}
-                          className="resize-none"
-                        />
-                      </div>
-                    )}
+                    <ExpandingButton
+                      buttonText="Add Special Notes"
+                      placeholder="Any special instructions or requests..."
+                      value={formData.notes}
+                      onChange={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                      onSubmit={(text) => {
+                        setFormData(prev => ({ ...prev, notes: text }));
+                        toast({
+                          title: "Notes Added",
+                          description: "Your special notes have been saved.",
+                        });
+                      }}
+                      onCancel={() => setFormData(prev => ({ ...prev, notes: '' }))}
+                      rows={2}
+                    />
                   </div>
                 </div>
               )}
@@ -882,14 +1053,14 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border-t bg-transparent p-6">
+          <div className="border border-slate-400/20 mx-3 my-5 bg-gradient-to-r from-slate-400/10 to-slate-400/0 rounded-full p-4">
             <div className="flex justify-between gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handlePrev}
                 disabled={currentStep === 0 || isSubmitting}
-                className="flex-1 hover:bg-gray-50 hover:text-slate-900"
+                className="flex-1 rounded-full hover:bg-gray-50 hover:text-slate-900"
               >
                 Back
               </Button>
@@ -897,7 +1068,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 <Button
                   onClick={handleNext}
                   disabled={!isStepComplete(currentStep) || isSubmitting}
-                  className="flex-1"
+                  className="flex-1 rounded-full"
                 >
                   Next
                 </Button>
@@ -905,7 +1076,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting || !isFormValid()}
-                  className={`flex-1 flex items-center gap-2 transition-all ${isFormValid() && !isSubmitting
+                  className={`flex-1 rounded-full flex items-center gap-2 transition-all ${isFormValid() && !isSubmitting
                       ? 'bg-primary hover:bg-primary/90 text-white'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300'
                     }`}

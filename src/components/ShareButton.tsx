@@ -232,7 +232,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
           size="sm"
           className={`rounded-full w-9 md:w-auto items-center gap-2 transition-all duration-300 ${isDarkMode
             ? 'bg-black/40 border-white/20 text-white hover:bg-white/20'
-            : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-white'
+            : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-black'
             }`}
           disabled={isGenerating}
         >
@@ -241,16 +241,17 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 rounded-2xl">
-        <DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 rounded-2xl">
-          Instagram Post
+        <DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 hover:text-black rounded-xl">
+         <span className=' ml-3'> Instagram Post </span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyShareLink} className="hover:bg-gray-100 rounded-2xl">
+        <DropdownMenuItem onClick={copyShareLink} className="hover:bg-gray-100 rounded-xl">
+        <span className=' ml-3 mr-2'>
+          Copy Link </span>
           {copied ? (
             <Check className="w-4 h-4 mr-2 text-green-500" />
           ) : (
             <Copy className="w-4 h-4 mr-2" />
           )}
-          Copy Link
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

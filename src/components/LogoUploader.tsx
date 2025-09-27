@@ -1,16 +1,28 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Copy } from 'lucide-react';
+import { Button } from './ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface LogoUploaderProps {
   onLogoChange: (logoDataUrl: string | null) => void;
   currentLogo?: string | null;
   className?: string;
+  showCopyButton?: boolean;
+  onCopyClick?: () => void;
+  copyButtonDisabled?: boolean;
+  copyButtonTooltip?: string;
+  rotate?: boolean;
 }
 
 export const LogoUploader: React.FC<LogoUploaderProps> = ({
   onLogoChange,
   currentLogo = null,
-  className = ''
+  className = '',
+  showCopyButton = false,
+  onCopyClick = () => {},
+  copyButtonDisabled = false,
+  copyButtonTooltip = 'Copy from side logo',
+  rotate = false
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -84,12 +96,11 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
   return (
     <div className={`h-[60px] !-mt-2 flex flex-col ${className}`}>
       {/* Minimal Header - Single Line */}
-      <div className="flex items-center justify-between ">
-      
+      <div className="flex items-center justify-end">
         {currentLogo && (
           <button
             onClick={handleRemoveLogo}
-            className="text-muted-foreground hover:text-destructive transition-colors"
+            className="text-muted-foreground -mt-4 mb-1 hover:text-destructive transition-colors"
             title="Remove logo"
           >
             <X size={12} />
@@ -127,7 +138,7 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
               <img
                 src={currentLogo}
                 alt="Logo preview"
-                className="w-full h-full object-contain"
+                className={`w-full h-full object-contain ${rotate ? '-rotate-90 scale-y-[-1]' : ''}`}
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -136,18 +147,43 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
             </div>
           </div>
         ) : (
-          // Centered upload prompt
-          <div className="text-center px-2">
-            <div className="w-6 h-6 mx-auto bg-muted rounded flex items-center justify-center mb-1">
-              {isProcessing ? (
-                <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <ImageIcon size={12} className="text-muted-foreground" />
-              )}
-            </div>
-            <p className="text-xs hidden md:block font-medium text-muted-foreground">
-              {isProcessing ? 'Processing...' : 'Drop or click to upload'}
-            </p>
+          // Centered buttons when no logo is uploaded
+          <div className="flex items-center justify-center gap-2 px-2">
+            {showCopyButton && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCopyClick();
+                      }}
+                      disabled={copyButtonDisabled}
+                      className="h-8 px-3 text-xs transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      Copy
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{copyButtonTooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUploadClick();
+              }}
+              disabled={isProcessing}
+              className="h-8 px-3 text-xs transition-all duration-300 disabled:opacity-40"
+            >
+              {isProcessing ? 'Processing...' : 'Upload new'}
+            </Button>
           </div>
         )}
       </div>

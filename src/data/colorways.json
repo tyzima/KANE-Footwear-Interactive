@@ -1,0 +1,508 @@
+{
+  "colorways": [
+    {
+      "id": "classic-forest",
+      "name": "Classic Forest",
+      "description": "Timeless forest green with natural tones",
+      "upper": {
+        "baseColor": "#2d5016",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#8b4513",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": "forest-splatter",
+      "name": "Forest Splatter",
+      "description": "Forest green with white paint splatter",
+      "upper": {
+        "baseColor": "#2d5016",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#060c03",
+        "splatterColor2": "#0d1806",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#8b4513",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": "crimson-classic",
+      "name": "Crimson Classic",
+      "description": "Bold crimson with clean white sole",
+      "upper": {
+        "baseColor": "#C01030",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#C01030"
+      }
+    },
+    {
+      "id": "crimson-splatter",
+      "name": "Crimson Splatter",
+      "description": "Crimson with white paint splatter effect",
+      "upper": {
+        "baseColor": "#C01030",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#1c0207",
+        "splatterColor2": "#39040e",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#C01030"
+      }
+    },
+    {
+      "id": "navy-classic",
+      "name": "Navy Classic",
+      "description": "Deep navy with white accents",
+      "upper": {
+        "baseColor": "#001F5C",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#001F5C"
+      }
+    },
+    {
+      "id": "navy-splatter",
+      "name": "Navy Splatter",
+      "description": "Navy with white paint splatter",
+      "upper": {
+        "baseColor": "#001F5C",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#00040d",
+        "splatterColor2": "#00091b",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#001F5C"
+      }
+    },
+    {
+      "id": "golden-forest",
+      "name": "Golden Forest",
+      "description": "Rich gold with forest green sole",
+      "upper": {
+        "baseColor": "#FFD700",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#2d5016",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#2d5016"
+      }
+    },
+    {
+      "id": "golden-splatter",
+      "name": "Golden Splatter",
+      "description": "Gold with forest green splatter",
+      "upper": {
+        "baseColor": "#FFD700",
+        "hasSplatter": true,
+        "splatterColor": "#2d5016",
+        "splatterBaseColor": "#262000",
+        "splatterColor2": "#fff3b2",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#2d5016",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#2d5016"
+      }
+    },
+    {
+      "id": "charcoal-classic",
+      "name": "Charcoal Classic",
+      "description": "Sophisticated charcoal with white sole",
+      "upper": {
+        "baseColor": "#36454F",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": "charcoal-splatter",
+      "name": "Charcoal Splatter",
+      "description": "Charcoal with white paint splatter",
+      "upper": {
+        "baseColor": "#36454F",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#080a0b",
+        "splatterColor2": "#101417",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FFFFFF"
+      }
+    },
+    {
+      "id": "burgundy-classic",
+      "name": "Burgundy Classic",
+      "description": "Rich burgundy with white sole",
+      "upper": {
+        "baseColor": "#8F0020",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#8F0020"
+      }
+    },
+    {
+      "id": "burgundy-splatter",
+      "name": "Burgundy Splatter",
+      "description": "Burgundy with white paint splatter",
+      "upper": {
+        "baseColor": "#8F0020",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#150004",
+        "splatterColor2": "#2a0009",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#8F0020"
+      }
+    },
+    {
+      "id": "teal-classic",
+      "name": "Teal Classic",
+      "description": "Vibrant teal with white sole",
+      "upper": {
+        "baseColor": "#008B8B",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#008B8B"
+      }
+    },
+    {
+      "id": "teal-splatter",
+      "name": "Teal Splatter",
+      "description": "Teal with white paint splatter",
+      "upper": {
+        "baseColor": "#008B8B",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#001414",
+        "splatterColor2": "#002929",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#008B8B"
+      }
+    },
+    {
+      "id": "orange-classic",
+      "name": "Orange Classic",
+      "description": "Bold orange with white sole",
+      "upper": {
+        "baseColor": "#FF7700",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FF7700"
+      }
+    },
+    {
+      "id": "orange-splatter",
+      "name": "Orange Splatter",
+      "description": "Orange with white paint splatter",
+      "upper": {
+        "baseColor": "#FF7700",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#af3600",
+        "splatterColor2": "#4c2300",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FF7700"
+      }
+    },
+    {
+      "id": "purple-classic",
+      "name": "Purple Classic",
+      "description": "Royal purple with white sole",
+      "upper": {
+        "baseColor": "#5D1EAF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#5D1EAF"
+      }
+    },
+    {
+      "id": "purple-splatter",
+      "name": "Purple Splatter",
+      "description": "Purple with white paint splatter",
+      "upper": {
+        "baseColor": "#5D1EAF",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#0d041a",
+        "splatterColor2": "#1b0934",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#5D1EAF"
+      }
+    },
+    {
+      "id": "olive-classic",
+      "name": "Olive Classic",
+      "description": "Military olive with white sole",
+      "upper": {
+        "baseColor": "#6B8000",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#6B8000"
+      }
+    },
+    {
+      "id": "olive-splatter",
+      "name": "Olive Splatter",
+      "description": "Olive with white paint splatter",
+      "upper": {
+        "baseColor": "#6B8000",
+        "hasSplatter": true,
+        "splatterColor": "#f8f8ff",
+        "splatterBaseColor": "#101300",
+        "splatterColor2": "#202600",
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#6B8000"
+      }
+    },
+    {
+      "id": "dual-splatter-test",
+      "name": "Dual Splatter Test",
+      "description": "White upper with red and blue dual splatter",
+      "upper": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": true,
+        "splatterColor": "#FF0000",
+        "splatterBaseColor": "#F0F0F0",
+        "splatterColor2": "#0000FF",
+        "useDualSplatter": true
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#000000"
+      }
+    }
+  ]
+}
