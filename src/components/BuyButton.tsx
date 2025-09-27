@@ -814,12 +814,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   </div>
 
                   {/* Sizes Header */}
-                  <div className="text-center py-2">
-                    <h4 className="text-base font-medium text-gray-900">
-                      {isConnected && currentProduct ? 'Available Sizes' : 'Select Sizes'}
-                    </h4>
-                 
-                  </div>
+                
 
                   {/* Size Grid with fade out */}
                   <div className="relative pt-3">
