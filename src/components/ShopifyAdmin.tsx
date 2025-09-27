@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Loader2, Package, Users, ShoppingCart, Inventory } from 'lucide-react';
+import { Loader2, Package, Users, ShoppingCart, Archive } from 'lucide-react';
 import { useShopify } from '@/hooks/useShopify';
 import { ShopifyConnection } from './ShopifyConnection';
 import { toast } from './ui/use-toast';
@@ -87,7 +87,7 @@ export const ShopifyAdmin: React.FC = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Inventory className="h-5 w-5 text-green-600" />
+              <Archive className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium">Variants</p>
                 <p className="text-2xl font-bold">

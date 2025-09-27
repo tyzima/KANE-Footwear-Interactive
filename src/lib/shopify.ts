@@ -16,7 +16,7 @@ export const SHOPIFY_CONFIG = {
     'read_inventory',
     'write_inventory',
   ],
-  redirectUri: `${window.location.origin}/auth/shopify/callback`,
+  redirectUri: typeof window !== 'undefined' ? `${window.location.origin}/auth/shopify/callback` : '',
 };
 
 // Shopify Admin API Client
