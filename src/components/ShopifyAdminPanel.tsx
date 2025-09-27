@@ -147,14 +147,39 @@ export const ShopifyAdminPanel: React.FC = () => {
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const productsPerPage = 10;
 
-  const loadProducts = async () => {
+  const loadProducts = async (page: number = 1, append: boolean = false) => {
     if (!isConnected) return;
 
     setIsLoadingProducts(true);
     try {
-      const productList = await getProducts(10);
-      setProducts(productList);
+      // Load more products to check pagination
+      const limit = Math.max(50, productsPerPage * page + 10); // Load enough for current page plus some extra
+      const productList = await getProducts(limit);
+      
+      const startIndex = (page - 1) * productsPerPage;
+      const endIndex = startIndex + productsPerPage;
+      const pageProducts = productList.slice(startIndex, endIndex);
+      
+      if (append) {
+        setProducts(prev => [...prev, ...pageProducts]);
+      } else {
+        setProducts(pageProducts);
+      }
+      
+      // Check if there are more products
+      setHasMoreProducts(productList.length > endIndex);
+      
+      console.log('Products loaded:', {
+        total: productList.length,
+        page,
+        showing: pageProducts.length,
+        hasMore: productList.length > endIndex
+      });
+      
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -165,6 +190,12 @@ export const ShopifyAdminPanel: React.FC = () => {
     } finally {
       setIsLoadingProducts(false);
     }
+  };
+
+  const loadMoreProducts = async () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    await loadProducts(nextPage, true);
   };
 
   useEffect(() => {
@@ -503,20 +534,22 @@ export const ShopifyAdminPanel: React.FC = () => {
         {/* Products Tab */}
         <TabsContent value="products" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Products</h3>
-            <Button onClick={loadProducts} disabled={isLoadingProducts} size="sm">
-              {isLoadingProducts ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
-                </>
-              )}
-            </Button>
+            <h3 className="text-lg font-medium">Products ({products.length})</h3>
+            <div className="flex gap-2">
+              <Button onClick={() => loadProducts(1, false)} disabled={isLoadingProducts} size="sm">
+                {isLoadingProducts ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {products.length === 0 ? (
@@ -576,6 +609,29 @@ export const ShopifyAdminPanel: React.FC = () => {
                   </CardContent>
                 </Card>
               ))}
+              
+              {/* Load More Button */}
+              {hasMoreProducts && products.length > 0 && (
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    onClick={loadMoreProducts} 
+                    disabled={isLoadingProducts}
+                    variant="outline"
+                  >
+                    {isLoadingProducts ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Loading More...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Load More Products
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
