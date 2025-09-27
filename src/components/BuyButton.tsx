@@ -560,11 +560,26 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       upperColor: colorConfig.upper.baseColor,
       soleColor: colorConfig.sole.baseColor,
       laceColor: colorConfig.laces.color,
+      
+      // Enhanced splatter data
       upperHasSplatter: colorConfig.upper.hasSplatter,
       upperSplatterColor: colorConfig.upper.hasSplatter ? colorConfig.upper.splatterColor : undefined,
+      upperSplatterColor2: colorConfig.upper.splatterColor2 || undefined,
+      upperUseDualSplatter: colorConfig.upper.useDualSplatter || false,
+      
       soleHasSplatter: colorConfig.sole.hasSplatter,
       soleSplatterColor: colorConfig.sole.hasSplatter ? colorConfig.sole.splatterColor : undefined,
+      soleSplatterColor2: colorConfig.sole.splatterColor2 || undefined,
+      soleUseDualSplatter: colorConfig.sole.useDualSplatter || false,
+      
+      // Logo data
       logoUrl: colorConfig.logo.url || undefined,
+      circleLogoUrl: colorConfig.logo.circleUrl || undefined,
+      logoColor1: colorConfig.logo.color1 || undefined,
+      logoColor2: colorConfig.logo.color2 || undefined,
+      logoColor3: colorConfig.logo.color3 || undefined,
+      
+      // Design context
       screenshot: screenshot || undefined,
       notes: formData.notes || undefined,
       timestamp: new Date().toISOString()
@@ -593,6 +608,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
     try {
       const designData = buildDesignData();
+      console.log('Design data for cart:', designData);
       const cartUrl = buildCartUrl(shopDomain, formData.sizeQuantities, variantMapping, designData);
       
       // Validate URL length

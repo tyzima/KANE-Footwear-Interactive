@@ -152,6 +152,11 @@ const buildCartProperties = (designData: DesignData): string[] => {
     properties.push(`attributes[Logo Colors]=${encodeURIComponent(logoColors)}`);
   }
   
+  // Additional design context
+  if (designData.colorwayId && designData.colorwayId !== 'custom') {
+    properties.push(`attributes[Colorway ID]=${encodeURIComponent(designData.colorwayId)}`);
+  }
+  
   // Design reference
   if (designData.designId) {
     properties.push(`attributes[Design ID]=${encodeURIComponent(designData.designId)}`);
@@ -171,7 +176,24 @@ const buildCartProperties = (designData: DesignData): string[] => {
     properties.push(`attributes[Design Created]=${encodeURIComponent(designData.timestamp)}`);
   }
   
-  console.log('Generated cart properties:', properties);
+  console.log(`Generated ${properties.length} cart attributes:`, properties);
+  
+  // Show a summary of what's being captured
+  const summary = {
+    colorway: designData.colorwayName,
+    colors: `Upper: ${designData.upperColor}, Sole: ${designData.soleColor}, Laces: ${designData.laceColor}`,
+    splatter: {
+      upper: designData.upperHasSplatter ? designData.upperSplatterColor : 'None',
+      sole: designData.soleHasSplatter ? designData.soleSplatterColor : 'None'
+    },
+    logos: {
+      side: designData.logoUrl ? 'Yes' : 'No',
+      back: designData.circleLogoUrl ? 'Yes' : 'No'
+    },
+    notes: designData.notes || 'None'
+  };
+  console.log('Design summary for Shopify:', summary);
+  
   return properties;
 };
 
