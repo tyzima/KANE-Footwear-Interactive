@@ -109,7 +109,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   currentColorway,
   getColorConfiguration
 }) => {
-  const { isConnected, getProduct, createDraftOrder, createOrFindCustomer } = useShopify();
+  const { isConnected, getProduct } = useShopify();
   
   // Detect if this is a customer context (embedded or direct link with shop domain)
   const urlParams = new URLSearchParams(window.location.search);
@@ -563,176 +563,60 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Check if we can create Shopify draft orders (admin connected)
-      if (isConnected && createDraftOrder && createOrFindCustomer) {
-        console.log('Creating Shopify draft order...');
-        
-        // Step 1: Create or find customer
-        const customer = await createOrFindCustomer({
+      // Prepare the data to send to n8n webhook
+      const webhookData = {
+        customerInfo: {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
-          phone: formData.phone || undefined
-        });
-        
-        console.log('Customer created/found:', customer.email);
-        
-        // Step 2: Prepare line items for the draft order
-        const lineItems = [];
-        
-        // Add each size as a line item
-        for (const [size, quantity] of Object.entries(formData.sizeQuantities)) {
-          if (quantity > 0) {
-            // Try to find matching variant for this size
-            let variantId = null;
-            
-            if (currentProduct?.variants) {
-              const matchingVariant = currentProduct.variants.find(variant => {
-                const variantSize = extractSizeFromVariant(variant);
-                return variantSize === size;
-              });
-              
-              if (matchingVariant) {
-                variantId = matchingVariant.id;
-              }
-            }
-            
-            // Create line item
-            const lineItem: any = {
-              quantity,
-              title: `${currentProduct?.title || 'Custom Shoe'} - Size ${size}`,
-              price: PRICE_PER_PAIR.toString(),
-              requiresShipping: true,
-              customAttributes: [
-                {
-                  key: 'Size',
-                  value: size
-                },
-                {
-                  key: 'Colorway',
-                  value: currentColorway?.name || 'Custom'
-                },
-                {
-                  key: 'Color Configuration',
-                  value: JSON.stringify(getColorInfo())
-                },
-                {
-                  key: 'Design Screenshot',
-                  value: screenshot ? 'Included' : 'Not available'
-                }
-              ]
-            };
-            
-            // Add variant ID if we found a matching variant
-            if (variantId) {
-              lineItem.variantId = variantId;
-            } else if (currentProduct?.id) {
-              lineItem.productId = currentProduct.id;
-            }
-            
-            lineItems.push(lineItem);
-          }
-        }
-        
-        // Step 3: Create draft order
-        const draftOrderInput = {
-          lineItems,
-          customer: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone || undefined
-          },
-          shippingAddress: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            address1: formData.addressLine1,
-            address2: formData.addressLine2 || undefined,
+          phone: formData.phone,
+          address: {
+            line1: formData.addressLine1,
+            line2: formData.addressLine2,
             city: formData.city,
-            province: formData.state,
+            state: formData.state,
             zip: formData.zip,
-            country: formData.country,
-            phone: formData.phone || undefined
+            country: formData.country
           },
-          note: formData.notes || undefined,
-          email: formData.email
-        };
-        
-        const draftOrder = await createDraftOrder(draftOrderInput);
-        
-        console.log('Draft order created:', draftOrder.name);
-        
-        toast({
-          title: "Order Created in Shopify!",
-          description: `Draft order ${draftOrder.name} created for ${getTotalPairs()} pairs. Total: $${getTotalPrice()}`,
-        });
-        
-        // Optionally open the draft order in Shopify admin
-        if (draftOrder.id && shopDomain) {
-          const shopifyOrderUrl = `https://${shopDomain}/admin/draft_orders/${draftOrder.id.replace('gid://shopify/DraftOrder/', '')}`;
-          console.log('Shopify draft order URL:', shopifyOrderUrl);
+          notes: formData.notes
+        },
+        orderDetails: {
+          sizeQuantities: formData.sizeQuantities,
+          totalPairs: getTotalPairs(),
+          totalPrice: getTotalPrice(),
+          pricePerPair: PRICE_PER_PAIR,
+          timestamp: new Date().toISOString(),
+          modelScreenshot: screenshot,
+          colorConfiguration: getColorInfo()
         }
-        
-      } else {
-        // Fallback to webhook if Shopify is not connected
-        console.log('Shopify not connected, using webhook fallback...');
-        
-        const webhookData = {
-          customerInfo: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
-            address: {
-              line1: formData.addressLine1,
-              line2: formData.addressLine2,
-              city: formData.city,
-              state: formData.state,
-              zip: formData.zip,
-              country: formData.country
-            },
-            notes: formData.notes
-          },
-          orderDetails: {
-            sizeQuantities: formData.sizeQuantities,
-            totalPairs: getTotalPairs(),
-            totalPrice: getTotalPrice(),
-            pricePerPair: PRICE_PER_PAIR,
-            timestamp: new Date().toISOString(),
-            modelScreenshot: screenshot,
-            colorConfiguration: getColorInfo(),
-            currentProduct: currentProduct,
-            currentColorway: currentColorway
-          }
-        };
+      };
 
-        // Replace with your actual n8n webhook URL
-        const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
+      // Replace with your actual n8n webhook URL
+      const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
 
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(webhookData),
-        });
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(webhookData),
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to submit order via webhook');
-        }
-
-        toast({
-          title: "Order Submitted!",
-          description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
-        });
+      if (!response.ok) {
+        throw new Error('Failed to submit order');
       }
+
+      toast({
+        title: "Order Submitted!",
+        description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
+      });
 
       setIsOpen(false);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
         title: "Submission Failed",
-        description: error instanceof Error ? error.message : "There was an error submitting your order. Please try again.",
+        description: "There was an error submitting your order. Please try again.",
         variant: "destructive",
       });
     } finally {

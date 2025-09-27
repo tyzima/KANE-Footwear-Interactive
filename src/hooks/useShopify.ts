@@ -4,9 +4,7 @@ import {
   checkShopifyConnection, 
   generateShopifyAuthUrl,
   shopifyAPI,
-  type ShopifyProduct,
-  type DraftOrderInput,
-  type ShopifyDraftOrder
+  type ShopifyProduct 
 } from '@/lib/shopify';
 
 interface ShopifyConnectionState {
@@ -282,13 +280,11 @@ export const useShopify = () => {
     // API functions
     getProducts,
     getProduct,
+    createCustomer,
+    createDraftOrder,
     getInventoryLevels,
     updateProductMetafields: shopifyAPI.updateProductMetafields,
     getProductMetafields: shopifyAPI.getProductMetafields,
     getColorways: shopifyAPI.getColorways,
-    
-    // Draft Orders and Customers
-    createDraftOrder: shopifyAPI.createDraftOrder,
-    createOrFindCustomer: shopifyAPI.createOrFindCustomer,
   };
 };
