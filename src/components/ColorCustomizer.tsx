@@ -245,6 +245,17 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const shopDomain = productContext?.shop;
   const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways(shopDomain, isCustomerContext);
   
+  // Debug logging for ColorCustomizer
+  console.log('ColorCustomizer: Hook values:', {
+    productContext,
+    isCustomerContext,
+    shopDomain,
+    colorwaysCount: colorways.length,
+    colorwaysLoading,
+    isUsingDynamicData,
+    colorways: colorways.map(c => ({ id: c.id, name: c.name }))
+  });
+  
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {
     if (productContext?.isCustomerEmbed && isUsingDynamicData) {

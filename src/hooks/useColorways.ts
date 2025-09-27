@@ -32,6 +32,14 @@ export interface Colorway {
 export const useColorways = (shopDomain?: string, isCustomerContext = false) => {
   const { isConnected, getColorways } = useShopify();
   const customerAPI = useShopifyCustomer(isCustomerContext ? shopDomain : undefined);
+  
+  console.log('useColorways: Initialization:', {
+    shopDomain,
+    isCustomerContext,
+    isConnected,
+    customerAPIInitialized: !!customerAPI,
+    passedShopDomain: isCustomerContext ? shopDomain : undefined
+  });
   const [colorways, setColorways] = useState<Colorway[]>(colorwaysData.colorways);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,20 +83,31 @@ export const useColorways = (shopDomain?: string, isCustomerContext = false) => 
 
   // Sync customer API state
   useEffect(() => {
+    console.log('useColorways: Checking customer context sync:', {
+      isCustomerContext,
+      shopDomain,
+      customerAPIColorways: customerAPI.colorways.length,
+      customerAPILoading: customerAPI.isLoading,
+      customerAPIError: customerAPI.error,
+      customerAPIUsingStorefront: customerAPI.isUsingStorefront
+    });
+    
     if (isCustomerContext && shopDomain) {
       console.log('Customer context detected, syncing Storefront API state');
       setIsLoading(customerAPI.isLoading);
       setError(customerAPI.error);
       
       if (customerAPI.colorways.length > 0) {
+        console.log('Setting colorways from customer API:', customerAPI.colorways.length);
         setColorways(customerAPI.colorways);
         setLastUpdated(new Date());
       } else if (!customerAPI.isLoading && !customerAPI.error) {
         // Fallback to static if no customer colorways and not loading
+        console.log('No customer colorways, falling back to static');
         setColorways(colorwaysData.colorways);
       }
     }
-  }, [isCustomerContext, shopDomain, customerAPI.colorways, customerAPI.isLoading, customerAPI.error]);
+  }, [isCustomerContext, shopDomain, customerAPI.colorways, customerAPI.isLoading, customerAPI.error, customerAPI.isUsingStorefront]);
 
   // Load admin colorways when connected
   useEffect(() => {
