@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
-import { useCustomerInventory } from '@/hooks/useCustomerInventory';
+import { usePublicInventory } from '@/hooks/usePublicInventory';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -56,6 +56,14 @@ interface BuyButtonProps {
       url: string | null;
     };
   };
+  // Product context for customer embeds
+  productContext?: {
+    productId: string;
+    shop: string;
+    isCustomerEmbed: boolean;
+    title?: string;
+    handle?: string;
+  } | null;
 }
 
 interface SizeQuantity {
@@ -107,23 +115,11 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   isDarkMode = false,
   currentProduct,
   currentColorway,
-  getColorConfiguration
+  getColorConfiguration,
+  productContext
 }) => {
   const { isConnected, getProduct } = useShopify();
-  
-  // Detect if this is a customer embed context
-  const isCustomerEmbed = typeof window !== 'undefined' && 
-    (window.self !== window.top || new URLSearchParams(window.location.search).get('customer') === 'true');
-  const shopParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('shop') : null;
-  const productIdParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('productId') : null;
-  
-  // Use customer inventory for embeds
-  const customerInventory = useCustomerInventory({
-    shop: shopParam || undefined,
-    productId: currentProduct?.id || productIdParam || undefined,
-    isCustomerEmbed: isCustomerEmbed
-  });
-  
+  const publicInventory = usePublicInventory();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
@@ -155,17 +151,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
-    // For customer embeds, use customer inventory hook
-    if (isCustomerEmbed && customerInventory.isAvailable) {
-      console.log('Using customer inventory for embed:', customerInventory.inventory);
-      setInventoryData(customerInventory.inventory);
-      setIsLoadingInventory(customerInventory.isLoading);
-      return;
-    }
-    
-    // For admin users, use full Shopify API
-    if (!isConnected || !currentProduct) {
-      console.log('Cannot load inventory: not connected or no product');
+    if (!currentProduct) {
+      console.log('Cannot load inventory: no product');
       return;
     }
 
@@ -173,24 +160,37 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     try {
       console.log('Loading inventory for product:', currentProduct.id);
       
-      // Get fresh product data with variants
-      const productData = await getProduct(currentProduct.id);
-      
-      if (productData && productData.variants) {
-        const inventory: Record<string, number> = {};
-        
-        // Map each variant to its size and inventory
-        productData.variants.forEach(variant => {
-          // Extract size from variant title or SKU
-          const size = extractSizeFromVariant(variant);
-          if (size) {
-            inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
-            console.log(`Size ${size}: ${inventory[size]} available`);
-          }
-        });
-        
+      // Use public API for customer embeds, admin API for admin use
+      if (productContext?.isCustomerEmbed && productContext.shop) {
+        console.log('Using public API for customer embed');
+        const inventory = await publicInventory.fetchInventory(
+          productContext.shop,
+          productContext.productId
+        );
         setInventoryData(inventory);
-        console.log('Inventory loaded:', inventory);
+      } else if (isConnected) {
+        console.log('Using admin API for authenticated user');
+        // Get fresh product data with variants
+        const productData = await getProduct(currentProduct.id);
+        
+        if (productData && productData.variants) {
+          const inventory: Record<string, number> = {};
+          
+          // Map each variant to its size and inventory
+          productData.variants.forEach(variant => {
+            // Extract size from variant title or SKU
+            const size = extractSizeFromVariant(variant);
+            if (size) {
+              inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
+              console.log(`Size ${size}: ${inventory[size]} available`);
+            }
+          });
+          
+          setInventoryData(inventory);
+          console.log('Inventory loaded:', inventory);
+        }
+      } else {
+        console.log('No inventory source available');
       }
     } catch (error) {
       console.error('Error loading inventory:', error);
@@ -202,7 +202,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     } finally {
       setIsLoadingInventory(false);
     }
-  }, [isConnected, currentProduct, getProduct, isCustomerEmbed, customerInventory.isAvailable, customerInventory.inventory, customerInventory.isLoading]);
+  }, [isConnected, currentProduct, getProduct, productContext, publicInventory]);
 
   // Extract size from variant title or SKU
   const extractSizeFromVariant = (variant: { size?: string; title?: string; sku?: string }) => {

@@ -13,6 +13,7 @@ import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
 import { useTheme } from '@/hooks/use-theme';
 import { useColorways } from '@/hooks/useColorways';
+import { usePublicColorways } from '@/hooks/usePublicColorways';
 
 // National Park inspired color palette with specific darkened speckle base colors
 const NATIONAL_PARK_COLORS = [
@@ -180,9 +181,20 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
   
   // Dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData, dataSource } = useColorways({
-    customerEmbedContext: productContext
-  });
+  // Use public API for customer embeds, admin API for admin use
+  const adminColorways = useColorways();
+  const publicColorways = usePublicColorways(
+    productContext?.shop,
+    productContext?.productId
+  );
+  
+  // Choose which colorways to use based on context
+  const {
+    colorways,
+    isLoading: colorwaysLoading,
+    error: colorwaysError,
+    isUsingDynamicData
+  } = productContext?.isCustomerEmbed ? publicColorways : adminColorways;
   
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {
