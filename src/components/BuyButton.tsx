@@ -810,12 +810,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                         )}
                       </div>
                     )}
-                    {currentColorway && (
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Colorway:</p>
-                        <p className="text-sm font-medium">{currentColorway.name}</p>
-                      </div>
-                    )}
+                   
                   </div>
 
                   {/* Sizes Header */}
@@ -823,11 +818,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     <h4 className="text-base font-medium text-gray-900">
                       {isConnected && currentProduct ? 'Available Sizes' : 'Select Sizes'}
                     </h4>
-                    {isConnected && currentProduct && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        Live inventory from Shopify
-                      </p>
-                    )}
+                 
                   </div>
 
                   {/* Size Grid with fade out */}
