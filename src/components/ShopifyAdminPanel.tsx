@@ -777,23 +777,26 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
 
   // Define the colorway metafields we want to edit
   const colorwayFields = [
-    { key: 'upper-base-hex', label: 'Upper Base Color', description: 'Main color of the upper shoe material' },
-    { key: 'upper-darkbase-hex', label: 'Upper Dark Base Color', description: 'Darker shade for upper material' },
-    { key: 'upper-splatter-hex', label: 'Upper Splatter Color', description: 'Splatter effect color on upper' },
-    { key: 'sole-base-hex', label: 'Sole Base Color', description: 'Main color of the shoe sole' },
-    { key: 'sole-splatter-hex', label: 'Sole Splatter Color', description: 'Splatter effect color on sole' },
-    { key: 'lace-color-hex', label: 'Lace Color', description: 'Color of the shoe laces' },
+    { key: 'upper_base_hex', label: 'Upper Base Color', description: 'Main color of the upper shoe material' },
+    { key: 'upper_darkbase_hex', label: 'Upper Dark Base Color', description: 'Darker shade for upper material' },
+    { key: 'upper_splatter_hex', label: 'Upper Splatter Color', description: 'Splatter effect color on upper' },
+    { key: 'sole_base_hex', label: 'Sole Base Color', description: 'Main color of the shoe sole' },
+    { key: 'sole_splatter_hex', label: 'Sole Splatter Color', description: 'Splatter effect color on sole' },
+    { key: 'lace_color_hex', label: 'Lace Color', description: 'Color of the shoe laces' },
   ];
 
   // Initialize metafields from product data
   useEffect(() => {
+    console.log('Product metafields:', product.metafields);
     const initialMetafields: Record<string, string> = {};
     colorwayFields.forEach(field => {
       const metafield = product.metafields?.find(m => 
         m.key === field.key && m.namespace === 'custom'
       );
+      console.log(`Looking for metafield: ${field.key}, found:`, metafield);
       initialMetafields[field.key] = metafield?.value || '#000000';
     });
+    console.log('Initial metafields:', initialMetafields);
     setMetafields(initialMetafields);
   }, [product]);
 

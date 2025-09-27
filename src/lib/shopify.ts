@@ -148,7 +148,7 @@ export const shopifyAPI = {
                   }
                 }
               }
-              metafields(first: 20) {
+              metafields(first: 20, namespace: "custom") {
                 edges {
                   node {
                     id
@@ -434,11 +434,14 @@ export const shopifyAPI = {
 
     console.log('GraphQL input:', JSON.stringify(input, null, 2));
     const response = await makeShopifyRequest(mutation, { input });
+    console.log('GraphQL response:', JSON.stringify(response, null, 2));
     
     if (response.data?.productUpdate?.userErrors?.length > 0) {
+      console.error('Shopify API user errors:', response.data.productUpdate.userErrors);
       throw new Error(response.data.productUpdate.userErrors[0].message);
     }
 
+    console.log('Metafields update successful, updated product:', response.data?.productUpdate?.product);
     return response.data?.productUpdate?.product;
   },
 
