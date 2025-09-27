@@ -62,6 +62,10 @@ export const storefrontAPI = {
                     availableForSale
                     quantityAvailable
                     sku
+                    selectedOptions {
+                      name
+                      value
+                    }
                   }
                 }
               }
@@ -127,6 +131,10 @@ export const storefrontAPI = {
                 availableForSale
                 quantityAvailable
                 sku
+                selectedOptions {
+                  name
+                  value
+                }
               }
             }
           }
@@ -194,6 +202,10 @@ export const storefrontAPI = {
                 availableForSale
                 quantityAvailable
                 sku
+                selectedOptions {
+                  name
+                  value
+                }
               }
             }
           }

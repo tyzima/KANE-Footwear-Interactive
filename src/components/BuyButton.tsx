@@ -8,6 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
 import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
+import { buildCartUrl, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -122,6 +123,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [inventoryData, setInventoryData] = useState<Record<string, number>>({});
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  const [variantMapping, setVariantMapping] = useState<ColorwayVariants>({});
   const [addressValidation, setAddressValidation] = useState<AddressValidation>({
     isValidating: false,
     isValid: null,
@@ -162,12 +164,23 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       if (isCustomerContext && shopDomain) {
         console.log('Using Storefront API for inventory');
         inventory = await customerAPI.loadProductInventory(currentProduct.id);
+        
+        // Also get product data for variant mapping
+        const productData = await customerAPI.getProduct(currentProduct.id);
+        if (productData) {
+          const variants = extractVariantMapping(productData);
+          setVariantMapping(variants);
+        }
       } else if (isConnected) {
         console.log('Using Admin API for inventory');
         // Get fresh product data with variants
         const productData = await getProduct(currentProduct.id);
         
         if (productData && productData.variants) {
+          // Extract variant mapping for cart URLs
+          const variants = extractVariantMapping(productData);
+          setVariantMapping(variants);
+          
           // Map each variant to its size and inventory
           productData.variants.forEach(variant => {
             // Extract size from variant title or SKU
@@ -537,6 +550,89 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     };
   };
 
+  // Build design data for cart properties
+  const buildDesignData = (): DesignData => {
+    const colorConfig = getColorInfo();
+    
+    return {
+      colorwayName: currentColorway?.name || 'Custom Design',
+      colorwayId: currentColorway?.id || 'custom',
+      upperColor: colorConfig.upper.baseColor,
+      soleColor: colorConfig.sole.baseColor,
+      laceColor: colorConfig.laces.color,
+      upperHasSplatter: colorConfig.upper.hasSplatter,
+      upperSplatterColor: colorConfig.upper.hasSplatter ? colorConfig.upper.splatterColor : undefined,
+      soleHasSplatter: colorConfig.sole.hasSplatter,
+      soleSplatterColor: colorConfig.sole.hasSplatter ? colorConfig.sole.splatterColor : undefined,
+      logoUrl: colorConfig.logo.url || undefined,
+      screenshot: screenshot || undefined,
+      notes: formData.notes || undefined,
+      timestamp: new Date().toISOString()
+    };
+  };
+
+  // Redirect to Shopify cart with selected items
+  const redirectToCart = async () => {
+    if (!shopDomain) {
+      toast({
+        title: "Store Not Found",
+        description: "Unable to determine the Shopify store domain.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Object.keys(variantMapping).length === 0) {
+      toast({
+        title: "Product Data Loading",
+        description: "Please wait for product data to load, then try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const designData = buildDesignData();
+      const cartUrl = buildCartUrl(shopDomain, formData.sizeQuantities, variantMapping, designData);
+      
+      // Validate URL length
+      const validation = validateCartUrl(cartUrl);
+      if (!validation.isValid) {
+        console.warn(`Cart URL too long: ${validation.length}/${validation.maxLength} characters`);
+        toast({
+          title: "Design Too Complex",
+          description: "Your design has too many customizations. Please simplify and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Redirecting to cart:', cartUrl);
+      
+      // Show success message
+      toast({
+        title: "Adding to Cart",
+        description: `Adding ${getTotalPairs()} pairs to your Shopify cart...`,
+      });
+
+      // Small delay to show the toast, then redirect
+      setTimeout(() => {
+        window.open(cartUrl, '_blank');
+      }, 1000);
+      
+      // Close the modal
+      setIsOpen(false);
+      
+    } catch (error) {
+      console.error('Error building cart URL:', error);
+      toast({
+        title: "Cart Error",
+        description: error instanceof Error ? error.message : "Failed to add items to cart",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -557,6 +653,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         description: "Please complete all required steps.",
         variant: "destructive",
       });
+      return;
+    }
+
+    // For customer contexts, redirect to Shopify cart instead of webhook
+    if (isCustomerContext && shopDomain) {
+      await redirectToCart();
       return;
     }
 
@@ -1160,15 +1262,18 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     </div>
                   </div>
 
-                  {/* Invoice Info Card */}
+                  {/* Info Card - Different content for customer vs admin */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
                     <div className="flex items-start gap-3">
                       <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
                         <h4 className="font-medium text-blue-900">Next Steps</h4>
                         <p className="text-xs text-blue-800">
-                          We'll reach out to you with an official invoice within 24 hours.
-
+                          {isCustomerContext && shopDomain ? (
+                            "Your items will be added to your Shopify cart where you can complete checkout with your preferred payment method."
+                          ) : (
+                            "We'll reach out to you with an official invoice within 24 hours."
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1233,8 +1338,17 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      Submit
+                      {isCustomerContext && shopDomain ? (
+                        <>
+                          <ShoppingCart className="w-4 h-4" />
+                          Add to Cart
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Submit Order
+                        </>
+                      )}
                     </>
                   )}
                 </Button>
