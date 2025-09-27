@@ -229,57 +229,120 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         const baseUrl = window.location.origin + window.location.pathname;
         const shareUrl = `${baseUrl}?design=${result.shareToken}`;
         
-    // Try to copy to clipboard, with fallback for Safari and other browsers
+    // Try to copy to clipboard with Safari-compatible approach
+    let copySuccessful = false;
+    
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-
-      toast({
-        title: "Design saved and link copied!",
-        description: "Anyone can view your custom design with this link.",
-      });
+      // First try modern clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+        copySuccessful = true;
+      } else {
+        throw new Error('Clipboard API not available');
+      }
     } catch (clipboardError) {
-      console.warn('Clipboard API failed, using fallback:', clipboardError);
+      console.warn('Clipboard API failed, trying fallback:', clipboardError);
       
-      // Fallback method for Safari and other browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      
+      // Safari-compatible fallback method
       try {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        
+        // Make textarea visible but off-screen for Safari
+        textArea.style.position = 'absolute';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
+        textArea.style.opacity = '0';
+        textArea.style.pointerEvents = 'none';
+        textArea.setAttribute('readonly', '');
+        
+        document.body.appendChild(textArea);
+        
+        // For iOS Safari, we need to use a different approach
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+          textArea.contentEditable = 'true';
+          textArea.readOnly = false;
+          const range = document.createRange();
+          range.selectNodeContents(textArea);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          textArea.setSelectionRange(0, 999999);
+        } else {
+          textArea.select();
+          textArea.setSelectionRange(0, 999999);
+        }
+        
+        // Try to copy
         const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
         
         if (successful) {
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-          
-          toast({
-            title: "Design saved and link copied!",
-            description: "Anyone can view your custom design with this link.",
-          });
-        } else {
-          throw new Error('execCommand failed');
+          copySuccessful = true;
         }
       } catch (fallbackError) {
-        document.body.removeChild(textArea);
-        
-        // If both methods fail, just show the link for manual copying
-        toast({
-          title: "Design saved!",
-          description: `Copy this link: ${shareUrl}`,
-          duration: 10000, // Show longer so user can copy manually
-        });
-        
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        console.warn('Fallback copy method failed:', fallbackError);
+        // Clean up if textarea was created
+        const textArea = document.querySelector('textarea[readonly]');
+        if (textArea) {
+          document.body.removeChild(textArea);
+        }
       }
+    }
+    
+    if (copySuccessful) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+      toast({
+        title: "Design saved and link copied!",
+        description: "Anyone can view your custom design with this link.",
+      });
+    } else {
+      // If all copy methods fail, show the link for manual copying
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+      // Create a temporary input for easier manual selection in Safari
+      const tempInput = document.createElement('input');
+      tempInput.value = shareUrl;
+      tempInput.style.position = 'absolute';
+      tempInput.style.left = '50%';
+      tempInput.style.top = '50%';
+      tempInput.style.transform = 'translate(-50%, -50%)';
+      tempInput.style.zIndex = '9999';
+      tempInput.style.padding = '10px';
+      tempInput.style.border = '2px solid #007AFF';
+      tempInput.style.borderRadius = '8px';
+      tempInput.style.fontSize = '16px';
+      tempInput.style.backgroundColor = 'white';
+      tempInput.style.color = 'black';
+      tempInput.readOnly = true;
+      
+      document.body.appendChild(tempInput);
+      tempInput.focus();
+      tempInput.select();
+      
+      toast({
+        title: "Design saved!",
+        description: "Link is selected above - tap and hold to copy, or copy from this message",
+        duration: 20000,
+        action: {
+          label: "Done",
+          onClick: () => {
+            if (document.body.contains(tempInput)) {
+              document.body.removeChild(tempInput);
+            }
+          },
+        },
+      });
+      
+      // Auto-remove the input after 20 seconds
+      setTimeout(() => {
+        if (document.body.contains(tempInput)) {
+          document.body.removeChild(tempInput);
+        }
+      }, 20000);
     }
       }
     } catch (error) {
