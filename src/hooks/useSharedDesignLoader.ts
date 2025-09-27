@@ -75,7 +75,7 @@ export const useSharedDesignLoader = (onDesignLoaded?: (design: SavedDesign) => 
 
   useEffect(() => {
     loadSharedDesignFromUrl();
-  }, [loadSharedDesignFromUrl]);
+  }, [location.search]); // Only depend on URL search params, not the function
 
   return {
     ...loadResult,

@@ -7,20 +7,23 @@ import { useTheme } from '@/hooks/use-theme';
 import { useSharedDesignLoader, convertSavedDesignToDesignData } from '@/hooks/useSharedDesignLoader';
 import { DesignData } from '@/hooks/useDesignSharing';
 import { toast } from '@/components/ui/use-toast';
+import { useCallback } from 'react';
 
 const Index = () => {
   const { isDark } = useTheme();
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
   
-  // Shared design loading
+  // Shared design loading callback (memoized to prevent infinite re-renders)
+  const onDesignLoaded = useCallback((design: any) => {
+    // This callback will be called when a shared design is loaded
+    toast({
+      title: "Design loaded!",
+      description: `Loaded "${design.name}" design.`,
+    });
+  }, []);
+
   const { design: sharedDesign, isLoading: isLoadingSharedDesign, error: sharedDesignError, hasSharedDesign } = useSharedDesignLoader(
-    (design) => {
-      // This callback will be called when a shared design is loaded
-      toast({
-        title: "Design loaded!",
-        description: `Loaded "${design.name}" design.`,
-      });
-    }
+    onDesignLoaded
   );
 
   // Set initial background type based on system dark mode preference
