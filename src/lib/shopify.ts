@@ -473,78 +473,82 @@ export const shopifyAPI = {
     return response.data?.product?.metafields?.edges?.map((edge: any) => edge.node) || [];
   },
 
-  // Get colorways from all products with metafields
-  async getColorways() {
-    console.log('Fetching colorways from Shopify products...');
-    
-    // Get all products with their metafields
-    const products = await this.getProducts(100); // Get more products for colorways
-    
-    const colorways = products
-      .filter(product => {
-        // Only include products that have at least some colorway metafields
-        return product.metafields && product.metafields.some(m => 
-          ['upper_base_hex', 'sole_base_hex', 'lace_color_hex'].includes(m.key)
-        );
-      })
-      .map(product => {
-        // Transform product metafields into colorway format
-        const metafields = product.metafields || [];
-        
-        // Helper function to get metafield value
-        const getMetafield = (key: string) => {
-          const field = metafields.find(m => m.key === key && m.namespace === 'custom');
-          return field?.value || null;
-        };
-        
-        // Extract colorway data from metafields
-        const upperBaseColor = getMetafield('upper_base_hex') || '#000000';
-        const upperDarkBaseColor = getMetafield('upper_darkbase_hex') || null;
-        const upperSplatterColor = getMetafield('upper_splatter_hex') || null;
-        const upperSplatterColor2 = getMetafield('upper_splatter2_hex') || null;
-        const soleBaseColor = getMetafield('sole_base_hex') || '#000000';
-        const soleSplatterColor = getMetafield('sole_splatter_hex') || null;
-        const soleSplatterColor2 = getMetafield('sole_splatter2_hex') || null;
-        const laceColor = getMetafield('lace_color_hex') || '#FFFFFF';
-        
-        // Determine if splatter is enabled
-        const upperHasSplatter = !!(upperSplatterColor && upperSplatterColor !== '#000000');
-        const soleHasSplatter = !!(soleSplatterColor && soleSplatterColor !== '#000000');
-        
-        // Determine if dual splatter is enabled
-        const upperUseDualSplatter = !!(upperSplatterColor2 && upperSplatterColor2 !== '#000000');
-        const soleUseDualSplatter = !!(soleSplatterColor2 && soleSplatterColor2 !== '#000000');
-        
-        return {
-          id: `product-${product.id.replace('gid://shopify/Product/', '')}`,
-          name: product.title,
-          description: product.description || `${product.title} colorway`,
-          upper: {
-            baseColor: upperBaseColor,
-            hasSplatter: upperHasSplatter,
-            splatterColor: upperSplatterColor,
-            splatterBaseColor: upperDarkBaseColor,
-            splatterColor2: upperSplatterColor2,
-            useDualSplatter: upperUseDualSplatter
-          },
-          sole: {
-            baseColor: soleBaseColor,
-            hasSplatter: soleHasSplatter,
-            splatterColor: soleSplatterColor,
-            splatterBaseColor: upperDarkBaseColor, // Use upper dark base for sole splatter base too
-            splatterColor2: soleSplatterColor2,
-            useDualSplatter: soleUseDualSplatter
-          },
-          laces: {
-            color: laceColor
-          }
-        };
-      });
-    
-    console.log(`Generated ${colorways.length} colorways from Shopify products:`, colorways);
-    return colorways;
-  },
 };
+
+// Get colorways from all products with metafields
+export const getColorwaysFromProducts = async () => {
+  console.log('Fetching colorways from Shopify products...');
+  
+  // Get all products with their metafields
+  const products = await shopifyAPI.getProducts(100); // Get more products for colorways
+  
+  const colorways = products
+    .filter(product => {
+      // Only include products that have at least some colorway metafields
+      return product.metafields && product.metafields.some(m => 
+        ['upper_base_hex', 'sole_base_hex', 'lace_color_hex'].includes(m.key)
+      );
+    })
+    .map(product => {
+      // Transform product metafields into colorway format
+      const metafields = product.metafields || [];
+      
+      // Helper function to get metafield value
+      const getMetafield = (key: string) => {
+        const field = metafields.find(m => m.key === key && m.namespace === 'custom');
+        return field?.value || null;
+      };
+      
+      // Extract colorway data from metafields
+      const upperBaseColor = getMetafield('upper_base_hex') || '#000000';
+      const upperDarkBaseColor = getMetafield('upper_darkbase_hex') || null;
+      const upperSplatterColor = getMetafield('upper_splatter_hex') || null;
+      const upperSplatterColor2 = getMetafield('upper_splatter2_hex') || null;
+      const soleBaseColor = getMetafield('sole_base_hex') || '#000000';
+      const soleSplatterColor = getMetafield('sole_splatter_hex') || null;
+      const soleSplatterColor2 = getMetafield('sole_splatter2_hex') || null;
+      const laceColor = getMetafield('lace_color_hex') || '#FFFFFF';
+      
+      // Determine if splatter is enabled
+      const upperHasSplatter = !!(upperSplatterColor && upperSplatterColor !== '#000000');
+      const soleHasSplatter = !!(soleSplatterColor && soleSplatterColor !== '#000000');
+      
+      // Determine if dual splatter is enabled
+      const upperUseDualSplatter = !!(upperSplatterColor2 && upperSplatterColor2 !== '#000000');
+      const soleUseDualSplatter = !!(soleSplatterColor2 && soleSplatterColor2 !== '#000000');
+      
+      return {
+        id: `product-${product.id.replace('gid://shopify/Product/', '')}`,
+        name: product.title,
+        description: product.description || `${product.title} colorway`,
+        upper: {
+          baseColor: upperBaseColor,
+          hasSplatter: upperHasSplatter,
+          splatterColor: upperSplatterColor,
+          splatterBaseColor: upperDarkBaseColor,
+          splatterColor2: upperSplatterColor2,
+          useDualSplatter: upperUseDualSplatter
+        },
+        sole: {
+          baseColor: soleBaseColor,
+          hasSplatter: soleHasSplatter,
+          splatterColor: soleSplatterColor,
+          splatterBaseColor: upperDarkBaseColor, // Use upper dark base for sole splatter base too
+          splatterColor2: soleSplatterColor2,
+          useDualSplatter: soleUseDualSplatter
+        },
+        laces: {
+          color: laceColor
+        }
+      };
+    });
+  
+  console.log(`Generated ${colorways.length} colorways from Shopify products:`, colorways);
+  return colorways;
+};
+
+// Add the function to the shopifyAPI object
+shopifyAPI.getColorways = getColorwaysFromProducts;
 
 // Shopify Connection Status
 export const checkShopifyConnection = async () => {
