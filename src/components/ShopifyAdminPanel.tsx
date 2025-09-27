@@ -794,7 +794,7 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
         m.key === field.key && m.namespace === 'custom'
       );
       console.log(`Looking for metafield: ${field.key}, found:`, metafield);
-      initialMetafields[field.key] = metafield?.value || '#000000';
+      initialMetafields[field.key] = metafield?.value || '';
     });
     console.log('Initial metafields:', initialMetafields);
     setMetafields(initialMetafields);
@@ -903,8 +903,13 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {colorwayFields.map((field) => (
               <div key={field.key} className="space-y-2">
-                <Label htmlFor={`${product.id}-${field.key}`} className="text-sm font-medium">
+                <Label htmlFor={`${product.id}-${field.key}`} className="text-sm font-medium flex items-center gap-2">
                   {field.label}
+                  {!metafields[field.key] && (
+                    <span className="text-xs text-gray-400 bg-gray-100 px-1 py-0.5 rounded">
+                      Not Set
+                    </span>
+                  )}
                 </Label>
                 <div className="flex items-center gap-2">
                   <input
@@ -913,14 +918,24 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
                     value={metafields[field.key] || '#000000'}
                     onChange={(e) => handleColorChange(field.key, e.target.value)}
                     className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                    disabled={!metafields[field.key]}
                   />
                   <input
                     type="text"
-                    value={metafields[field.key] || '#000000'}
+                    value={metafields[field.key] || ''}
                     onChange={(e) => handleColorChange(field.key, e.target.value)}
                     className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="#000000"
+                    placeholder="Enter hex color (e.g. #ff0000) or leave blank"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleColorChange(field.key, '')}
+                    className="px-2 py-1 h-8 text-xs"
+                  >
+                    Clear
+                  </Button>
                 </div>
                 <p className="text-xs text-gray-500">{field.description}</p>
               </div>
