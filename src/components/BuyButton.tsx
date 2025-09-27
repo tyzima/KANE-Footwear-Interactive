@@ -94,18 +94,12 @@ interface AddressValidation {
   error: string | null;
 }
 
-const MENS_SIZES = ['M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18'];
-const WOMENS_SIZES = ['W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17', 'W18', 'W19', 'W20'];
-
-// Combined sizes for "both" view - each men's size paired with corresponding women's size
-const COMBINED_SIZES = [
-  'M3 / W5', 'M4 / W6', 'M5 / W7', 'M6 / W8', 'M7 / W9', 'M8 / W10', 'M9 / W11', 'M10 / W12',
-  'M11 / W13', 'M12 / W14', 'M13 / W15', 'M14 / W16', 'M15 / W17', 'M16 / W18', 'M17 / W19', 'M18 / W20'
-];
+// Fallback sizes when not connected to Shopify
+const FALLBACK_MENS_SIZES = ['M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18'];
+const FALLBACK_WOMENS_SIZES = ['W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17', 'W18', 'W19', 'W20'];
 
 const PRICE_PER_PAIR = 80; // Base price per pair
 
-type SizeFilter = 'both' | 'mens' | 'womens';
 
 export const BuyButton: React.FC<BuyButtonProps> = ({
   canvasRef,
@@ -118,7 +112,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
-  const [sizeFilter, setSizeFilter] = useState<SizeFilter>('mens');
   const [currentStep, setCurrentStep] = useState(0);
   const [inventoryData, setInventoryData] = useState<Record<string, number>>({});
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
@@ -144,8 +137,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     website: '' // Honeypot field
   });
 
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const indicatorRef = useRef<HTMLDivElement>(null);
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
@@ -176,10 +167,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         
         setInventoryData(inventory);
         console.log('Inventory loaded:', inventory);
-        console.log('Sample size checks:');
-        console.log('M10 available:', inventory['M10'] || 0);
-        console.log('W12 available:', inventory['W12'] || 0);
-        console.log('Combined M10 / W12 would show:', Math.min(inventory['M10'] || 0, inventory['W12'] || 0));
       }
     } catch (error) {
       console.error('Error loading inventory:', error);
@@ -194,7 +181,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   }, [isConnected, currentProduct, getProduct]);
 
   // Extract size from variant title or SKU
-  const extractSizeFromVariant = (variant: any) => {
+  const extractSizeFromVariant = (variant: { size?: string; title?: string; sku?: string }) => {
     // Check if size is already provided
     if (variant.size) return variant.size;
     
@@ -228,15 +215,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Get available quantity for a specific size
   const getAvailableQuantity = (size: string) => {
-    // Handle combined sizes (e.g., "M3 / W5" -> check both M3 and W5)
-    if (size.includes(' / ')) {
-      const [mensSize, womensSize] = size.split(' / ');
-      const mensStock = inventoryData[mensSize] || 0;
-      const womensStock = inventoryData[womensSize] || 0;
-      // Return the minimum of both (most restrictive)
-      return Math.min(mensStock, womensStock);
-    }
-    
     return inventoryData[size] || 0;
   };
 
@@ -245,30 +223,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     return getAvailableQuantity(size) > 0;
   };
 
-  // Get the actual inventory key(s) for a display size
-  const getInventoryKeys = (displaySize: string) => {
-    if (displaySize.includes(' / ')) {
-      return displaySize.split(' / ');
-    }
-    return [displaySize];
-  };
-
   const steps = [
     { title: 'Sizes', icon: ShoppingCart },
     { title: 'Contact', icon: User },
     { title: 'Review', icon: MessageSquare },
   ];
 
-  useEffect(() => {
-    if (tabRefs.current.length > 0 && indicatorRef.current) {
-      const activeIndex = ['both', 'mens', 'womens'].indexOf(sizeFilter);
-      const activeTab = tabRefs.current[activeIndex];
-      if (activeTab) {
-        indicatorRef.current.style.width = `${activeTab.offsetWidth}px`;
-        indicatorRef.current.style.left = `${activeTab.offsetLeft}px`;
-      }
-    }
-  }, [sizeFilter]);
 
   const captureScreenshot = () => {
     if (!canvasRef?.current) {
@@ -327,26 +287,11 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     
     // Show warning if user tries to exceed available quantity
     if (quantity > maxQuantity && maxQuantity > 0) {
-      // For combined sizes, show more specific message
-      if (size.includes(' / ')) {
-        const [mensSize, womensSize] = size.split(' / ');
-        const mensStock = inventoryData[mensSize] || 0;
-        const womensStock = inventoryData[womensSize] || 0;
-        const limitingSize = mensStock <= womensStock ? mensSize : womensSize;
-        const limitingStock = Math.min(mensStock, womensStock);
-        
-        toast({
-          title: "Stock Limit Reached",
-          description: `Only ${limitingStock} pairs available (limited by ${limitingSize}: ${limitingStock} in stock)`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Stock Limit Reached",
-          description: `Only ${maxQuantity} pairs available in size ${size}`,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Stock Limit Reached",
+        description: `Only ${maxQuantity} pairs available in size ${size}`,
+        variant: "destructive",
+      });
     }
     
     setFormData(prev => ({
@@ -366,15 +311,30 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     return getTotalPairs() * PRICE_PER_PAIR;
   };
 
-  const getFilteredSizes = () => {
-    switch (sizeFilter) {
-      case 'mens':
-        return MENS_SIZES;
-      case 'womens':
-        return WOMENS_SIZES;
-      default:
-        return COMBINED_SIZES;
+  // Get available sizes from inventory data, sorted logically
+  const getAvailableSizes = () => {
+    if (!isConnected || Object.keys(inventoryData).length === 0) {
+      // Fallback to standard sizes when not connected
+      return [...FALLBACK_MENS_SIZES, ...FALLBACK_WOMENS_SIZES];
     }
+    
+    // Get sizes from inventory data and sort them
+    const sizes = Object.keys(inventoryData);
+    
+    // Sort sizes logically (M3, M4, ..., W5, W6, ...)
+    return sizes.sort((a, b) => {
+      const aIsMens = a.startsWith('M');
+      const bIsMens = b.startsWith('M');
+      
+      // Group mens first, then womens
+      if (aIsMens && !bIsMens) return -1;
+      if (!aIsMens && bIsMens) return 1;
+      
+      // Within same gender, sort by number
+      const aNum = parseInt(a.substring(1));
+      const bNum = parseInt(b.substring(1));
+      return aNum - bNum;
+    });
   };
 
   const isStepComplete = (stepIndex: number) => {
@@ -858,48 +818,22 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     )}
                   </div>
 
-                  {/* Enhanced Tab Bar with Sliding Indicator */}
-                  <div className="relative flex bg-gray-100 rounded-full p-1">
-                    <div
-                      ref={indicatorRef}
-                      className="absolute top-1 bottom-1 bg-white rounded-full shadow-sm transition-all duration-300 ease-out"
-                    />
-                    <Button
-                      ref={el => tabRefs.current[0] = el}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSizeFilter('both')}
-                      className={`flex-1 hover:text-gray-800 h-9 relative z-10 transition-colors rounded-full hover:bg-transparent ${sizeFilter === 'both' ? 'text-primary font-medium' : 'text-gray-600'}`}
-                    >
-                      Both
-                    </Button>
-                    <Button
-                      ref={el => tabRefs.current[1] = el}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSizeFilter('mens')}
-                      className={`flex-1 hover:text-gray-800 h-9 relative z-10 transition-colors rounded-full hover:bg-transparent ${sizeFilter === 'mens' ? 'text-primary font-medium' : 'text-gray-600'}`}
-                    >
-                      Men's
-                    </Button>
-                    <Button
-                      ref={el => tabRefs.current[2] = el}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSizeFilter('womens')}
-                      className={`flex-1 hover:text-gray-800 h-9 relative z-10 transition-colors rounded-full hover:bg-transparent ${sizeFilter === 'womens' ? 'text-primary font-medium' : 'text-gray-600'}`}
-                    >
-                      Women's
-                    </Button>
+                  {/* Sizes Header */}
+                  <div className="text-center py-2">
+                    <h4 className="text-base font-medium text-gray-900">
+                      {isConnected && currentProduct ? 'Available Sizes' : 'Select Sizes'}
+                    </h4>
+                    {isConnected && currentProduct && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Live inventory from Shopify
+                      </p>
+                    )}
                   </div>
 
                   {/* Size Grid with fade out */}
                   <div className="relative pt-3">
                     <div className="grid grid-cols-2 gap-4 max-h-[50vh] pb-4 overflow-y-auto pr-2">
-                      {getFilteredSizes().map((size) => {
+                      {getAvailableSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
                         const available = getAvailableQuantity(size);
                         const isAvailable = isSizeAvailable(size);
@@ -930,17 +864,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                                  !isAvailable ? 'Out of Stock' : 
                                  available <= 5 ? `Only ${available} left` : 
                                  `${available} available`}
-                                {/* Show breakdown for combined sizes when hovering or when stock is limited */}
-                                {size.includes(' / ') && !isLoading && isAvailable && available <= 10 && (
-                                  <div className="text-xs text-gray-500 mt-0.5">
-                                    {(() => {
-                                      const [mensSize, womensSize] = size.split(' / ');
-                                      const mensStock = inventoryData[mensSize] || 0;
-                                      const womensStock = inventoryData[womensSize] || 0;
-                                      return `(${mensSize}: ${mensStock}, ${womensSize}: ${womensStock})`;
-                                    })()}
-                                  </div>
-                                )}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
