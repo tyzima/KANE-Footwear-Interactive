@@ -285,5 +285,6 @@ export const useShopify = () => {
     getInventoryLevels,
     updateProductMetafields: shopifyAPI.updateProductMetafields,
     getProductMetafields: shopifyAPI.getProductMetafields,
+    getColorways: shopifyAPI.getColorways,
   };
 };

@@ -12,7 +12,7 @@ import { LightingControls, LightingPreset } from './LightingControls';
 import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
 import { useTheme } from '@/hooks/use-theme';
-import colorwaysData from '../data/colorways.json';
+import { useColorways } from '@/hooks/useColorways';
 
 // National Park inspired color palette with specific darkened speckle base colors
 const NATIONAL_PARK_COLORS = [
@@ -169,11 +169,13 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
   
+  // Dynamic colorways from Shopify
+  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = useColorways();
+  
   // Colorway state
   const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
   
   // Get current colorway data
-  const colorways = colorwaysData.colorways;
   const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Handle colorway changes

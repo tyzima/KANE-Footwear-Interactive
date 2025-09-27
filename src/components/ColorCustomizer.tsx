@@ -11,7 +11,7 @@ import { ColorPickerPortal } from './ColorPickerPortal';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import colorwaysData from '../data/colorways.json';
+import { useColorways } from '@/hooks/useColorways';
 
 interface Colorway {
   id: string;
@@ -230,8 +230,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor2, setOriginalLogoColor2] = useState(logoColor2);
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
-  // Get colorways from JSON data
-  const colorways = colorwaysData.colorways as Colorway[];
+  // Get dynamic colorways from Shopify
+  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways();
   const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Helper function to find original color from darkened value
@@ -584,19 +584,45 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   )}
                 </div>
 
+                {/* Data Source Indicator */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {colorwaysLoading && (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-70" />
+                    )}
+                    <span className={`text-xs ${isDarkMode ? 'text-white/60' : 'text-gray-500'}`}>
+                      {isUsingDynamicData ? `${colorways.length} Shopify Colorways` : `${colorways.length} Default Colorways`}
+                    </span>
+                  </div>
+                  {isUsingDynamicData && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isDarkMode ? 'bg-green-500/20 text-green-400' : 'bg-green-100 text-green-700'}`}>
+                      Live
+                    </span>
+                  )}
+                </div>
+
                 {/* Colorway Horizontal Scroll */}
                 <div className="relative pt-0">
                   <div className="flex gap-2 overflow-x-auto pb-2 pt-2 scrollbar-hide bg-slate-500/10 rounded-xl">
-                    {colorways.map((colorway, idx) => (
-                      <div key={colorway.id} className={idx === 0 ? "pl-2" : ""}>
-                        <ColorwaySwatch
-                          colorway={colorway}
-                          isSelected={selectedColorwayId === colorway.id}
-                          onClick={() => handleColorwaySelect(colorway)}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
-                    ))}
+                    {colorwaysLoading ? (
+                      // Loading skeleton
+                      Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className={`${idx === 0 ? "pl-2" : ""} flex-shrink-0`}>
+                          <div className={`w-16 h-16 rounded-lg animate-pulse ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+                        </div>
+                      ))
+                    ) : (
+                      colorways.map((colorway, idx) => (
+                        <div key={colorway.id} className={idx === 0 ? "pl-2" : ""}>
+                          <ColorwaySwatch
+                            colorway={colorway}
+                            isSelected={selectedColorwayId === colorway.id}
+                            onClick={() => handleColorwaySelect(colorway)}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
                  </motion.div>
