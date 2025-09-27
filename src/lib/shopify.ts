@@ -55,29 +55,28 @@ const generateRandomState = () => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
-// Exchange OAuth code for access token
+// Exchange OAuth code for access token via Netlify function
 export const exchangeCodeForToken = async (shopDomain: string, code: string): Promise<string> => {
-  const response = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
+  const response = await fetch('/.netlify/functions/shopify-oauth', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      client_id: SHOPIFY_CONFIG.clientId,
-      client_secret: SHOPIFY_CONFIG.clientSecret,
+      shop: shopDomain,
       code: code,
     }),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OAuth token exchange failed: ${response.status} ${response.statusText} - ${errorText}`);
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || `OAuth token exchange failed: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
   
   if (!data.access_token) {
-    throw new Error('No access token received from Shopify');
+    throw new Error('No access token received from server');
   }
 
   return data.access_token;

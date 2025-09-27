@@ -14,7 +14,9 @@ import {
   Eye,
   Plus,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Store,
+  Zap
 } from 'lucide-react';
 import { useShopify } from '@/hooks/useShopify';
 import { ShopifyConnection } from './ShopifyConnection';
@@ -22,7 +24,7 @@ import { toast } from './ui/use-toast';
 import type { ShopifyProduct } from '@/lib/shopify';
 
 export const ShopifyAdminPanel: React.FC = () => {
-  const { isConnected, getProducts, shop } = useShopify();
+  const { isConnected, getProducts, shop, connectViaOAuth } = useShopify();
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -62,15 +64,92 @@ export const ShopifyAdminPanel: React.FC = () => {
     window.open(adminUrl, '_blank');
   };
 
+  // Auto-detect shop domain from embedded context
+  const getShopFromUrl = (): string | null => {
+    // Check URL parameters first
+    const urlParams = new URLSearchParams(window.location.search);
+    const shopParam = urlParams.get('shop');
+    
+    if (shopParam) {
+      return shopParam.endsWith('.myshopify.com') ? shopParam : `${shopParam}.myshopify.com`;
+    }
+    
+    // Check if we're in an iframe and try to get from parent
+    if (window.self !== window.top) {
+      try {
+        // Try to get shop from the parent URL
+        const parentUrl = document.referrer;
+        if (parentUrl && parentUrl.includes('.myshopify.com')) {
+          const match = parentUrl.match(/https?:\/\/([^\.]+\.myshopify\.com)/);
+          if (match) {
+            return match[1];
+          }
+        }
+      } catch (error) {
+        console.warn('Could not access parent URL:', error);
+      }
+    }
+    
+    return null;
+  };
+
+  const handleQuickConnect = () => {
+    const detectedShop = getShopFromUrl();
+    
+    if (detectedShop) {
+      console.log('Auto-detected shop:', detectedShop);
+      connectViaOAuth(detectedShop);
+    } else {
+      toast({
+        title: "Shop not detected",
+        description: "Please use the connection form below to manually enter your shop domain.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!isConnected) {
+    const detectedShop = getShopFromUrl();
+    
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold mb-2">KANE Footwear Admin</h1>
-          <p className="text-muted-foreground">Connect your Shopify store to get started</p>
+          <p className="text-muted-foreground">
+            {detectedShop 
+              ? `Ready to connect to ${detectedShop}` 
+              : "Connect your Shopify store to get started"
+            }
+          </p>
         </div>
+        
         <div className="flex justify-center">
-          <ShopifyConnection />
+          <div className="w-full max-w-md space-y-4">
+            {detectedShop ? (
+              <Card>
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <Store className="h-5 w-5" />
+                    Quick Connect
+                  </CardTitle>
+                  <CardDescription>
+                    Connect to {detectedShop}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button onClick={handleQuickConnect} className="w-full" size="lg">
+                    <Zap className="h-4 w-4 mr-2" />
+                    Connect to Shopify
+                  </Button>
+                  <p className="text-xs text-center text-muted-foreground mt-3">
+                    You'll be redirected to authorize the connection
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <ShopifyConnection />
+            )}
+          </div>
         </div>
       </div>
     );

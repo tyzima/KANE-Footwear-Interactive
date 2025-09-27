@@ -11,6 +11,10 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 # Shopify Configuration (Optional - can be set via UI)
 VITE_SHOPIFY_CLIENT_ID=d4d69ee44cf2dd4522f73989a961c273
 VITE_SHOPIFY_CLIENT_SECRET=3c4fbf1eb5b479e223c4f940871bd489
+
+# Shopify Configuration for Netlify Functions (Required for OAuth)
+SHOPIFY_CLIENT_ID=d4d69ee44cf2dd4522f73989a961c273
+SHOPIFY_CLIENT_SECRET=3c4fbf1eb5b479e223c4f940871bd489
 ```
 
 ## Getting Your Supabase Keys
