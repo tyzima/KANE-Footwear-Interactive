@@ -28,17 +28,6 @@ export const useShopify = () => {
     shop: null,
   });
 
-  // Initialize connection from URL parameters (for embeds)
-  const initializeFromParams = useCallback(async (shopDomain: string, accessToken: string) => {
-    console.log('initializeFromParams called with:', {
-      shopDomain,
-      hasToken: !!accessToken,
-      tokenPrefix: accessToken?.substring(0, 10) + '...'
-    });
-    
-    return initializeConnection(shopDomain, accessToken);
-  }, []);
-
   // Initialize connection with stored credentials
   const initializeConnection = useCallback(async (shopDomain: string, accessToken: string) => {
     console.log('initializeConnection called with:', {
@@ -285,7 +274,6 @@ export const useShopify = () => {
     
     // Connection management
     initializeConnection,
-    initializeFromParams,
     connectViaOAuth,
     disconnect,
     

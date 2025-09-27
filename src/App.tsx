@@ -9,8 +9,6 @@ import Admin from "./pages/Admin";
 import ShopifyAdmin from "./pages/ShopifyAdmin";
 import ShopifyCallback from "./pages/ShopifyCallback";
 import ShopifyEmbeddedPage from "./pages/ShopifyEmbedded";
-import AppProxy from "./pages/AppProxy";
-import Embed from "./pages/Embed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,8 +29,6 @@ const AppContent = () => {
             <Route path="/shopify-admin" element={<ShopifyAdmin />} />
             <Route path="/auth/shopify/callback" element={<ShopifyCallback />} />
             <Route path="/shopify-embedded" element={<ShopifyEmbeddedPage />} />
-            <Route path="/configurator" element={<AppProxy />} />
-            <Route path="/embed" element={<Embed />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
