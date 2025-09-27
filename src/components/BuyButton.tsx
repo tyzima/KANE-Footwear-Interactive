@@ -6,10 +6,27 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
+import { useShopify } from '@/hooks/useShopify';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   isDarkMode?: boolean;
+  // Current product and colorway for inventory checking
+  currentProduct?: {
+    id: string;
+    title: string;
+    variants: Array<{
+      id: string;
+      title: string;
+      inventoryQuantity: number;
+      sku: string;
+      size?: string; // Size extracted from title or SKU
+    }>;
+  };
+  currentColorway?: {
+    id: string;
+    name: string;
+  };
   // Optional callback to get current color configuration
   getColorConfiguration?: () => {
     upper: {
@@ -93,13 +110,18 @@ type SizeFilter = 'both' | 'mens' | 'womens';
 export const BuyButton: React.FC<BuyButtonProps> = ({
   canvasRef,
   isDarkMode = false,
+  currentProduct,
+  currentColorway,
   getColorConfiguration
 }) => {
+  const { isConnected, getProduct } = useShopify();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
   const [sizeFilter, setSizeFilter] = useState<SizeFilter>('mens');
   const [currentStep, setCurrentStep] = useState(0);
+  const [inventoryData, setInventoryData] = useState<Record<string, number>>({});
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [addressValidation, setAddressValidation] = useState<AddressValidation>({
     isValidating: false,
     isValid: null,
@@ -124,6 +146,91 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const indicatorRef = useRef<HTMLDivElement>(null);
+
+  // Load inventory data when component opens
+  const loadInventory = useCallback(async () => {
+    if (!isConnected || !currentProduct) {
+      console.log('Cannot load inventory: not connected or no product');
+      return;
+    }
+
+    setIsLoadingInventory(true);
+    try {
+      console.log('Loading inventory for product:', currentProduct.id);
+      
+      // Get fresh product data with variants
+      const productData = await getProduct(currentProduct.id);
+      
+      if (productData && productData.variants) {
+        const inventory: Record<string, number> = {};
+        
+        // Map each variant to its size and inventory
+        productData.variants.forEach(variant => {
+          // Extract size from variant title or SKU
+          const size = extractSizeFromVariant(variant);
+          if (size) {
+            inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
+            console.log(`Size ${size}: ${inventory[size]} available`);
+          }
+        });
+        
+        setInventoryData(inventory);
+        console.log('Inventory loaded:', inventory);
+      }
+    } catch (error) {
+      console.error('Error loading inventory:', error);
+      toast({
+        title: "Inventory Error",
+        description: "Could not load current stock levels. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingInventory(false);
+    }
+  }, [isConnected, currentProduct, getProduct]);
+
+  // Extract size from variant title or SKU
+  const extractSizeFromVariant = (variant: any) => {
+    // Check if size is already provided
+    if (variant.size) return variant.size;
+    
+    // Try to extract from title (e.g., "Men's 10", "Women's 8", "M10", "W8")
+    const title = variant.title || '';
+    const sizeMatch = title.match(/(?:Men's|M)\s*(\d+(?:\.\d+)?)|(?:Women's|W)\s*(\d+(?:\.\d+)?)/i);
+    
+    if (sizeMatch) {
+      const mensSize = sizeMatch[1];
+      const womensSize = sizeMatch[2];
+      
+      if (mensSize) return `M${mensSize}`;
+      if (womensSize) return `W${womensSize}`;
+    }
+    
+    // Try to extract from SKU
+    const sku = variant.sku || '';
+    const skuMatch = sku.match(/(?:M|MENS?)[-_]?(\d+(?:\.\d+)?)|(?:W|WOMENS?)[-_]?(\d+(?:\.\d+)?)/i);
+    
+    if (skuMatch) {
+      const mensSize = skuMatch[1];
+      const womensSize = skuMatch[2];
+      
+      if (mensSize) return `M${mensSize}`;
+      if (womensSize) return `W${womensSize}`;
+    }
+    
+    console.warn('Could not extract size from variant:', variant);
+    return null;
+  };
+
+  // Get available quantity for a specific size
+  const getAvailableQuantity = (size: string) => {
+    return inventoryData[size] || 0;
+  };
+
+  // Check if a size is available
+  const isSizeAvailable = (size: string) => {
+    return getAvailableQuantity(size) > 0;
+  };
 
   const steps = [
     { title: 'Sizes', icon: ShoppingCart },
@@ -170,6 +277,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     setIsOpen(open);
     if (open) {
       captureScreenshot();
+      loadInventory(); // Load inventory when opening
     } else {
       // Reset form and step when closing
       setFormData({
@@ -193,11 +301,23 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   };
 
   const updateQuantity = (size: string, quantity: number) => {
+    const maxQuantity = getAvailableQuantity(size);
+    const newQuantity = Math.max(0, Math.min(quantity, maxQuantity));
+    
+    // Show warning if user tries to exceed available quantity
+    if (quantity > maxQuantity && maxQuantity > 0) {
+      toast({
+        title: "Stock Limit Reached",
+        description: `Only ${maxQuantity} pairs available in size ${size}`,
+        variant: "destructive",
+      });
+    }
+    
     setFormData(prev => ({
       ...prev,
       sizeQuantities: {
         ...prev.sizeQuantities,
-        [size]: Math.max(0, quantity)
+        [size]: newQuantity
       }
     }));
   };
@@ -677,7 +797,29 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
               {currentStep === 0 && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                 
+                    {/* Inventory Status */}
+                    {currentProduct && (
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">
+                          {currentProduct.title}
+                        </h3>
+                        {isConnected && (
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            isLoadingInventory 
+                              ? 'bg-gray-100 text-gray-600'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {isLoadingInventory ? 'Loading Stock...' : 'Live Inventory'}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {currentColorway && (
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Colorway:</p>
+                        <p className="text-sm font-medium">{currentColorway.name}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Enhanced Tab Bar with Sliding Indicator */}
@@ -723,17 +865,47 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     <div className="grid grid-cols-2 gap-4 max-h-[50vh] pb-4 overflow-y-auto pr-2">
                       {getFilteredSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
+                        const available = getAvailableQuantity(size);
+                        const isAvailable = isSizeAvailable(size);
+                        const isLoading = isLoadingInventory;
+                        
                         return (
-                          <div key={size} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${quantity > 0 ? 'border-slate-500/20 bg-slate-400/5' : 'border-gray-200 hover:border-gray-300'
+                          <div key={size} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${
+                            !isAvailable && !isLoading
+                              ? 'border-red-200 bg-red-50 opacity-60'
+                              : quantity > 0 
+                                ? 'border-slate-500/20 bg-slate-400/5' 
+                                : 'border-gray-200 hover:border-gray-300'
                             }`}>
-                            <span className="font-medium text-sm">{size}</span>
+                            <div className="flex flex-col">
+                              <span className={`font-medium text-sm ${!isAvailable && !isLoading ? 'text-gray-500' : ''}`}>
+                                {size}
+                              </span>
+                              <span className={`text-xs ${
+                                isLoading 
+                                  ? 'text-gray-400' 
+                                  : !isAvailable 
+                                    ? 'text-red-500' 
+                                    : available <= 5 
+                                      ? 'text-orange-600' 
+                                      : 'text-green-600'
+                              }`}>
+                                {isLoading ? 'Loading...' : 
+                                 !isAvailable ? 'Out of Stock' : 
+                                 available <= 5 ? `Only ${available} left` : 
+                                 `${available} available`}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1">
-                          
                               <input
                                 type="number"
                                 value={quantity}
                                 onChange={(e) => updateQuantity(size, Math.max(0, parseInt(e.target.value) || 0))}
-                                className="w-12 text-center font-medium border rounded-md h-8 focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                disabled={!isAvailable || isLoading}
+                                max={available}
+                                className={`w-12 text-center font-medium border rounded-md h-8 focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                                  !isAvailable || isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
+                                }`}
                               />
                               <Button
                                 type="button"
@@ -741,6 +913,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                                 size="sm"
                                 className="h-8 w-8 p-0"
                                 onClick={() => updateQuantity(size, quantity + 1)}
+                                disabled={!isAvailable || isLoading || quantity >= available}
                               >
                                 <Plus className="w-4 h-4" />
                               </Button>

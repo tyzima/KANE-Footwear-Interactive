@@ -128,6 +128,7 @@ const Index = () => {
     }
   }, [isDark]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedColorway, setSelectedColorway] = useState<any>(null);
   const [colorConfiguration, setColorConfiguration] = useState<{
     upper: {
       baseColor: string;
@@ -161,6 +162,36 @@ const Index = () => {
   
   // Helper to determine if current background should use dark mode styling
   const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+
+  // Convert selected colorway to product format for BuyButton
+  const getCurrentProduct = () => {
+    if (!selectedColorway) return undefined;
+    
+    // Check if this is a dynamic colorway from Shopify (starts with "product-")
+    if (selectedColorway.id.startsWith('product-')) {
+      const productId = selectedColorway.id.replace('product-', '');
+      
+      // Create mock variants for all sizes (in a real implementation, this would come from Shopify)
+      const variants = [
+        ...['M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18'],
+        ...['W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17', 'W18', 'W19', 'W20']
+      ].map(size => ({
+        id: `gid://shopify/ProductVariant/${productId}_${size}`,
+        title: size,
+        inventoryQuantity: Math.floor(Math.random() * 20), // Mock inventory
+        sku: `${selectedColorway.name.replace(/\s+/g, '-').toUpperCase()}-${size}`,
+        size: size
+      }));
+      
+      return {
+        id: `gid://shopify/Product/${productId}`,
+        title: selectedColorway.name,
+        variants: variants
+      };
+    }
+    
+    return undefined;
+  };
 
   // Function to get current design state for sharing
   const getCurrentDesignState = (): DesignData => {
@@ -295,6 +326,8 @@ const Index = () => {
           <BuyButton
             canvasRef={canvasRef}
             isDarkMode={isDarkMode}
+            currentProduct={getCurrentProduct()}
+            currentColorway={selectedColorway}
             getColorConfiguration={() => colorConfiguration}
           />
           <ShareButton
@@ -313,6 +346,7 @@ const Index = () => {
             canvasRef={canvasRef}
             onColorConfigurationChange={setColorConfiguration}
             colorConfiguration={colorConfiguration}
+            onSelectedColorwayChange={setSelectedColorway}
           />
         </div>
 

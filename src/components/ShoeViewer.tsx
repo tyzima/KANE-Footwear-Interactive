@@ -131,7 +131,8 @@ interface ShoeViewerProps {
   onBackgroundTypeChange?: (type: 'light' | 'dark' | 'turf') => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   onColorConfigurationChange?: (config: any) => void;
-  colorConfiguration?: any; // External color configuration to apply (for shared designs)
+  colorConfiguration?: any;
+  onSelectedColorwayChange?: (colorway: any) => void; // External color configuration to apply (for shared designs)
 }
 
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({
@@ -140,7 +141,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   onBackgroundTypeChange,
   canvasRef,
   onColorConfigurationChange,
-  colorConfiguration: externalColorConfiguration
+  colorConfiguration: externalColorConfiguration,
+  onSelectedColorwayChange
 }) => {
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -428,7 +430,12 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
     setSoleSplatterColor2(selectedColorway.sole.splatterColor2);
     setUpperUseDualSplatter(selectedColorway.upper.useDualSplatter);
     setSoleUseDualSplatter(selectedColorway.sole.useDualSplatter);
-  }, [selectedColorway]);
+    
+    // Notify parent component about colorway change
+    if (onSelectedColorwayChange) {
+      onSelectedColorwayChange(selectedColorway);
+    }
+  }, [selectedColorway, onSelectedColorwayChange]);
 
   const handleModelLoad = () => {
     setIsLoading(false);
