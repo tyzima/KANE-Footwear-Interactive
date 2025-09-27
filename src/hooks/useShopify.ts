@@ -200,9 +200,19 @@ export const useShopify = () => {
     // Store the shop domain for the callback
     localStorage.setItem('shopify_oauth_shop', fullDomain);
     
-    // Always redirect in the same window/iframe - no popup needed
-    console.log('Redirecting to OAuth URL in same window:', authUrl);
-    window.location.href = authUrl;
+    // Check if we're in an embedded context
+    const isEmbedded = window.self !== window.top;
+    
+    if (isEmbedded) {
+      // If embedded, we need to break out of the iframe for OAuth
+      // because accounts.shopify.com cannot be displayed in iframes
+      console.log('Breaking out of iframe for OAuth:', authUrl);
+      window.top!.location.href = authUrl;
+    } else {
+      // If not embedded, redirect normally
+      console.log('Redirecting to OAuth URL in same window:', authUrl);
+      window.location.href = authUrl;
+    }
   }, []);
 
   return {

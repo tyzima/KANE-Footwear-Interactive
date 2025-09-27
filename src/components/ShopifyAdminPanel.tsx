@@ -36,8 +36,12 @@ export const ShopifyAdminPanel: React.FC = () => {
     const originalError = window.onerror;
     window.onerror = (message, source, lineno, colno, error) => {
       if (
-        (source && source.includes('share-modal.js')) ||
-        (typeof message === 'string' && message.includes('addEventListener'))
+        (source && (source.includes('share-modal.js') || source.includes('shopifycloud'))) ||
+        (typeof message === 'string' && (
+          message.includes('addEventListener') || 
+          message.includes('Cannot read properties of null') ||
+          message.includes('frame-ancestors')
+        ))
       ) {
         console.warn('Suppressed Shopify script error:', message);
         return true; // Prevent default error handling
@@ -48,8 +52,27 @@ export const ShopifyAdminPanel: React.FC = () => {
       return false;
     };
 
+    // Also suppress unhandled promise rejections from Shopify scripts
+    const originalUnhandledRejection = window.onunhandledrejection;
+    window.onunhandledrejection = (event) => {
+      if (
+        event.reason && 
+        typeof event.reason.message === 'string' &&
+        (event.reason.message.includes('frame-ancestors') || 
+         event.reason.message.includes('X-Frame-Options'))
+      ) {
+        console.warn('Suppressed Shopify iframe error:', event.reason.message);
+        event.preventDefault();
+        return;
+      }
+      if (originalUnhandledRejection) {
+        originalUnhandledRejection(event);
+      }
+    };
+
     return () => {
       window.onerror = originalError;
+      window.onunhandledrejection = originalUnhandledRejection;
     };
   }, []);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
@@ -169,7 +192,7 @@ export const ShopifyAdminPanel: React.FC = () => {
                     Connect to Shopify
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-3">
-                    You'll be redirected to Shopify for authorization, then back here
+                    You'll be taken to Shopify to authorize the connection, then redirected back
                   </p>
                 </CardContent>
               </Card>
