@@ -23,6 +23,10 @@ import { useShopify } from '@/hooks/useShopify';
 import { ShopifyConnection } from './ShopifyConnection';
 import { toast } from './ui/use-toast';
 import type { ShopifyProduct } from '@/lib/shopify';
+import { ShoeModel } from './ShoeModel';
+import { Canvas } from '@react-three/fiber';
+import { Environment, OrbitControls } from '@react-three/drei';
+import { Suspense } from 'react';
 
 export const ShopifyAdminPanel: React.FC = () => {
   const { isConnected, getProducts, shop, connectViaOAuth, updateProductMetafields } = useShopify();
@@ -835,7 +839,7 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
       <CardHeader>
         <div className="flex items-start gap-4">
           {/* Product Thumbnail */}
-          <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+          <div className="w-24 h-24 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
             {productImage ? (
               <img 
                 src={productImage} 
@@ -900,6 +904,63 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
       
       {isEditing && (
         <CardContent>
+          {/* Live Preview Section */}
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium mb-2">Live Preview</h4>
+                <p className="text-xs text-gray-600 mb-3">See your color changes in real-time</p>
+                
+                {/* Mini Shoe Model */}
+                <div className="w-48 h-48 bg-white rounded-lg border-2 border-gray-200 overflow-hidden">
+                  <Canvas
+                    camera={{ position: [0, 0, 5], fov: 50 }}
+                    style={{ background: 'transparent' }}
+                  >
+                    <Suspense fallback={null}>
+                      <Environment preset="studio" />
+                      <OrbitControls 
+                        enableZoom={false} 
+                        enablePan={false}
+                        autoRotate={true}
+                        autoRotateSpeed={2}
+                      />
+                      <ShoeModel
+                        topColor={metafields.upper_base_hex || '#000000'}
+                        bottomColor={metafields.sole_base_hex || '#000000'}
+                        upperSplatterColor={metafields.upper_splatter_hex || '#000000'}
+                        soleSplatterColor={metafields.sole_splatter_hex || '#000000'}
+                        upperSplatterBaseColor={metafields.upper_darkbase_hex || '#000000'}
+                        laceColor={metafields.lace_color_hex || '#000000'}
+                        upperHasSplatter={true}
+                        soleHasSplatter={true}
+                        scale={0.8}
+                      />
+                    </Suspense>
+                  </Canvas>
+                </div>
+              </div>
+              
+              {/* Color Summary */}
+              <div className="flex-1">
+                <h4 className="text-sm font-medium mb-2">Color Summary</h4>
+                <div className="space-y-2">
+                  {colorwayFields.map((field) => (
+                    <div key={field.key} className="flex items-center gap-2 text-xs">
+                      <div 
+                        className="w-4 h-4 rounded border border-gray-300"
+                        style={{ backgroundColor: metafields[field.key] || '#000000' }}
+                      />
+                      <span className="text-gray-700">{field.label}</span>
+                      <span className="text-gray-500 font-mono">{metafields[field.key] || '#000000'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Color Editors */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {colorwayFields.map((field) => (
               <div key={field.key} className="space-y-2">
