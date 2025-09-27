@@ -25,11 +25,18 @@ const Index = () => {
   // Check if we're in an embedded context (Shopify iframe)
   useEffect(() => {
     const embedded = window.self !== window.top;
-    setIsEmbedded(embedded);
-    
-    // If embedded and has shop parameter, this is likely a Shopify embed
     const urlParams = new URLSearchParams(window.location.search);
     const shop = urlParams.get('shop');
+    
+    console.log('Index.tsx: Embedded detection:', {
+      embedded,
+      windowSelf: window.self,
+      windowTop: window.top,
+      shop,
+      currentURL: window.location.href
+    });
+    
+    setIsEmbedded(embedded);
     
     if (embedded && shop) {
       // Suppress Shopify-related errors
@@ -54,36 +61,54 @@ const Index = () => {
     }
   }, []);
 
-  // Load product context for embedded customer views
+  // Load product context for customer views (embedded or direct)
   useEffect(() => {
-    if (isEmbedded) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const productId = urlParams.get('productId');
-      const shop = urlParams.get('shop');
-      const customer = urlParams.get('customer');
-      const title = urlParams.get('title');
-      const handle = urlParams.get('handle');
+    console.log('Index.tsx: Checking for customer context:', {
+      isEmbedded,
+      currentURL: window.location.href,
+      search: window.location.search
+    });
+    
+    // Check for customer context regardless of embedded status
+    // This handles both embedded iframes and direct customer links
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('productId');
+    const shop = urlParams.get('shop');
+    const customer = urlParams.get('customer');
+    const title = urlParams.get('title');
+    const handle = urlParams.get('handle');
+    
+    console.log('Index.tsx: URL parameters:', {
+      productId,
+      shop,
+      customer,
+      title,
+      handle,
+      allParams: Object.fromEntries(urlParams.entries())
+    });
+    
+    // Set product context for customer views (with or without specific productId)
+    if (shop && (customer === 'true' || productId)) {
+      const newProductContext = {
+        productId: productId || '', // Empty string if no specific product
+        shop,
+        title: title || undefined,
+        handle: handle || undefined,
+        isCustomerEmbed: true
+      };
       
-      // Set product context for customer embeds (with or without specific productId)
-      if (shop && (customer === 'true' || productId)) {
-        setProductContext({
-          productId: productId || '', // Empty string if no specific product
-          shop,
-          title: title || undefined,
-          handle: handle || undefined,
-          isCustomerEmbed: true
-        });
-        
-        console.log('Loading product context for customer embed:', { 
-          productId: productId || '(all products)', 
-          shop, 
-          title, 
-          handle, 
-          customer 
-        });
-      }
+      console.log('Index.tsx: Setting product context for customer:', newProductContext);
+      setProductContext(newProductContext);
+    } else {
+      console.log('Index.tsx: No customer context found - conditions not met:', {
+        hasShop: !!shop,
+        isCustomerTrue: customer === 'true',
+        hasProductId: !!productId
+      });
     }
-  }, [isEmbedded]);
+  }, []);
+  
+  // Note: Customer context detection moved to the effect above to handle both embedded and direct links
 
   // Determine embed type for conditional rendering later
   const getEmbedType = () => {
