@@ -18,7 +18,12 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Allow Shopify embedding for the embedded route
+# Allow Shopify embedding for admin routes
+[[headers]]
+  for = "/shopify-admin*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com"
+
 [[headers]]
   for = "/shopify-embedded*"
   [headers.values]

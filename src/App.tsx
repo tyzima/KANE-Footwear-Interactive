@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useTheme } from "@/hooks/use-theme";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import ShopifyAdmin from "./pages/ShopifyAdmin";
 import ShopifyEmbeddedPage from "./pages/ShopifyEmbedded";
 import NotFound from "./pages/NotFound";
 
@@ -24,6 +25,7 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/shopify-admin" element={<ShopifyAdmin />} />
             <Route path="/shopify-embedded" element={<ShopifyEmbeddedPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

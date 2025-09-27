@@ -215,7 +215,7 @@ In your Shopify app settings on dev.shopify.com, you need to configure these URL
 
 ### For Embedded App (Recommended):
 ```
-App URL: https://kaneconfig.netlify.app/
+App URL: https://kaneconfig.netlify.app/shopify-admin
 Allowed redirection URL(s): https://kaneconfig.netlify.app/auth/shopify/callback
 ```
 
@@ -225,11 +225,21 @@ App URL: https://kaneconfig.netlify.app/admin
 Allowed redirection URL(s): https://kaneconfig.netlify.app/auth/shopify/callback
 ```
 
-**Note**: For embedded apps, use the root URL (`/`) - the app will automatically detect it's embedded and show the appropriate interface.
+**Note**: The `/shopify-admin` route is specifically designed for embedded Shopify admin integration, while `/admin` is for standalone use.
 
 ### What Each URL Does:
 - **App URL**: Where Shopify loads your app (embedded in iframe or as standalone)
 - **Allowed redirection URL(s)**: Where Shopify redirects after OAuth authentication
+
+### 🎯 App Interface Structure:
+
+| Route | Purpose | Embedding | Best For |
+|-------|---------|-----------|----------|
+| `/` | Shoe Configurator | ❌ Not embedded | End customers designing shoes |
+| `/admin` | Full Admin Dashboard | ❌ Not embedded | Advanced store management |
+| `/shopify-admin` | Shopify Admin Panel | ✅ Embedded | Daily Shopify admin tasks |
+
+**Recommended Setup**: Use `/shopify-admin` as your App URL for the best merchant experience!
 
 ### Important Notes:
 - ✅ Always use `https://` (required by Shopify)
