@@ -47,9 +47,19 @@ export const useShopify = () => {
           shop: connectionResult.shop,
         });
 
-        // Store credentials securely (you might want to encrypt these)
-        localStorage.setItem('shopify_domain', shopDomain);
-        localStorage.setItem('shopify_access_token', accessToken);
+        // Store credentials securely with expiration (30 days)
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        
+        const connectionData = {
+          shopDomain,
+          accessToken,
+          expiresAt: expirationDate.toISOString(),
+          connectedAt: new Date().toISOString(),
+          shop: connectionResult.shop
+        };
+        
+        localStorage.setItem('shopify_connection', JSON.stringify(connectionData));
 
         return { success: true, shop: connectionResult.shop };
       } else {
@@ -69,8 +79,12 @@ export const useShopify = () => {
 
   // Disconnect from Shopify
   const disconnect = useCallback(() => {
+    // Clear both old and new storage formats
     localStorage.removeItem('shopify_domain');
     localStorage.removeItem('shopify_access_token');
+    localStorage.removeItem('shopify_connection');
+    localStorage.removeItem('shopify_oauth_shop');
+    
     setConnectionState({
       isConnected: false,
       isLoading: false,
@@ -82,10 +96,37 @@ export const useShopify = () => {
   // Check for existing connection on mount
   useEffect(() => {
     const checkExistingConnection = async () => {
+      // Try new storage format first
+      const connectionDataStr = localStorage.getItem('shopify_connection');
+      
+      if (connectionDataStr) {
+        try {
+          const connectionData = JSON.parse(connectionDataStr);
+          const now = new Date();
+          const expiresAt = new Date(connectionData.expiresAt);
+          
+          // Check if connection has expired
+          if (now > expiresAt) {
+            console.log('Shopify connection expired, clearing stored data');
+            localStorage.removeItem('shopify_connection');
+            return;
+          }
+          
+          console.log('Found valid stored connection, reconnecting...');
+          await initializeConnection(connectionData.shopDomain, connectionData.accessToken);
+          return;
+        } catch (error) {
+          console.error('Error parsing stored connection data:', error);
+          localStorage.removeItem('shopify_connection');
+        }
+      }
+      
+      // Fallback to old storage format
       const storedDomain = localStorage.getItem('shopify_domain');
       const storedToken = localStorage.getItem('shopify_access_token');
 
       if (storedDomain && storedToken) {
+        console.log('Found old format connection, reconnecting...');
         await initializeConnection(storedDomain, storedToken);
       }
     };
@@ -186,6 +227,16 @@ export const useShopify = () => {
                 console.log('Connection successful:', result.shop?.name);
                 // Force a re-render by triggering a state update
                 window.dispatchEvent(new CustomEvent('shopify-connected'));
+                
+                // Redirect back to Shopify embedded app after successful connection
+                setTimeout(() => {
+                  const shopifyAdminUrl = `https://${shop}/admin/apps`;
+                  if (window.top) {
+                    window.top.location.href = shopifyAdminUrl;
+                  } else {
+                    window.location.href = shopifyAdminUrl;
+                  }
+                }, 2000); // 2 second delay to show success message
               } else {
                 console.error('Connection failed:', result.error);
                 window.location.reload();

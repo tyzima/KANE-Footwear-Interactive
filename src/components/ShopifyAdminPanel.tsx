@@ -185,20 +185,35 @@ export const ShopifyAdminPanel: React.FC = () => {
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">KANE Footwear Admin</h1>
-          <p className="text-sm text-muted-foreground">
-            Connected to {shop?.name || 'Shopify Store'}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">KANE Footwear Admin</h1>
+            <p className="text-sm text-muted-foreground">
+              Connected to {shop?.name || 'Shopify Store'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {(() => {
+                const connectionData = localStorage.getItem('shopify_connection');
+                if (connectionData) {
+                  try {
+                    const data = JSON.parse(connectionData);
+                    const connectedAt = new Date(data.connectedAt);
+                    return `Connected ${connectedAt.toLocaleDateString()} at ${connectedAt.toLocaleTimeString()}`;
+                  } catch (e) {
+                    return 'Connection active';
+                  }
+                }
+                return 'Connection active';
+              })()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-green-100 text-green-800">
+              <Archive className="h-3 w-3 mr-1" />
+              Connected
+            </Badge>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-green-100 text-green-800">
-            <Archive className="h-3 w-3 mr-1" />
-            Connected
-          </Badge>
-        </div>
-      </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
