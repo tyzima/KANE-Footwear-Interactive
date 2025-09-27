@@ -6,6 +6,7 @@ export interface Colorway {
   id: string;
   name: string;
   description: string;
+  productId?: string; // Optional product ID for Shopify colorways
   upper: {
     baseColor: string;
     hasSplatter: boolean;

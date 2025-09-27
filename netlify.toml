@@ -29,6 +29,13 @@
   [headers.values]
     Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com"
 
+# Allow embedding for customer-facing embed routes
+[[headers]]
+  for = "/embed/*"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com *"
+    X-Frame-Options = "ALLOWALL"
+
 # Also allow embedding for the root if needed (but with restrictions)
 [[headers]]
   for = "/"

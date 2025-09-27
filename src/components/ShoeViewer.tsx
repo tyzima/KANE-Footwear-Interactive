@@ -133,6 +133,13 @@ interface ShoeViewerProps {
   onColorConfigurationChange?: (config: any) => void;
   colorConfiguration?: any;
   onSelectedColorwayChange?: (colorway: any) => void; // External color configuration to apply (for shared designs)
+  productContext?: {
+    productId: string;
+    shop: string;
+    isCustomerEmbed: boolean;
+    title?: string;
+    handle?: string;
+  } | null;
 }
 
 export const ShoeViewer: React.FC<ShoeViewerProps> = ({
@@ -142,7 +149,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   canvasRef,
   onColorConfigurationChange,
   colorConfiguration: externalColorConfiguration,
-  onSelectedColorwayChange
+  onSelectedColorwayChange,
+  productContext
 }) => {
   const { isDark } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
@@ -174,11 +182,36 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   // Dynamic colorways from Shopify
   const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = useColorways();
   
+  // Filter colorways based on product context (for customer embeds)
+  const availableColorways = React.useMemo(() => {
+    if (productContext?.isCustomerEmbed && productContext.productId && isUsingDynamicData) {
+      // For customer embeds, filter to show only colorways for this specific product
+      const productColorways = colorways.filter(colorway => 
+        colorway.id.includes(`product-${productContext.productId}`) ||
+        colorway.id === `product-${productContext.productId}` ||
+        colorway.productId === productContext.productId
+      );
+      
+      console.log('Customer embed colorway filtering:', {
+        productId: productContext.productId,
+        allColorways: colorways.length,
+        filteredColorways: productColorways.length,
+        productColorways: productColorways.map(c => ({ id: c.id, name: c.name }))
+      });
+      
+      // If we found product-specific colorways, use them; otherwise fallback to all colorways
+      return productColorways.length > 0 ? productColorways : colorways;
+    }
+    
+    // For admin or standalone use, show all colorways
+    return colorways;
+  }, [colorways, productContext, isUsingDynamicData]);
+  
   // Colorway state
   const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
   
-  // Get current colorway data
-  const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
+  // Get current colorway data from available colorways
+  const selectedColorway = availableColorways.find(c => c.id === selectedColorwayId) || availableColorways[0];
 
   // Handle colorway changes
   const handleColorwayChange = (colorway: any) => {
@@ -862,6 +895,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
           isDarkMode={isDarkMode}
           // Height callback for AIChat positioning
           onHeightChange={setCustomizerHeight}
+          // Product context for customer embeds
+          productContext={productContext}
         />
 
         {/* AI Chat - Fixed Position (handles its own responsive positioning) */}

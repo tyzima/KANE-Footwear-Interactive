@@ -14,6 +14,13 @@ const Index = () => {
   const { isDark } = useTheme();
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
   const [isEmbedded, setIsEmbedded] = useState(false);
+  const [productContext, setProductContext] = useState<{
+    productId: string;
+    shop: string;
+    isCustomerEmbed: boolean;
+    title?: string;
+    handle?: string;
+  } | null>(null);
 
   // Check if we're in an embedded context (Shopify iframe)
   useEffect(() => {
@@ -47,14 +54,52 @@ const Index = () => {
     }
   }, []);
 
-  // If this is an embedded Shopify context, show the embedded component
-  if (isEmbedded) {
+  // Load product context for embedded customer views
+  useEffect(() => {
+    if (isEmbedded) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get('productId');
+      const shop = urlParams.get('shop');
+      const title = urlParams.get('title');
+      const handle = urlParams.get('handle');
+      
+      if (productId && shop) {
+        // Load specific product colorways for this product
+        setProductContext({
+          productId,
+          shop,
+          title: title || undefined,
+          handle: handle || undefined,
+          isCustomerEmbed: true
+        });
+        
+        console.log('Loading product context for customer embed:', { productId, shop, title, handle });
+      }
+    }
+  }, [isEmbedded]);
+
+  // Determine embed type for conditional rendering later
+  const getEmbedType = () => {
+    if (!isEmbedded) return 'standalone';
+    
     const urlParams = new URLSearchParams(window.location.search);
     const shop = urlParams.get('shop');
-    if (shop) {
-      return <ShopifyEmbedded />;
+    const customer = urlParams.get('customer');
+    const productId = urlParams.get('productId');
+    
+    if (shop && !customer && !productId) {
+      return 'admin';
     }
-  }
+    
+    if (shop && (customer === 'true' || productId)) {
+      console.log('Customer-facing embed detected', { shop, productId, customer, productContext });
+      return 'customer';
+    }
+    
+    return 'standalone';
+  };
+  
+  const embedType = getEmbedType();
   
   // Shared design loading callback (memoized to prevent infinite re-renders)
   const onDesignLoaded = useCallback((design: any) => {
@@ -97,8 +142,8 @@ const Index = () => {
           ...prevConfig.laces,
           color: design.custom_lace_color || prevConfig.laces.color,
         },
-        logos: {
-          ...prevConfig.logos,
+        logo: {
+          ...prevConfig.logo,
           color1: design.logo_color1 || '#2048FF',
           color2: design.logo_color2 || '#000000',
           color3: design.logo_color3 || '#C01030',
@@ -113,7 +158,7 @@ const Index = () => {
         description: `Loaded "${design.name}" design.`,
       });
     }
-  }, []);
+  }, [setColorConfiguration]);
 
   const { design: sharedDesign, isLoading: isLoadingSharedDesign, error: sharedDesignError, hasSharedDesign } = useSharedDesignLoader(
     onDesignLoaded
@@ -134,6 +179,9 @@ const Index = () => {
       baseColor: string;
       hasSplatter: boolean;
       splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
       hasGradient: boolean;
       gradientColor1: string;
       gradientColor2: string;
@@ -144,6 +192,9 @@ const Index = () => {
       baseColor: string;
       hasSplatter: boolean;
       splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
       hasGradient: boolean;
       gradientColor1: string;
       gradientColor2: string;
@@ -277,6 +328,11 @@ const Index = () => {
     },
   ];
 
+  // Conditional rendering based on embed type
+  if (embedType === 'admin') {
+    return <ShopifyEmbedded />;
+  }
+
   return (
     <div className="min-h-screen max-h-screen bg-gradient-hero">
       {/* Main Viewer Section - Full Height */}
@@ -347,6 +403,7 @@ const Index = () => {
             onColorConfigurationChange={setColorConfiguration}
             colorConfiguration={colorConfiguration}
             onSelectedColorwayChange={setSelectedColorway}
+            productContext={productContext}
           />
         </div>
 
