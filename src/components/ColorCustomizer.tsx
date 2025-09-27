@@ -12,6 +12,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useColorways } from '@/hooks/useColorways';
+import { useCustomerShopify } from '@/hooks/useCustomerShopify';
 
 interface Colorway {
   id: string;
@@ -240,35 +241,39 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor2, setOriginalLogoColor2] = useState(logoColor2);
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
-  // Get dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways();
+  // Dynamic colorways from Shopify (admin)
+  const { colorways: adminColorways, isLoading: adminColorwaysLoading, isUsingDynamicData: adminUsingDynamicData } = useColorways();
   
-  // Filter colorways based on product context (for customer embeds)
-  const availableColorways = React.useMemo(() => {
-    if (productContext?.isCustomerEmbed && productContext.productId && isUsingDynamicData) {
-      // For customer embeds, filter to show only colorways for this specific product
-      const productColorways = colorways.filter(colorway => 
-        colorway.id.includes(`product-${productContext.productId}`) ||
-        colorway.id === `product-${productContext.productId}` ||
-        colorway.productId === productContext.productId
-      );
-      
-      console.log('ColorCustomizer: Customer embed colorway filtering:', {
-        productId: productContext.productId,
-        allColorways: colorways.length,
-        filteredColorways: productColorways.length,
-        productColorways: productColorways.map(c => ({ id: c.id, name: c.name }))
-      });
-      
-      // If we found product-specific colorways, use them; otherwise fallback to all colorways
-      return productColorways.length > 0 ? productColorways : colorways;
+  // Customer-facing colorways (for embeds)
+  const { 
+    colorways: customerColorways, 
+    isLoading: customerColorwaysLoading,
+    isConnected: customerConnected
+  } = useCustomerShopify({
+    shopDomain: productContext?.shop,
+    productId: productContext?.productId
+  });
+  
+  // Determine which colorways to use based on context
+  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = React.useMemo(() => {
+    if (productContext?.isCustomerEmbed && productContext.shop && productContext.productId) {
+      // Use customer API for embeds
+      return {
+        colorways: customerColorways,
+        isLoading: customerColorwaysLoading,
+        isUsingDynamicData: customerConnected && customerColorways.length > 0
+      };
+    } else {
+      // Use admin API for admin users
+      return {
+        colorways: adminColorways,
+        isLoading: adminColorwaysLoading,
+        isUsingDynamicData: adminUsingDynamicData
+      };
     }
-    
-    // For admin or standalone use, show all colorways
-    return colorways;
-  }, [colorways, productContext, isUsingDynamicData]);
+  }, [productContext, customerColorways, customerColorwaysLoading, customerConnected, adminColorways, adminColorwaysLoading, adminUsingDynamicData]);
   
-  const selectedColorway = availableColorways.find(c => c.id === selectedColorwayId) || availableColorways[0];
+  const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Helper function to find original color from darkened value
   const findOriginalColor = (darkenedValue: string): string => {
@@ -500,19 +505,19 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                      <div className="flex gap-1">
                        <div
                          className="w-3 h-3 rounded-full border border-white/50"
-                         style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.upper.baseColor }}
+                         style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.upper.baseColor }}
                        />
                        <div
                          className="w-3 h-3 rounded-full border border-white/50"
-                         style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.sole.baseColor }}
+                         style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.sole.baseColor }}
                        />
                        <div
                          className="w-3 h-3 rounded-full border border-white/50"
-                         style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.laces.color }}
+                         style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.laces.color }}
                        />
                      </div>
                      <span>
-                       {availableColorways.find(c => c.id === selectedColorwayId)?.name}
+                       {colorways.find(c => c.id === selectedColorwayId)?.name}
                      </span>
                    </div>
                  </motion.div>
@@ -600,19 +605,19 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                           <div className="flex gap-1">
                             <div
                               className="w-3 h-3 rounded-full border border-white/50"
-                              style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.upper.baseColor }}
+                              style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.upper.baseColor }}
                             />
                             <div
                               className="w-3 h-3 rounded-full border border-white/50"
-                              style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.sole.baseColor }}
+                              style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.sole.baseColor }}
                             />
                             <div
                               className="w-3 h-3 rounded-full border border-white/50"
-                              style={{ backgroundColor: availableColorways.find(c => c.id === selectedColorwayId)?.laces.color }}
+                              style={{ backgroundColor: colorways.find(c => c.id === selectedColorwayId)?.laces.color }}
                             />
                           </div>
                           <span>
-                            {availableColorways.find(c => c.id === selectedColorwayId)?.name}
+                            {colorways.find(c => c.id === selectedColorwayId)?.name}
                           </span>
                         </div>
                       </motion.div>
@@ -627,7 +632,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin opacity-70" />
                     )}
                     <span className={`text-xs ${isDarkMode ? 'text-white/60' : 'text-gray-500'}`}>
-                      {isUsingDynamicData ? `${availableColorways.length} Shopify Colorways` : `${availableColorways.length} Default Colorways`}
+                      {isUsingDynamicData ? `${colorways.length} Shopify Colorways` : `${colorways.length} Default Colorways`}
                     </span>
                   </div>
                   {isUsingDynamicData && (
@@ -648,7 +653,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                         </div>
                       ))
                     ) : (
-                      availableColorways.map((colorway, idx) => (
+                      colorways.map((colorway, idx) => (
                         <div key={colorway.id} className={idx === 0 ? "pl-2" : ""}>
                           <ColorwaySwatch
                             colorway={colorway}

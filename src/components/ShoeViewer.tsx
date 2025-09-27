@@ -13,6 +13,7 @@ import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
 import { useTheme } from '@/hooks/use-theme';
 import { useColorways } from '@/hooks/useColorways';
+import { useCustomerShopify } from '@/hooks/useCustomerShopify';
 
 // National Park inspired color palette with specific darkened speckle base colors
 const NATIONAL_PARK_COLORS = [
@@ -179,39 +180,46 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
   
-  // Dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = useColorways();
+  // Dynamic colorways from Shopify (admin)
+  const { colorways: adminColorways, isLoading: adminColorwaysLoading, error: adminColorwaysError, isUsingDynamicData: adminUsingDynamicData } = useColorways();
   
-  // Filter colorways based on product context (for customer embeds)
-  const availableColorways = React.useMemo(() => {
-    if (productContext?.isCustomerEmbed && productContext.productId && isUsingDynamicData) {
-      // For customer embeds, filter to show only colorways for this specific product
-      const productColorways = colorways.filter(colorway => 
-        colorway.id.includes(`product-${productContext.productId}`) ||
-        colorway.id === `product-${productContext.productId}` ||
-        colorway.productId === productContext.productId
-      );
-      
-      console.log('Customer embed colorway filtering:', {
-        productId: productContext.productId,
-        allColorways: colorways.length,
-        filteredColorways: productColorways.length,
-        productColorways: productColorways.map(c => ({ id: c.id, name: c.name }))
-      });
-      
-      // If we found product-specific colorways, use them; otherwise fallback to all colorways
-      return productColorways.length > 0 ? productColorways : colorways;
+  // Customer-facing colorways (for embeds)
+  const { 
+    colorways: customerColorways, 
+    isLoading: customerColorwaysLoading, 
+    error: customerColorwaysError,
+    isConnected: customerConnected
+  } = useCustomerShopify({
+    shopDomain: productContext?.shop,
+    productId: productContext?.productId
+  });
+  
+  // Determine which colorways to use based on context
+  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = React.useMemo(() => {
+    if (productContext?.isCustomerEmbed && productContext.shop && productContext.productId) {
+      // Use customer API for embeds
+      return {
+        colorways: customerColorways,
+        isLoading: customerColorwaysLoading,
+        error: customerColorwaysError,
+        isUsingDynamicData: customerConnected && customerColorways.length > 0
+      };
+    } else {
+      // Use admin API for admin users
+      return {
+        colorways: adminColorways,
+        isLoading: adminColorwaysLoading,
+        error: adminColorwaysError,
+        isUsingDynamicData: adminUsingDynamicData
+      };
     }
-    
-    // For admin or standalone use, show all colorways
-    return colorways;
-  }, [colorways, productContext, isUsingDynamicData]);
+  }, [productContext, customerColorways, customerColorwaysLoading, customerColorwaysError, customerConnected, adminColorways, adminColorwaysLoading, adminColorwaysError, adminUsingDynamicData]);
   
-  // Colorway state
+  // Colorway state - customer API already returns product-specific colorways
   const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
   
-  // Get current colorway data from available colorways
-  const selectedColorway = availableColorways.find(c => c.id === selectedColorwayId) || availableColorways[0];
+  // Get current colorway data
+  const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Handle colorway changes
   const handleColorwayChange = (colorway: any) => {
