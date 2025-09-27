@@ -383,11 +383,85 @@ export const shopifyAPI = {
       }
     `;
 
-    const response = await client.request(query, {
-      variables: { inventoryItemIds },
-    });
+    const response = await makeShopifyRequest(query, { inventoryItemIds });
 
     return response.data?.inventoryItems?.edges?.map((edge: any) => edge.node) || [];
+  },
+
+  // Update product metafields
+  async updateProductMetafields(productId: string, metafields: Record<string, string>) {
+    const metafieldInputs = Object.entries(metafields).map(([key, value]) => ({
+      namespace: 'custom',
+      key: key,
+      value: value,
+      type: 'color'
+    }));
+
+    const mutation = `
+      mutation productUpdate($input: ProductInput!) {
+        productUpdate(input: $input) {
+          product {
+            id
+            metafields(first: 50) {
+              edges {
+                node {
+                  id
+                  namespace
+                  key
+                  value
+                  type
+                }
+              }
+            }
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const input = {
+      id: `gid://shopify/Product/${productId}`,
+      metafields: metafieldInputs
+    };
+
+    const response = await makeShopifyRequest(mutation, { input });
+    
+    if (response.data?.productUpdate?.userErrors?.length > 0) {
+      throw new Error(response.data.productUpdate.userErrors[0].message);
+    }
+
+    return response.data?.productUpdate?.product;
+  },
+
+  // Get product metafields
+  async getProductMetafields(productId: string) {
+    const query = `
+      query getProductMetafields($id: ID!) {
+        product(id: $id) {
+          id
+          metafields(first: 50, namespace: "custom") {
+            edges {
+              node {
+                id
+                namespace
+                key
+                value
+                type
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await makeShopifyRequest(query, { 
+      id: `gid://shopify/Product/${productId}` 
+    });
+    
+    return response.data?.product?.metafields?.edges?.map((edge: any) => edge.node) || [];
   },
 };
 

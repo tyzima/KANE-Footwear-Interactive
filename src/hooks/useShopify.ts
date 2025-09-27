@@ -283,5 +283,7 @@ export const useShopify = () => {
     createCustomer,
     createDraftOrder,
     getInventoryLevels,
+    updateProductMetafields: shopifyAPI.updateProductMetafields,
+    getProductMetafields: shopifyAPI.getProductMetafields,
   };
 };

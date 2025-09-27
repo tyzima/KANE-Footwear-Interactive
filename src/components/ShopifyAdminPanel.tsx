@@ -25,7 +25,7 @@ import { toast } from './ui/use-toast';
 import type { ShopifyProduct } from '@/lib/shopify';
 
 export const ShopifyAdminPanel: React.FC = () => {
-  const { isConnected, getProducts, shop, connectViaOAuth } = useShopify();
+  const { isConnected, getProducts, shop, connectViaOAuth, updateProductMetafields } = useShopify();
   
   // Check for credentials in URL parameters and store them
   useEffect(() => {
@@ -197,6 +197,21 @@ export const ShopifyAdminPanel: React.FC = () => {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
     await loadProducts(nextPage, true);
+  };
+
+  // Handle metafield updates
+  const handleUpdateMetafields = async (productId: string, metafields: Record<string, string>) => {
+    try {
+      console.log('Updating metafields for product:', productId, metafields);
+      await updateProductMetafields(productId, metafields);
+      console.log('Metafields updated successfully');
+      
+      // Optionally refresh the products to show updated metafields
+      // await loadProducts(1, false);
+    } catch (error) {
+      console.error('Failed to update metafields:', error);
+      throw error; // Re-throw so the ColorwayEditor can handle the error display
+    }
   };
 
   useEffect(() => {
@@ -687,7 +702,7 @@ export const ShopifyAdminPanel: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {products.map((product) => (
-                <ColorwayEditor key={product.id} product={product} />
+                <ColorwayEditor key={product.id} product={product} onUpdate={handleUpdateMetafields} />
               ))}
               
               {/* Load More Button for Colorways */}
@@ -755,7 +770,7 @@ export const ShopifyAdminPanel: React.FC = () => {
 };
 
 // ColorwayEditor component for editing product metafields
-const ColorwayEditor: React.FC<{ product: ShopifyProduct }> = ({ product }) => {
+const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: string, metafields: Record<string, string>) => Promise<void> }> = ({ product, onUpdate }) => {
   const [metafields, setMetafields] = useState<Record<string, string>>({});
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -789,9 +804,8 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct }> = ({ product }) => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Here you would call the Shopify API to update metafields
-      // For now, we'll just simulate the save
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call the real Shopify API to update metafields
+      await onUpdate(product.id, metafields);
       
       toast({
         title: "Colorway Updated",
@@ -800,9 +814,10 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct }> = ({ product }) => {
       
       setIsEditing(false);
     } catch (error) {
+      console.error('Error updating metafields:', error);
       toast({
         title: "Update Failed",
-        description: "Failed to update colorway settings",
+        description: error instanceof Error ? error.message : "Failed to update colorway settings",
         variant: "destructive",
       });
     } finally {
