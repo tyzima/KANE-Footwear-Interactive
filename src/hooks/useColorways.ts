@@ -37,44 +37,34 @@ export const useColorways = () => {
 
   // Load dynamic colorways from Shopify
   const loadDynamicColorways = useCallback(async () => {
+    if (!isConnected) {
+      console.log('Not connected to Shopify, using static colorways');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // Admin/connected path
-      if (isConnected) {
-        const dynamicColorways = await getColorways();
-        if (dynamicColorways && dynamicColorways.length > 0) {
-          setColorways(dynamicColorways);
-          setLastUpdated(new Date());
-          return;
-        }
+      console.log('Loading dynamic colorways from Shopify...');
+      const dynamicColorways = await getColorways();
+      
+      if (dynamicColorways && dynamicColorways.length > 0) {
+        console.log(`Loaded ${dynamicColorways.length} dynamic colorways from Shopify`);
+        setColorways(dynamicColorways);
+        setLastUpdated(new Date());
+      } else {
+        console.log('No colorways found in Shopify, falling back to static data');
+        setColorways(colorwaysData.colorways);
       }
-
-      // Public/customer path via Netlify function
-      const params = new URLSearchParams(window.location.search);
-      const shop = params.get('shop');
-      if (shop) {
-        const resp = await fetch(`/.netlify/functions/public-colorways?shop=${encodeURIComponent(shop)}`);
-        if (resp.ok) {
-          const json = await resp.json();
-          if (Array.isArray(json.colorways) && json.colorways.length > 0) {
-            setColorways(json.colorways as Colorway[]);
-            setLastUpdated(new Date());
-            return;
-          }
-        }
-      }
-
-      // Fallback to static
-      setColorways(colorwaysData.colorways);
-      setLastUpdated(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load colorways';
-      console.error('Error loading colorways:', err);
+      console.error('Error loading dynamic colorways:', err);
       setError(errorMessage);
+      
+      // Fallback to static colorways on error
+      console.log('Falling back to static colorways due to error');
       setColorways(colorwaysData.colorways);
-      setLastUpdated(null);
     } finally {
       setIsLoading(false);
     }
@@ -82,8 +72,15 @@ export const useColorways = () => {
 
   // Load colorways when connected
   useEffect(() => {
-    loadDynamicColorways();
-  }, [loadDynamicColorways]);
+    if (isConnected) {
+      loadDynamicColorways();
+    } else {
+      // Use static colorways when not connected
+      setColorways(colorwaysData.colorways);
+      setLastUpdated(null);
+      setError(null);
+    }
+  }, [isConnected, loadDynamicColorways]);
 
   // Manual refresh function
   const refreshColorways = useCallback(async () => {
@@ -98,7 +95,7 @@ export const useColorways = () => {
     error,
     lastUpdated,
     refreshColorways,
-    isUsingDynamicData: !!lastUpdated,
+    isUsingDynamicData: isConnected && !error,
     totalCount: colorways.length
   };
 };

@@ -140,31 +140,17 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
-    if (!currentProduct) {
-      console.log('Cannot load inventory: no product');
+    if (!isConnected || !currentProduct) {
+      console.log('Cannot load inventory: not connected or no product');
       return;
     }
 
     setIsLoadingInventory(true);
     try {
       console.log('Loading inventory for product:', currentProduct.id);
-      let productData: any = null;
-      if (isConnected) {
-        // Admin/connected path
-        productData = await getProduct(currentProduct.id);
-      } else {
-        // Customer path via public function
-        const params = new URLSearchParams(window.location.search);
-        const shop = params.get('shop');
-        if (shop) {
-          const prodId = currentProduct.id.replace('gid://shopify/Product/', '');
-          const resp = await fetch(`/.netlify/functions/public-inventory?shop=${encodeURIComponent(shop)}&productId=${encodeURIComponent(prodId)}`);
-          if (resp.ok) {
-            const json = await resp.json();
-            productData = { variants: json.variants };
-          }
-        }
-      }
+      
+      // Get fresh product data with variants
+      const productData = await getProduct(currentProduct.id);
       
       if (productData && productData.variants) {
         const inventory: Record<string, number> = {};
