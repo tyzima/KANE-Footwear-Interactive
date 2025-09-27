@@ -23,6 +23,7 @@ import { useShopify } from '@/hooks/useShopify';
 import { ShopifyConnection } from './ShopifyConnection';
 import { toast } from './ui/use-toast';
 import type { ShopifyProduct } from '@/lib/shopify';
+import { createStorefrontAccessToken, listStorefrontAccessTokens, deleteStorefrontAccessToken, type StorefrontTokenResult } from '@/lib/shopify-storefront-token';
 import { ShoeModel } from './ShoeModel';
 import { Canvas } from '@react-three/fiber';
 import { Environment, OrbitControls } from '@react-three/drei';
@@ -154,6 +155,11 @@ export const ShopifyAdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  
+  // Storefront API token management
+  const [storefrontTokens, setStorefrontTokens] = useState<StorefrontTokenResult[]>([]);
+  const [isLoadingTokens, setIsLoadingTokens] = useState(false);
+  const [isCreatingToken, setIsCreatingToken] = useState(false);
   const productsPerPage = 10;
 
   const loadProducts = async (page: number = 1, append: boolean = false) => {
@@ -218,11 +224,101 @@ export const ShopifyAdminPanel: React.FC = () => {
     }
   };
 
+  // Load Storefront access tokens
+  const loadStorefrontTokens = async () => {
+    if (!isConnected) return;
+    
+    setIsLoadingTokens(true);
+    try {
+      const tokens = await listStorefrontAccessTokens();
+      setStorefrontTokens(tokens);
+      console.log('Loaded Storefront tokens:', tokens);
+    } catch (error) {
+      console.error('Error loading Storefront tokens:', error);
+      toast({
+        title: "Error Loading Tokens",
+        description: "Failed to load Storefront API tokens",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingTokens(false);
+    }
+  };
+
+  // Create new Storefront access token
+  const createNewStorefrontToken = async () => {
+    if (!isConnected) return;
+    
+    setIsCreatingToken(true);
+    try {
+      const newToken = await createStorefrontAccessToken('KANE Configurator Customer API');
+      
+      toast({
+        title: "Token Created Successfully!",
+        description: `Created token: ${newToken.accessToken.substring(0, 8)}...`,
+      });
+      
+      // Reload tokens to show the new one
+      await loadStorefrontTokens();
+      
+      // Show instructions to copy the token
+      toast({
+        title: "Copy This Token",
+        description: `Add this to Netlify: SHOPIFY_STOREFRONT_ACCESS_TOKEN=${newToken.accessToken}`,
+        duration: 10000,
+      });
+      
+    } catch (error) {
+      console.error('Error creating Storefront token:', error);
+      toast({
+        title: "Error Creating Token",
+        description: error instanceof Error ? error.message : "Failed to create token",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingToken(false);
+    }
+  };
+
+  // Delete Storefront access token
+  const deleteStorefrontToken = async (tokenId: string, title: string) => {
+    if (!isConnected) return;
+    
+    if (!confirm(`Are you sure you want to delete the token "${title}"?`)) {
+      return;
+    }
+    
+    try {
+      await deleteStorefrontAccessToken(tokenId);
+      toast({
+        title: "Token Deleted",
+        description: `Deleted token: ${title}`,
+      });
+      
+      // Reload tokens
+      await loadStorefrontTokens();
+    } catch (error) {
+      console.error('Error deleting Storefront token:', error);
+      toast({
+        title: "Error Deleting Token",
+        description: error instanceof Error ? error.message : "Failed to delete token",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (isConnected) {
       loadProducts();
     }
   }, [isConnected]);
+
+  // Load tokens when storefront tab is accessed
+  useEffect(() => {
+    if (isConnected && activeTab === 'storefront') {
+      loadStorefrontTokens();
+    }
+  }, [isConnected, activeTab]);
 
   const openConfigurator = () => {
     const configUrl = `https://kaneconfig.netlify.app/`;
@@ -433,10 +529,11 @@ export const ShopifyAdminPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
           <TabsTrigger value="colorways">Colorways</TabsTrigger>
+          <TabsTrigger value="storefront">API Tokens</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -733,6 +830,131 @@ export const ShopifyAdminPanel: React.FC = () => {
               )}
             </div>
           )}
+        </TabsContent>
+
+        {/* Storefront API Tab */}
+        <TabsContent value="storefront" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-blue-600" />
+                Storefront API Tokens
+              </CardTitle>
+              <CardDescription>
+                Manage access tokens for customer-facing features. These tokens allow customers to access colorways and inventory without admin authentication.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Create Token Button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium">Customer API Access</h3>
+                  <p className="text-sm text-gray-600">Create a token for customer-facing embeds and direct links</p>
+                </div>
+                <Button 
+                  onClick={createNewStorefrontToken}
+                  disabled={isCreatingToken}
+                  className="flex items-center gap-2"
+                >
+                  {isCreatingToken ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  {isCreatingToken ? 'Creating...' : 'Create Token'}
+                </Button>
+              </div>
+
+              {/* Existing Tokens */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Existing Tokens</h4>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={loadStorefrontTokens}
+                    disabled={isLoadingTokens}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoadingTokens ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                </div>
+
+                {isLoadingTokens ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                    <span className="ml-2 text-gray-600">Loading tokens...</span>
+                  </div>
+                ) : storefrontTokens.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p>No Storefront API tokens found</p>
+                    <p className="text-sm">Create one to enable customer access</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {storefrontTokens.map((token) => (
+                      <div key={token.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-medium">{token.title}</h5>
+                            <Badge variant="secondary" className="text-xs">
+                              {token.accessScopes.length} scopes
+                            </Badge>
+                          </div>
+                          <div className="mt-1">
+                            <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                              {token.accessToken.substring(0, 12)}...{token.accessToken.substring(-4)}
+                            </code>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-500">
+                            Scopes: {token.accessScopes.join(', ')}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(token.accessToken);
+                              toast({
+                                title: "Token Copied",
+                                description: "Storefront access token copied to clipboard",
+                              });
+                            }}
+                          >
+                            Copy
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => deleteStorefrontToken(token.id, token.title)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Setup Instructions */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">Setup Instructions</h4>
+                <div className="text-sm text-blue-800 space-y-2">
+                  <p><strong>1.</strong> Create a Storefront API token above</p>
+                  <p><strong>2.</strong> Copy the token and add it to your Netlify environment variables:</p>
+                  <code className="block bg-blue-100 p-2 rounded mt-1 font-mono text-xs">
+                    SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_token_here
+                  </code>
+                  <p><strong>3.</strong> Redeploy your site to activate customer access</p>
+                  <p><strong>4.</strong> Test with: <code className="bg-blue-100 px-1 rounded">?shop={shop?.domain}&customer=true</code></p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Settings Tab */}

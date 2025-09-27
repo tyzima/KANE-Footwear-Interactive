@@ -44,7 +44,7 @@ export const getShopifyConfig = () => {
 };
 
 // Helper function to make GraphQL requests to Shopify via Netlify function
-const makeShopifyRequest = async (query: string, variables?: any) => {
+export const makeShopifyRequest = async (query: string, variables?: any) => {
   const config = getShopifyConfig();
   
   const response = await fetch('/.netlify/functions/shopify-api', {
