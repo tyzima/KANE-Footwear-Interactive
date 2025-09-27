@@ -15,11 +15,55 @@ const Index = () => {
   
   // Shared design loading callback (memoized to prevent infinite re-renders)
   const onDesignLoaded = useCallback((design: any) => {
-    // This callback will be called when a shared design is loaded
-    toast({
-      title: "Design loaded!",
-      description: `Loaded "${design.name}" design.`,
-    });
+    console.log('Loading shared design:', design);
+    
+    // Apply the loaded design to the color configuration
+    if (design) {
+      // Update color configuration from saved design
+      setColorConfiguration(prevConfig => ({
+        ...prevConfig,
+        upper: {
+          ...prevConfig.upper,
+          baseColor: design.custom_upper_base_color || prevConfig.upper.baseColor,
+          hasSplatter: design.splatter_config?.upperHasSplatter || false,
+          splatterColor: design.splatter_config?.upperSplatterColor || '#FFFFFF',
+          hasGradient: design.gradient_config?.upperHasGradient || false,
+          gradientColor1: design.gradient_config?.upperGradientColor1 || '#4a8c2b',
+          gradientColor2: design.gradient_config?.upperGradientColor2 || '#c25d1e',
+          texture: design.texture_config?.upperTexture || null,
+          paintDensity: design.splatter_config?.upperPaintDensity || 50,
+        },
+        sole: {
+          ...prevConfig.sole,
+          baseColor: design.custom_sole_base_color || prevConfig.sole.baseColor,
+          hasSplatter: design.splatter_config?.soleHasSplatter || false,
+          splatterColor: design.splatter_config?.soleSplatterColor || '#FFFFFF',
+          hasGradient: design.gradient_config?.soleHasGradient || false,
+          gradientColor1: design.gradient_config?.soleGradientColor1 || '#4a8c2b',
+          gradientColor2: design.gradient_config?.soleGradientColor2 || '#c25d1e',
+          texture: design.texture_config?.soleTexture || null,
+          paintDensity: design.splatter_config?.solePaintDensity || 50,
+        },
+        laces: {
+          ...prevConfig.laces,
+          color: design.custom_lace_color || prevConfig.laces.color,
+        },
+        logos: {
+          ...prevConfig.logos,
+          color1: design.logo_color1 || '#2048FF',
+          color2: design.logo_color2 || '#000000',
+          color3: design.logo_color3 || '#C01030',
+          logoUrl: design.logo_url || null,
+          circleLogoUrl: design.circle_logo_url || null,
+        }
+      }));
+
+      // Show success message
+      toast({
+        title: "Design loaded!",
+        description: `Loaded "${design.name}" design.`,
+      });
+    }
   }, []);
 
   const { design: sharedDesign, isLoading: isLoadingSharedDesign, error: sharedDesignError, hasSharedDesign } = useSharedDesignLoader(
@@ -71,16 +115,16 @@ const Index = () => {
 
   // Function to get current design state for sharing
   const getCurrentDesignState = (): DesignData => {
-    // Note: This is a basic implementation. You may need to expand this
-    // to capture more detailed state from your ShoeViewer component
+    // Capture the current design state from colorConfiguration
     return {
-      colorwayId: 'classic-forest', // Default or get from current selection
-      logoColor1: '#2048FF',
-      logoColor2: '#000000', 
-      logoColor3: '#C01030',
+      colorwayId: 'custom-design', // Use custom since we're capturing current state
+      logoColor1: colorConfiguration?.logos?.color1 || '#2048FF',
+      logoColor2: colorConfiguration?.logos?.color2 || '#000000', 
+      logoColor3: colorConfiguration?.logos?.color3 || '#C01030',
       logoPosition: [0.8, 0.2, 0.5],
       logoRotation: [0, -0.3, 0],
       logoScale: 1.0,
+      circleLogoUrl: colorConfiguration?.logos?.circleLogoUrl || null,
       customColors: {
         upperBaseColor: colorConfiguration?.upper?.baseColor,
         soleBaseColor: colorConfiguration?.sole?.baseColor,
