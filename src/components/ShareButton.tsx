@@ -221,94 +221,140 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 
     try {
       const currentDesign = getCurrentDesign();
-      const designName = `Custom Design - ${new Date().toLocaleDateString()}`;
+      console.log('Current design data:', currentDesign);
       
-      console.log('Saving design data:', currentDesign);
-      const result = await saveDesign(
-        designName, 
-        currentDesign, 
-        'Custom shoe design created with KANE Footwear',
-        true // isPublic
-      );
+      const designName = `Custom Design - ${new Date().toLocaleDateString()}`;
+      console.log('Saving design with name:', designName);
+      
+      const result = await saveDesign(designName, currentDesign, 'Custom shoe design created with KANE Footwear', true);
       console.log('Save result:', result);
       
       if (result) {
         const baseUrl = window.location.origin + window.location.pathname;
         const shareUrl = `${baseUrl}?design=${result.shareToken}`;
         
-    // Quick copy - try multiple methods silently
-    let copySuccessful = false;
-    
-    try {
-      // Method 1: Modern clipboard API
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(shareUrl);
-        copySuccessful = true;
-      } else {
-        throw new Error('Clipboard API not available');
-      }
-    } catch (clipboardError) {
-      // Method 2: Quick fallback for Safari
-      try {
-        const textArea = document.createElement('textarea');
-        textArea.value = shareUrl;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        textArea.style.opacity = '0';
+        // Enhanced clipboard handling with better Safari support
+        let copySuccessful = false;
         
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        
-        if (successful) {
-          copySuccessful = true;
-        }
-      } catch (fallbackError) {
-        // Method 3: iOS Safari specific
         try {
-          const textArea = document.createElement('textarea');
-          textArea.value = shareUrl;
-          textArea.contentEditable = 'true';
-          textArea.readOnly = false;
-          textArea.style.position = 'absolute';
-          textArea.style.left = '-9999px';
-          
-          document.body.appendChild(textArea);
-          
-          const range = document.createRange();
-          range.selectNodeContents(textArea);
-          const selection = window.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-          
-          const successful = document.execCommand('copy');
-          document.body.removeChild(textArea);
-          
-          if (successful) {
+          // Method 1: Try modern clipboard API first (works in Chrome and modern Safari with HTTPS)
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareUrl);
             copySuccessful = true;
+          } else {
+            throw new Error('Clipboard API not available');
           }
-        } catch (iosError) {
-          // All methods failed - just continue silently
-          console.warn('All copy methods failed');
+        } catch (clipboardError) {
+          console.warn('Modern clipboard API failed, trying fallbacks:', clipboardError);
+          
+          // Method 2: Traditional execCommand approach for Safari
+          try {
+            // Create a more Safari-friendly textarea
+            const textArea = document.createElement('textarea');
+            textArea.value = shareUrl;
+            
+            // Safari-specific positioning and attributes
+            textArea.style.position = 'absolute';
+            textArea.style.left = '-9999px';
+            textArea.style.top = '0';
+            textArea.style.opacity = '0';
+            textArea.style.pointerEvents = 'none';
+            textArea.setAttribute('readonly', '');
+            textArea.tabIndex = -1;
+            
+            document.body.appendChild(textArea);
+            
+            // Safari needs focus before selection
+            textArea.focus();
+            textArea.setSelectionRange(0, shareUrl.length);
+            
+            // Try execCommand
+            const successful = document.execCommand('copy');
+            
+            // Clean up immediately
+            document.body.removeChild(textArea);
+            
+            if (successful) {
+              copySuccessful = true;
+            } else {
+              throw new Error('execCommand returned false');
+            }
+            
+          } catch (execError) {
+            console.warn('execCommand failed, trying iOS Safari method:', execError);
+            
+            // Method 3: iOS Safari specific approach
+            try {
+              const textArea = document.createElement('textarea');
+              textArea.value = shareUrl;
+              textArea.contentEditable = 'true';
+              textArea.readOnly = false;
+              
+              // iOS Safari specific styles
+              textArea.style.position = 'fixed';
+              textArea.style.left = '0';
+              textArea.style.top = '0';
+              textArea.style.width = '1px';
+              textArea.style.height = '1px';
+              textArea.style.padding = '0';
+              textArea.style.border = 'none';
+              textArea.style.outline = 'none';
+              textArea.style.boxShadow = 'none';
+              textArea.style.background = 'transparent';
+              textArea.style.fontSize = '16px'; // Prevent zoom on iOS
+              
+              document.body.appendChild(textArea);
+              
+              // iOS Safari selection method
+              const range = document.createRange();
+              range.selectNodeContents(textArea);
+              
+              const selection = window.getSelection();
+              if (selection) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+              }
+              
+              textArea.setSelectionRange(0, shareUrl.length);
+              
+              const successful = document.execCommand('copy');
+              document.body.removeChild(textArea);
+              
+              if (successful) {
+                copySuccessful = true;
+              }
+              
+            } catch (iosError) {
+              console.warn('All clipboard methods failed:', iosError);
+              // Final fallback - just show the link
+            }
+          }
         }
-      }
-    }
-    
-    // Always show success (even if copy failed, the design is still saved and shareable)
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    
-    toast({
-      title: copySuccessful ? "Design saved and link copied!" : "Design saved!",
-      description: copySuccessful 
-        ? "Anyone can view your custom design with this link." 
-        : `Share this link: ${shareUrl}`,
-      duration: copySuccessful ? 3000 : 8000,
-    });
+        
+        // Show appropriate success message
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        
+        if (copySuccessful) {
+          toast({
+            title: "Design saved and link copied!",
+            description: "Anyone can view your custom design with this link.",
+          });
+        } else {
+          // Show the link for manual copying with a more user-friendly message
+          toast({
+            title: "Design saved successfully!",
+            description: (
+              <div className="space-y-2">
+                <p>Please copy this link to share:</p>
+                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs font-mono break-all">
+                  {shareUrl}
+                </div>
+              </div>
+            ),
+            duration: 15000, // Show longer for manual copying
+          });
+        }
       }
     } catch (error) {
       console.error('Error saving and sharing design:', error);
@@ -375,6 +421,5 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-
   );
 };

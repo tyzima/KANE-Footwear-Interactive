@@ -60,12 +60,23 @@ export const useDesignSharing = () => {
     description: string = '',
     isPublic: boolean = true
   ): Promise<{ shareToken: string; design: SavedDesign } | null> => {
+    console.log('saveDesign called with:', { name, designData, description, isPublic });
+    
     setIsLoading(true);
     setError(null);
 
     try {
+      // Check if Supabase is properly configured
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseAnonKey) {
+        throw new Error('Supabase configuration missing. Please set VITE_SUPABASE_ANON_KEY in your environment variables.');
+      }
+      
+      console.log('Supabase client configured, attempting to save...');
       const shareToken = generateShareToken();
 
+      console.log('Inserting into saved_designs table...');
+      
       const { data, error: supabaseError } = await supabase
         .from('saved_designs')
         .insert({
@@ -82,19 +93,28 @@ export const useDesignSharing = () => {
           logo_rotation: designData.logoRotation,
           logo_scale: designData.logoScale,
           circle_logo_url: designData.circleLogoUrl,
-          custom_upper_base_color: designData.customColors?.upperBaseColor,
-          custom_sole_base_color: designData.customColors?.soleBaseColor,
-          custom_lace_color: designData.customColors?.laceColor,
-          splatter_config: designData.splatterConfig,
-          gradient_config: designData.gradientConfig,
-          texture_config: designData.textureConfig,
+          custom_upper_base_color: designData.customColors.upperBaseColor,
+          custom_sole_base_color: designData.customColors.soleBaseColor,
+          custom_lace_color: designData.customColors.laceColor,
+          design_config: {
+            splatterConfig: designData.splatterConfig,
+            gradientConfig: designData.gradientConfig,
+            textureConfig: designData.textureConfig,
+          },
           created_by: 'anonymous'
         })
         .select()
         .single();
 
+      console.log('Supabase response:', { data, supabaseError });
+
       if (supabaseError) {
-        console.error('Supabase error:', supabaseError);
+        console.error('Supabase error details:', {
+          message: supabaseError.message,
+          details: supabaseError.details,
+          hint: supabaseError.hint,
+          code: supabaseError.code
+        });
         setError(`Failed to save design: ${supabaseError.message}`);
         return null;
       }
