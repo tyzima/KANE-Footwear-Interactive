@@ -390,6 +390,8 @@ export const shopifyAPI = {
 
   // Update product metafields
   async updateProductMetafields(productId: string, metafields: Record<string, string>) {
+    console.log('updateProductMetafields called with:', { productId, metafields });
+    
     const metafieldInputs = Object.entries(metafields).map(([key, value]) => ({
       namespace: 'custom',
       key: key,
@@ -422,11 +424,15 @@ export const shopifyAPI = {
       }
     `;
 
+    const finalProductId = productId.startsWith('gid://') ? productId : `gid://shopify/Product/${productId}`;
+    console.log('Using product ID for mutation:', finalProductId);
+    
     const input = {
-      id: `gid://shopify/Product/${productId}`,
+      id: finalProductId,
       metafields: metafieldInputs
     };
 
+    console.log('GraphQL input:', JSON.stringify(input, null, 2));
     const response = await makeShopifyRequest(mutation, { input });
     
     if (response.data?.productUpdate?.userErrors?.length > 0) {
@@ -458,7 +464,7 @@ export const shopifyAPI = {
     `;
 
     const response = await makeShopifyRequest(query, { 
-      id: `gid://shopify/Product/${productId}` 
+      id: productId.startsWith('gid://') ? productId : `gid://shopify/Product/${productId}` 
     });
     
     return response.data?.product?.metafields?.edges?.map((edge: any) => edge.node) || [];
