@@ -240,6 +240,15 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
       if (externalColorConfiguration.upper?.splatterColor) {
         setUpperSplatterColor(externalColorConfiguration.upper.splatterColor);
       }
+      if (externalColorConfiguration.upper?.splatterColor2 !== undefined) {
+        setUpperSplatterColor2(externalColorConfiguration.upper.splatterColor2);
+      }
+      if (externalColorConfiguration.upper?.splatterBaseColor !== undefined) {
+        setUpperSplatterBaseColor(externalColorConfiguration.upper.splatterBaseColor);
+      }
+      if (externalColorConfiguration.upper?.useDualSplatter !== undefined) {
+        setUpperUseDualSplatter(externalColorConfiguration.upper.useDualSplatter);
+      }
       if (externalColorConfiguration.upper?.hasGradient !== undefined) {
         setUpperHasGradient(externalColorConfiguration.upper.hasGradient);
       }
@@ -265,6 +274,15 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
       }
       if (externalColorConfiguration.sole?.splatterColor) {
         setSoleSplatterColor(externalColorConfiguration.sole.splatterColor);
+      }
+      if (externalColorConfiguration.sole?.splatterColor2 !== undefined) {
+        setSoleSplatterColor2(externalColorConfiguration.sole.splatterColor2);
+      }
+      if (externalColorConfiguration.sole?.splatterBaseColor !== undefined) {
+        setSoleSplatterBaseColor(externalColorConfiguration.sole.splatterBaseColor);
+      }
+      if (externalColorConfiguration.sole?.useDualSplatter !== undefined) {
+        setSoleUseDualSplatter(externalColorConfiguration.sole.useDualSplatter);
       }
       if (externalColorConfiguration.sole?.hasGradient !== undefined) {
         setSoleHasGradient(externalColorConfiguration.sole.hasGradient);
@@ -348,6 +366,9 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         baseColor: topColor,
         hasSplatter: upperHasSplatter,
         splatterColor: upperSplatterColor,
+        splatterColor2: upperSplatterColor2,
+        splatterBaseColor: upperSplatterBaseColor,
+        useDualSplatter: upperUseDualSplatter,
         hasGradient: upperHasGradient,
         gradientColor1: upperGradientColor1,
         gradientColor2: upperGradientColor2,
@@ -358,6 +379,9 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         baseColor: bottomColor,
         hasSplatter: soleHasSplatter,
         splatterColor: soleSplatterColor,
+        splatterColor2: soleSplatterColor2,
+        splatterBaseColor: soleSplatterBaseColor,
+        useDualSplatter: soleUseDualSplatter,
         hasGradient: soleHasGradient,
         gradientColor1: soleGradientColor1,
         gradientColor2: soleGradientColor2,
@@ -386,7 +410,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   }, [
     topColor, bottomColor, laceColor, logoColor1, logoColor2, logoColor3,
     upperHasSplatter, soleHasSplatter, upperSplatterColor, soleSplatterColor,
-    upperPaintDensity, solePaintDensity,
+    upperSplatterColor2, soleSplatterColor2, upperSplatterBaseColor, soleSplatterBaseColor,
+    upperUseDualSplatter, soleUseDualSplatter, upperPaintDensity, solePaintDensity,
     upperHasGradient, soleHasGradient,
     upperGradientColor1, upperGradientColor2, soleGradientColor1, soleGradientColor2,
     upperTexture, soleTexture, logoUrl, logoPosition, logoRotation,
