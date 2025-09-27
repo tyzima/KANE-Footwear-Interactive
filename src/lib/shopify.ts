@@ -400,16 +400,26 @@ export const checkShopifyConnection = async () => {
           id
           name
           email
-          domain
           myshopifyDomain
+          primaryDomain {
+            host
+            url
+          }
         }
       }
     `;
 
     const response = await makeShopifyRequest(query);
+    const shop = response.data?.shop;
+    
+    // Transform the response to include a domain field for backward compatibility
+    if (shop) {
+      shop.domain = shop.primaryDomain?.host || shop.myshopifyDomain;
+    }
+    
     return {
       connected: true,
-      shop: response.data?.shop,
+      shop: shop,
     };
   } catch (error) {
     return {
