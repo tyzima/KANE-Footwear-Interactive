@@ -392,44 +392,12 @@ export const shopifyAPI = {
   async updateProductMetafields(productId: string, metafields: Record<string, string>) {
     console.log('updateProductMetafields called with:', { productId, metafields });
     
-    // First, get existing metafields to identify which ones to delete
-    const existingMetafields = await this.getProductMetafields(productId);
-    console.log('Existing metafields:', existingMetafields);
-    
-    const metafieldInputs = Object.entries(metafields).map(([key, value]) => {
-      const existingMetafield = existingMetafields.find(m => m.key === key);
-      
-      if (value.trim() === '') {
-        // If value is empty and metafield exists, mark it for deletion
-        if (existingMetafield) {
-          return {
-            id: existingMetafield.id,
-            namespace: 'custom',
-            key: key,
-            value: null // Setting to null will delete the metafield
-          };
-        }
-        // If empty and doesn't exist, skip it
-        return null;
-      } else {
-        // If value is provided, update or create the metafield
-        return {
-          ...(existingMetafield?.id && { id: existingMetafield.id }),
-          namespace: 'custom',
-          key: key,
-          value: value,
-          type: 'color'
-        };
-      }
-    }).filter(Boolean); // Remove null entries
-
-    console.log('Processed metafield inputs:', metafieldInputs);
-
-    // If no metafields to update, return early
-    if (metafieldInputs.length === 0) {
-      console.log('No metafields to update, skipping API call');
-      return null;
-    }
+    const metafieldInputs = Object.entries(metafields).map(([key, value]) => ({
+      namespace: 'custom',
+      key: key,
+      value: value,
+      type: 'color'
+    }));
 
     const mutation = `
       mutation productUpdate($input: ProductInput!) {
