@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
+import { useCustomerInventory } from '@/hooks/useCustomerInventory';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -109,6 +110,20 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   getColorConfiguration
 }) => {
   const { isConnected, getProduct } = useShopify();
+  
+  // Detect if this is a customer embed context
+  const isCustomerEmbed = typeof window !== 'undefined' && 
+    (window.self !== window.top || new URLSearchParams(window.location.search).get('customer') === 'true');
+  const shopParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('shop') : null;
+  const productIdParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('productId') : null;
+  
+  // Use customer inventory for embeds
+  const customerInventory = useCustomerInventory({
+    shop: shopParam || undefined,
+    productId: currentProduct?.id || productIdParam || undefined,
+    isCustomerEmbed: isCustomerEmbed
+  });
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
@@ -140,6 +155,15 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
+    // For customer embeds, use customer inventory hook
+    if (isCustomerEmbed && customerInventory.isAvailable) {
+      console.log('Using customer inventory for embed:', customerInventory.inventory);
+      setInventoryData(customerInventory.inventory);
+      setIsLoadingInventory(customerInventory.isLoading);
+      return;
+    }
+    
+    // For admin users, use full Shopify API
     if (!isConnected || !currentProduct) {
       console.log('Cannot load inventory: not connected or no product');
       return;
@@ -178,7 +202,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     } finally {
       setIsLoadingInventory(false);
     }
-  }, [isConnected, currentProduct, getProduct]);
+  }, [isConnected, currentProduct, getProduct, isCustomerEmbed, customerInventory.isAvailable, customerInventory.inventory, customerInventory.isLoading]);
 
   // Extract size from variant title or SKU
   const extractSizeFromVariant = (variant: { size?: string; title?: string; sku?: string }) => {

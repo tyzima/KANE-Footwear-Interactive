@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useShopify } from './useShopify';
+import { usePublicShopifyData } from './usePublicShopifyData';
 import colorwaysData from '../data/colorways.json';
 
 export interface Colorway {
@@ -28,8 +29,24 @@ export interface Colorway {
   };
 }
 
-export const useColorways = () => {
+interface UseColorwaysOptions {
+  // Customer embed context
+  customerEmbedContext?: {
+    shop: string;
+    productId?: string;
+    isCustomerEmbed: boolean;
+  };
+}
+
+export const useColorways = (options?: UseColorwaysOptions) => {
   const { isConnected, getColorways } = useShopify();
+  const customerContext = options?.customerEmbedContext;
+  
+  // Use public API for customer embeds
+  const publicData = usePublicShopifyData(
+    customerContext?.shop,
+    customerContext?.productId
+  );
   const [colorways, setColorways] = useState<Colorway[]>(colorwaysData.colorways);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,17 +87,32 @@ export const useColorways = () => {
     }
   }, [isConnected, getColorways]);
 
-  // Load colorways when connected
+  // Load colorways based on context
   useEffect(() => {
-    if (isConnected) {
+    if (customerContext?.isCustomerEmbed) {
+      // For customer embeds, use public API data if available
+      if (publicData.isAvailable && publicData.colorways.length > 0) {
+        console.log('Using public API colorways for customer embed');
+        setColorways(publicData.colorways);
+        setLastUpdated(new Date());
+        setError(null);
+      } else {
+        // Fallback to static colorways for customer embeds
+        console.log('Public API not available, using static colorways for customer embed');
+        setColorways(colorwaysData.colorways);
+        setLastUpdated(null);
+        setError(null);
+      }
+    } else if (isConnected) {
+      // For admin/authenticated users, use full Shopify API
       loadDynamicColorways();
     } else {
-      // Use static colorways when not connected
+      // Default: use static colorways
       setColorways(colorwaysData.colorways);
       setLastUpdated(null);
       setError(null);
     }
-  }, [isConnected, loadDynamicColorways]);
+  }, [isConnected, loadDynamicColorways, customerContext, publicData.isAvailable, publicData.colorways]);
 
   // Manual refresh function
   const refreshColorways = useCallback(async () => {
@@ -91,11 +123,16 @@ export const useColorways = () => {
 
   return {
     colorways,
-    isLoading,
-    error,
+    isLoading: isLoading || publicData.isLoading,
+    error: error || publicData.error,
     lastUpdated,
     refreshColorways,
-    isUsingDynamicData: isConnected && !error,
-    totalCount: colorways.length
+    isUsingDynamicData: customerContext?.isCustomerEmbed 
+      ? publicData.isAvailable 
+      : isConnected && !error,
+    totalCount: colorways.length,
+    dataSource: customerContext?.isCustomerEmbed 
+      ? (publicData.isAvailable ? 'public-api' : 'static')
+      : (isConnected ? 'admin-api' : 'static')
   };
 };
