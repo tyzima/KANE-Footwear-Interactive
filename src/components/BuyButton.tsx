@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
-import { useCustomerShopify } from '@/hooks/useCustomerShopify';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -110,21 +109,6 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   getColorConfiguration
 }) => {
   const { isConnected, getProduct } = useShopify();
-  
-  // Detect if we're in a customer embed context
-  const isCustomerEmbed = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const customer = urlParams.get('customer');
-    const productId = urlParams.get('productId');
-    const shop = urlParams.get('shop');
-    return !!(customer === 'true' || (productId && shop));
-  }, []);
-  
-  // Customer API for embeds
-  const customerShopify = useCustomerShopify({
-    shopDomain: isCustomerEmbed ? new URLSearchParams(window.location.search).get('shop') || undefined : undefined,
-    productId: isCustomerEmbed ? new URLSearchParams(window.location.search).get('productId') || currentProduct?.id : undefined
-  });
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
@@ -156,8 +140,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
-    if (!currentProduct) {
-      console.log('Cannot load inventory: no product');
+    if (!isConnected || !currentProduct) {
+      console.log('Cannot load inventory: not connected or no product');
       return;
     }
 
@@ -165,34 +149,25 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     try {
       console.log('Loading inventory for product:', currentProduct.id);
       
-      let inventory: Record<string, number> = {};
+      // Get fresh product data with variants
+      const productData = await getProduct(currentProduct.id);
       
-      if (isCustomerEmbed && customerShopify.inventory && Object.keys(customerShopify.inventory).length > 0) {
-        // Use customer API inventory (already loaded)
-        inventory = customerShopify.inventory;
-        console.log('Using customer API inventory:', inventory);
-      } else if (isConnected) {
-        // Use admin API for admin users
-        const productData = await getProduct(currentProduct.id);
+      if (productData && productData.variants) {
+        const inventory: Record<string, number> = {};
         
-        if (productData && productData.variants) {
-          // Map each variant to its size and inventory
-          productData.variants.forEach(variant => {
-            // Extract size from variant title or SKU
-            const size = extractSizeFromVariant(variant);
-            if (size) {
-              inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
-              console.log(`Size ${size}: ${inventory[size]} available`);
-            }
-          });
-        }
-      } else {
-        console.log('No inventory connection available');
+        // Map each variant to its size and inventory
+        productData.variants.forEach(variant => {
+          // Extract size from variant title or SKU
+          const size = extractSizeFromVariant(variant);
+          if (size) {
+            inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
+            console.log(`Size ${size}: ${inventory[size]} available`);
+          }
+        });
+        
+        setInventoryData(inventory);
+        console.log('Inventory loaded:', inventory);
       }
-      
-      setInventoryData(inventory);
-      console.log('Final inventory loaded:', inventory);
-      
     } catch (error) {
       console.error('Error loading inventory:', error);
       toast({
@@ -203,7 +178,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     } finally {
       setIsLoadingInventory(false);
     }
-  }, [isCustomerEmbed, customerShopify.inventory, isConnected, currentProduct, getProduct]);
+  }, [isConnected, currentProduct, getProduct]);
 
   // Extract size from variant title or SKU
   const extractSizeFromVariant = (variant: { size?: string; title?: string; sku?: string }) => {
