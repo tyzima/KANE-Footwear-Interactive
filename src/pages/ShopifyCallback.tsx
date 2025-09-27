@@ -52,34 +52,21 @@ const ShopifyCallback: React.FC = () => {
         
         setStatus('success');
         
-        // Check if we're in a popup (opened by embedded app)
-        const isPopup = window.opener && window.opener !== window;
-        
-        if (isPopup) {
-          // Send success message to parent window with full credentials
-          window.opener.postMessage({
-            type: 'SHOPIFY_OAUTH_SUCCESS',
-            shop: shopDomain,
-            accessToken: accessToken // Send full token for immediate initialization
-          }, window.location.origin);
-          
-          // Show brief success message then close
-          toast({
-            title: "Successfully connected!",
-            description: "Closing popup...",
-          });
-          
-          setTimeout(() => {
-            window.close();
-          }, 1500);
-        } else {
-          // Normal flow - show success and redirect
-          toast({
-            title: "Successfully connected to Shopify!",
-            description: `Connected to ${shopDomain}`,
-          });
+        toast({
+          title: "Successfully connected to Shopify!",
+          description: `Connected to ${shopDomain}`,
+        });
 
-          // Redirect to admin after a brief delay
+        // Check if we're in an embedded context and redirect accordingly
+        const isEmbedded = window.self !== window.top;
+        
+        if (isEmbedded) {
+          // If embedded, redirect back to the shopify-admin route within the iframe
+          setTimeout(() => {
+            navigate('/shopify-admin');
+          }, 2000);
+        } else {
+          // If standalone, redirect to admin
           setTimeout(() => {
             navigate('/shopify-admin');
           }, 2000);
@@ -91,30 +78,11 @@ const ShopifyCallback: React.FC = () => {
         setError(errorMessage);
         setStatus('error');
         
-        // Check if we're in a popup
-        const isPopup = window.opener && window.opener !== window;
-        
-        if (isPopup) {
-          // Send error message to parent window
-          window.opener.postMessage({
-            type: 'SHOPIFY_OAUTH_ERROR',
-            error: errorMessage
-          }, window.location.origin);
-          
-          toast({
-            title: "Connection failed",
-            description: "Check the main window for details.",
-            variant: "destructive",
-          });
-          
-          // Keep popup open so user can see the error
-        } else {
-          toast({
-            title: "Connection failed",
-            description: errorMessage,
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Connection failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
     };
 

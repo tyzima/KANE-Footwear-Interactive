@@ -200,75 +200,9 @@ export const useShopify = () => {
     // Store the shop domain for the callback
     localStorage.setItem('shopify_oauth_shop', fullDomain);
     
-    // Check if we're in an iframe (embedded app)
-    const isEmbedded = window.self !== window.top;
-    
-    if (isEmbedded) {
-      // If embedded, open OAuth in a new window/tab
-      const authWindow = window.open(authUrl, 'shopify-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes');
-      
-      // Listen for the callback message from the popup
-      const handleMessage = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-        
-        if (event.data.type === 'SHOPIFY_OAUTH_SUCCESS') {
-          console.log('OAuth success received from popup', event.data);
-          authWindow?.close();
-          window.removeEventListener('message', handleMessage);
-          
-          // Use credentials from the message for immediate initialization
-          const { shop, accessToken } = event.data;
-          
-          if (shop && accessToken) {
-            console.log('Initializing connection with popup credentials');
-            try {
-              const result = await initializeConnection(shop, accessToken);
-              if (result.success) {
-                console.log('Connection successful:', result.shop?.name);
-                // Force a re-render by triggering a state update
-                window.dispatchEvent(new CustomEvent('shopify-connected'));
-                
-                // Redirect back to Shopify embedded app after successful connection
-                setTimeout(() => {
-                  const shopifyAdminUrl = `https://${shop}/admin/apps`;
-                  if (window.top) {
-                    window.top.location.href = shopifyAdminUrl;
-                  } else {
-                    window.location.href = shopifyAdminUrl;
-                  }
-                }, 2000); // 2 second delay to show success message
-              } else {
-                console.error('Connection failed:', result.error);
-                window.location.reload();
-              }
-            } catch (error) {
-              console.error('Error initializing connection:', error);
-              window.location.reload();
-            }
-          } else {
-            console.log('Missing credentials in popup message, reloading page');
-            window.location.reload();
-          }
-        } else if (event.data.type === 'SHOPIFY_OAUTH_ERROR') {
-          console.error('OAuth error received from popup:', event.data.error);
-          authWindow?.close();
-          window.removeEventListener('message', handleMessage);
-        }
-      };
-      
-      window.addEventListener('message', handleMessage);
-      
-      // Check if popup was closed manually
-      const checkClosed = setInterval(() => {
-        if (authWindow?.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleMessage);
-        }
-      }, 1000);
-    } else {
-      // If not embedded, redirect normally
-      window.location.href = authUrl;
-    }
+    // Always redirect in the same window/iframe - no popup needed
+    console.log('Redirecting to OAuth URL in same window:', authUrl);
+    window.location.href = authUrl;
   }, []);
 
   return {

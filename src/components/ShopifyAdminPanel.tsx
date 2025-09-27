@@ -169,7 +169,7 @@ export const ShopifyAdminPanel: React.FC = () => {
                     Connect to Shopify
                   </Button>
                   <p className="text-xs text-center text-muted-foreground mt-3">
-                    You'll be redirected to authorize the connection
+                    You'll be redirected to Shopify for authorization, then back here
                   </p>
                 </CardContent>
               </Card>
