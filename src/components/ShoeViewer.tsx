@@ -179,8 +179,10 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
   
-  // Dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = useColorways();
+  // Dynamic colorways from Shopify (use customer API for embeds)
+  const isCustomerContext = productContext?.isCustomerEmbed || false;
+  const shopDomain = productContext?.shop;
+  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, isUsingDynamicData } = useColorways(shopDomain, isCustomerContext);
   
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useShopify } from './useShopify';
+import { useShopifyCustomer } from './useShopifyCustomer';
 import colorwaysData from '../data/colorways.json';
 
 export interface Colorway {
@@ -28,8 +29,9 @@ export interface Colorway {
   };
 }
 
-export const useColorways = () => {
+export const useColorways = (shopDomain?: string, isCustomerContext = false) => {
   const { isConnected, getColorways } = useShopify();
+  const customerAPI = useShopifyCustomer(isCustomerContext ? shopDomain : undefined);
   const [colorways, setColorways] = useState<Colorway[]>(colorwaysData.colorways);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +39,26 @@ export const useColorways = () => {
 
   // Load dynamic colorways from Shopify
   const loadDynamicColorways = useCallback(async () => {
+    // For customer context, use Storefront API
+    if (isCustomerContext && shopDomain) {
+      console.log('Customer context detected, using Storefront API');
+      setIsLoading(customerAPI.isLoading);
+      setError(customerAPI.error);
+      
+      if (customerAPI.colorways.length > 0) {
+        setColorways(customerAPI.colorways);
+        setLastUpdated(new Date());
+      } else if (!customerAPI.isLoading && !customerAPI.error) {
+        // Fallback to static if no customer colorways and not loading
+        setColorways(colorwaysData.colorways);
+      }
+      return;
+    }
+    
+    // For admin context, use Admin API
     if (!isConnected) {
-      console.log('Not connected to Shopify, using static colorways');
+      console.log('Not connected to Shopify admin, using static colorways');
+      setColorways(colorwaysData.colorways);
       return;
     }
 
@@ -46,11 +66,11 @@ export const useColorways = () => {
     setError(null);
 
     try {
-      console.log('Loading dynamic colorways from Shopify...');
+      console.log('Loading dynamic colorways from Shopify Admin API...');
       const dynamicColorways = await getColorways();
       
       if (dynamicColorways && dynamicColorways.length > 0) {
-        console.log(`Loaded ${dynamicColorways.length} dynamic colorways from Shopify`);
+        console.log(`Loaded ${dynamicColorways.length} dynamic colorways from Admin API`);
         setColorways(dynamicColorways);
         setLastUpdated(new Date());
       } else {
@@ -68,7 +88,7 @@ export const useColorways = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, getColorways]);
+  }, [isConnected, getColorways, isCustomerContext, shopDomain, customerAPI]);
 
   // Load colorways when connected
   useEffect(() => {

@@ -240,8 +240,10 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor2, setOriginalLogoColor2] = useState(logoColor2);
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
-  // Get dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways();
+  // Get dynamic colorways from Shopify (use customer API for embeds)
+  const isCustomerContext = productContext?.isCustomerEmbed || false;
+  const shopDomain = productContext?.shop;
+  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways(shopDomain, isCustomerContext);
   
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {

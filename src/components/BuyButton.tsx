@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
+import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -109,6 +110,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   getColorConfiguration
 }) => {
   const { isConnected, getProduct } = useShopify();
+  
+  // Detect if this is a customer context (embedded or direct link with shop domain)
+  const urlParams = new URLSearchParams(window.location.search);
+  const shopDomain = urlParams.get('shop');
+  const isCustomerContext = urlParams.get('customer') === 'true' || !!urlParams.get('productId');
+  const customerAPI = useShopifyCustomer(isCustomerContext ? shopDomain || undefined : undefined);
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState<string>('');
@@ -140,8 +147,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Load inventory data when component opens
   const loadInventory = useCallback(async () => {
-    if (!isConnected || !currentProduct) {
-      console.log('Cannot load inventory: not connected or no product');
+    if (!currentProduct) {
+      console.log('Cannot load inventory: no product');
       return;
     }
 
@@ -149,25 +156,34 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     try {
       console.log('Loading inventory for product:', currentProduct.id);
       
-      // Get fresh product data with variants
-      const productData = await getProduct(currentProduct.id);
+      let inventory: Record<string, number> = {};
       
-      if (productData && productData.variants) {
-        const inventory: Record<string, number> = {};
+      // Use customer API if in customer context
+      if (isCustomerContext && shopDomain) {
+        console.log('Using Storefront API for inventory');
+        inventory = await customerAPI.loadProductInventory(currentProduct.id);
+      } else if (isConnected) {
+        console.log('Using Admin API for inventory');
+        // Get fresh product data with variants
+        const productData = await getProduct(currentProduct.id);
         
-        // Map each variant to its size and inventory
-        productData.variants.forEach(variant => {
-          // Extract size from variant title or SKU
-          const size = extractSizeFromVariant(variant);
-          if (size) {
-            inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
-            console.log(`Size ${size}: ${inventory[size]} available`);
-          }
-        });
-        
-        setInventoryData(inventory);
-        console.log('Inventory loaded:', inventory);
+        if (productData && productData.variants) {
+          // Map each variant to its size and inventory
+          productData.variants.forEach(variant => {
+            // Extract size from variant title or SKU
+            const size = extractSizeFromVariant(variant);
+            if (size) {
+              inventory[size] = Math.max(0, variant.inventoryQuantity || 0);
+              console.log(`Size ${size}: ${inventory[size]} available`);
+            }
+          });
+        }
+      } else {
+        console.log('No API available for inventory lookup');
       }
+      
+      setInventoryData(inventory);
+      console.log('Inventory loaded:', inventory);
     } catch (error) {
       console.error('Error loading inventory:', error);
       toast({
@@ -178,7 +194,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     } finally {
       setIsLoadingInventory(false);
     }
-  }, [isConnected, currentProduct, getProduct]);
+  }, [isConnected, currentProduct, getProduct, isCustomerContext, shopDomain, customerAPI]);
 
   // Extract size from variant title or SKU
   const extractSizeFromVariant = (variant: { size?: string; title?: string; sku?: string }) => {
