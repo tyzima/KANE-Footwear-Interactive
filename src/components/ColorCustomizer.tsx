@@ -12,6 +12,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useColorways } from '@/hooks/useColorways';
+import { detectShopDomain } from '@/utils/shopDetection';
 
 interface Colorway {
   id: string;
@@ -231,7 +232,8 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
   // Get dynamic colorways from Shopify
-  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways();
+  const shopDomain = useMemo(() => detectShopDomain(), []);
+  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways(shopDomain);
   const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Helper function to find original color from darkened value
