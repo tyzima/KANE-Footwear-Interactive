@@ -54,7 +54,7 @@ export const buildCartUrl = (
 ): string => {
   console.log('Building cart URL:', { shopDomain, sizeQuantities, colorwayVariants, designData });
   
-  // Build line items (variant:quantity pairs)
+  // Build line items using Shopify cart permalink format: VARIANT_ID:QUANTITY
   console.log('Available variant mappings:', Object.keys(colorwayVariants));
   console.log('Requested sizes:', Object.keys(sizeQuantities).filter(size => sizeQuantities[size] > 0));
   
@@ -68,48 +68,54 @@ export const buildCartUrl = (
         console.warn('Available sizes:', Object.keys(colorwayVariants));
         return null;
       }
-      return `id=${variantId}:${qty}`;
+      return `${variantId}:${qty}`; // Shopify cart permalink format
     })
     .filter(Boolean)
-    .join('&');
+    .join(','); // Multiple items separated by commas
 
   if (!lineItems) {
     throw new Error('No valid line items to add to cart');
   }
 
-  // For now, let's try without properties to isolate the ID issue
-  // const properties = buildCartProperties(designData);
+  // Build custom properties for cart permalink
+  const properties = buildCartProperties(designData);
   
-  // Construct final cart URL without properties first
-  const baseUrl = `https://${shopDomain}/cart/add`;
-  const cartUrl = `${baseUrl}?${lineItems}`;
+  // Construct Shopify cart permalink URL (correct format)
+  const baseUrl = `https://${shopDomain}/cart`;
+  let cartUrl = `${baseUrl}/${lineItems}`;
   
-  console.log('Generated cart URL (without properties):', cartUrl);
+  // Add properties as query parameters if any
+  if (properties.length > 0) {
+    cartUrl += `?${properties.join('&')}`;
+  }
+  
+  console.log('Generated cart permalink:', cartUrl);
   return cartUrl;
 };
 
 /**
- * Build cart properties array from design data
- * Note: Shopify has limits on property names (255 chars) and values (255 chars)
+ * Build cart properties array from design data for cart permalinks
+ * Note: Shopify cart permalinks use different property format than cart/add URLs
  */
 const buildCartProperties = (designData: DesignData): string[] => {
   const properties: string[] = [];
   
+  // For cart permalinks, we'll use attributes instead of properties
   // Essential design properties
   if (designData.colorwayName) {
-    properties.push(`properties[Colorway]=${encodeURIComponent(designData.colorwayName)}`);
+    properties.push(`attributes[Colorway]=${encodeURIComponent(designData.colorwayName)}`);
   }
   
   if (designData.upperColor) {
-    properties.push(`properties[Upper Color]=${encodeURIComponent(designData.upperColor)}`);
+    properties.push(`attributes[Upper Color]=${encodeURIComponent(designData.upperColor)}`);
   }
   
   if (designData.soleColor) {
-    properties.push(`properties[Sole Color]=${encodeURIComponent(designData.soleColor)}`);
+    properties.push(`attributes[Sole Color]=${encodeURIComponent(designData.soleColor)}`);
   }
   
   if (designData.laceColor) {
-    properties.push(`properties[Lace Color]=${encodeURIComponent(designData.laceColor)}`);
+    properties.push(`attributes[Lace Color]=${encodeURIComponent(designData.laceColor)}`);
   }
   
   // Splatter properties
@@ -117,23 +123,23 @@ const buildCartProperties = (designData: DesignData): string[] => {
     const splatterInfo = designData.upperUseDualSplatter && designData.upperSplatterColor2
       ? `${designData.upperSplatterColor} + ${designData.upperSplatterColor2}`
       : designData.upperSplatterColor;
-    properties.push(`properties[Upper Splatter]=${encodeURIComponent(splatterInfo)}`);
+    properties.push(`attributes[Upper Splatter]=${encodeURIComponent(splatterInfo)}`);
   }
   
   if (designData.soleHasSplatter && designData.soleSplatterColor) {
     const splatterInfo = designData.soleUseDualSplatter && designData.soleSplatterColor2
       ? `${designData.soleSplatterColor} + ${designData.soleSplatterColor2}`
       : designData.soleSplatterColor;
-    properties.push(`properties[Sole Splatter]=${encodeURIComponent(splatterInfo)}`);
+    properties.push(`attributes[Sole Splatter]=${encodeURIComponent(splatterInfo)}`);
   }
   
   // Logo properties
   if (designData.logoUrl) {
-    properties.push(`properties[Side Logo]=${encodeURIComponent('Custom Logo Uploaded')}`);
+    properties.push(`attributes[Side Logo]=${encodeURIComponent('Custom Logo Uploaded')}`);
   }
   
   if (designData.circleLogoUrl) {
-    properties.push(`properties[Back Logo]=${encodeURIComponent('Custom Logo Uploaded')}`);
+    properties.push(`attributes[Back Logo]=${encodeURIComponent('Custom Logo Uploaded')}`);
   }
   
   // Logo colors (if logos are present)
@@ -143,12 +149,12 @@ const buildCartProperties = (designData: DesignData): string[] => {
       designData.logoColor2,
       designData.logoColor3
     ].filter(Boolean).join(', ');
-    properties.push(`properties[Logo Colors]=${encodeURIComponent(logoColors)}`);
+    properties.push(`attributes[Logo Colors]=${encodeURIComponent(logoColors)}`);
   }
   
   // Design reference
   if (designData.designId) {
-    properties.push(`properties[Design ID]=${encodeURIComponent(designData.designId)}`);
+    properties.push(`attributes[Design ID]=${encodeURIComponent(designData.designId)}`);
   }
   
   // Customer notes
@@ -157,12 +163,12 @@ const buildCartProperties = (designData: DesignData): string[] => {
     const truncatedNotes = designData.notes.length > 200 
       ? designData.notes.substring(0, 200) + '...'
       : designData.notes;
-    properties.push(`properties[Special Notes]=${encodeURIComponent(truncatedNotes)}`);
+    properties.push(`attributes[Special Notes]=${encodeURIComponent(truncatedNotes)}`);
   }
   
   // Timestamp
   if (designData.timestamp) {
-    properties.push(`properties[Design Created]=${encodeURIComponent(designData.timestamp)}`);
+    properties.push(`attributes[Design Created]=${encodeURIComponent(designData.timestamp)}`);
   }
   
   console.log('Generated cart properties:', properties);
