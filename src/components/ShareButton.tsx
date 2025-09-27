@@ -341,14 +341,58 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
             description: "Anyone can view your custom design with this link.",
           });
         } else {
-          // Show the link for manual copying with a more user-friendly message
+          // Show the link for manual copying with a copy button
           toast({
             title: "Design saved successfully!",
             description: (
               <div className="space-y-2">
-                <p>Please copy this link to share:</p>
-                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs font-mono break-all">
-                  {shareUrl}
+                <p>Tap the copy icon to copy the link:</p>
+                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                  <div className="text-xs font-mono break-all flex-1">
+                    {shareUrl}
+                  </div>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        // Try multiple copy methods for the toast copy button
+                        if (navigator.clipboard && window.isSecureContext) {
+                          await navigator.clipboard.writeText(shareUrl);
+                        } else {
+                          // Fallback method
+                          const textArea = document.createElement('textarea');
+                          textArea.value = shareUrl;
+                          textArea.style.position = 'fixed';
+                          textArea.style.left = '-999999px';
+                          textArea.style.top = '-999999px';
+                          document.body.appendChild(textArea);
+                          textArea.focus();
+                          textArea.select();
+                          document.execCommand('copy');
+                          document.body.removeChild(textArea);
+                        }
+                        
+                        // Show success feedback
+                        const button = e.target as HTMLButtonElement;
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '✓';
+                        button.style.color = '#22c55e';
+                        setTimeout(() => {
+                          button.innerHTML = originalText;
+                          button.style.color = '';
+                        }, 1000);
+                      } catch (error) {
+                        console.warn('Copy failed:', error);
+                      }
+                    }}
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+                    title="Copy link"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                      <path d="M4 16c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h8c1.1 0 2 .9 2 2"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             ),
