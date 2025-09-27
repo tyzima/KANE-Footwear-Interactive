@@ -176,6 +176,10 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         
         setInventoryData(inventory);
         console.log('Inventory loaded:', inventory);
+        console.log('Sample size checks:');
+        console.log('M10 available:', inventory['M10'] || 0);
+        console.log('W12 available:', inventory['W12'] || 0);
+        console.log('Combined M10 / W12 would show:', Math.min(inventory['M10'] || 0, inventory['W12'] || 0));
       }
     } catch (error) {
       console.error('Error loading inventory:', error);
@@ -224,12 +228,29 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   // Get available quantity for a specific size
   const getAvailableQuantity = (size: string) => {
+    // Handle combined sizes (e.g., "M3 / W5" -> check both M3 and W5)
+    if (size.includes(' / ')) {
+      const [mensSize, womensSize] = size.split(' / ');
+      const mensStock = inventoryData[mensSize] || 0;
+      const womensStock = inventoryData[womensSize] || 0;
+      // Return the minimum of both (most restrictive)
+      return Math.min(mensStock, womensStock);
+    }
+    
     return inventoryData[size] || 0;
   };
 
   // Check if a size is available
   const isSizeAvailable = (size: string) => {
     return getAvailableQuantity(size) > 0;
+  };
+
+  // Get the actual inventory key(s) for a display size
+  const getInventoryKeys = (displaySize: string) => {
+    if (displaySize.includes(' / ')) {
+      return displaySize.split(' / ');
+    }
+    return [displaySize];
   };
 
   const steps = [
@@ -306,11 +327,26 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     
     // Show warning if user tries to exceed available quantity
     if (quantity > maxQuantity && maxQuantity > 0) {
-      toast({
-        title: "Stock Limit Reached",
-        description: `Only ${maxQuantity} pairs available in size ${size}`,
-        variant: "destructive",
-      });
+      // For combined sizes, show more specific message
+      if (size.includes(' / ')) {
+        const [mensSize, womensSize] = size.split(' / ');
+        const mensStock = inventoryData[mensSize] || 0;
+        const womensStock = inventoryData[womensSize] || 0;
+        const limitingSize = mensStock <= womensStock ? mensSize : womensSize;
+        const limitingStock = Math.min(mensStock, womensStock);
+        
+        toast({
+          title: "Stock Limit Reached",
+          description: `Only ${limitingStock} pairs available (limited by ${limitingSize}: ${limitingStock} in stock)`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Stock Limit Reached",
+          description: `Only ${maxQuantity} pairs available in size ${size}`,
+          variant: "destructive",
+        });
+      }
     }
     
     setFormData(prev => ({
@@ -894,6 +930,17 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                                  !isAvailable ? 'Out of Stock' : 
                                  available <= 5 ? `Only ${available} left` : 
                                  `${available} available`}
+                                {/* Show breakdown for combined sizes when hovering or when stock is limited */}
+                                {size.includes(' / ') && !isLoading && isAvailable && available <= 10 && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {(() => {
+                                      const [mensSize, womensSize] = size.split(' / ');
+                                      const mensStock = inventoryData[mensSize] || 0;
+                                      const womensStock = inventoryData[womensSize] || 0;
+                                      return `(${mensSize}: ${mensStock}, ${womensSize}: ${womensStock})`;
+                                    })()}
+                                  </div>
+                                )}
                               </span>
                             </div>
                             <div className="flex items-center gap-1">
