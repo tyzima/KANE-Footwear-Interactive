@@ -11,32 +11,7 @@ import { ColorPickerPortal } from './ColorPickerPortal';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import colorwaysData from '../data/colorways.json';
-
-interface Colorway {
-  id: string;
-  name: string;
-  description: string;
-  upper: {
-    baseColor: string;
-    hasSplatter: boolean;
-    splatterColor: string | null;
-    splatterColor2: string | null;
-    splatterBaseColor: string | null;
-    useDualSplatter: boolean;
-  };
-  sole: {
-    baseColor: string;
-    hasSplatter: boolean;
-    splatterColor: string | null;
-    splatterColor2: string | null;
-    splatterBaseColor: string | null;
-    useDualSplatter: boolean;
-  };
-  laces: {
-    color: string;
-  };
-}
+import { useColorways, type Colorway } from '../hooks/useColorways';
 
 interface ColorCustomizerProps {
   // Current colorway state
@@ -212,6 +187,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   // Height callback for AIChat positioning
   onHeightChange = () => { }
 }) => {
+  const { colorways, isLoading: colorwaysLoading, error: colorwaysError, refreshColorways } = useColorways();
   const [isOpen, setIsOpen] = useState(false);
   const [internalActiveTab, setInternalActiveTab] = useState<'colorways' | 'logos'>('colorways');
   const [schools, setSchools] = useState<unknown[]>([]);
@@ -230,8 +206,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor2, setOriginalLogoColor2] = useState(logoColor2);
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
-  // Get colorways from JSON data
-  const colorways = colorwaysData.colorways as Colorway[];
+  // Get colorways from Shopify products (dynamic data)
   const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
   // Helper function to find original color from darkened value

@@ -12,7 +12,7 @@ import { LightingControls, LightingPreset } from './LightingControls';
 import { LightingSystem } from './LightingSystem';
 import { DebugMenu, DebugDataCollector } from './DebugMenu';
 import { useTheme } from '@/hooks/use-theme';
-import colorwaysData from '../data/colorways.json';
+import { useColorways, type Colorway } from '../hooks/useColorways';
 
 // National Park inspired color palette with specific darkened speckle base colors
 const NATIONAL_PARK_COLORS = [
@@ -143,6 +143,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   colorConfiguration: externalColorConfiguration
 }) => {
   const { isDark } = useTheme();
+  const { colorways, isLoading: colorwaysLoading, refreshColorways } = useColorways();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(false);
@@ -169,15 +170,23 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const [solePaintDensity, setSolePaintDensity] = useState(500); // 50% default
   const [activeColorTab, setActiveColorTab] = useState<'colorways' | 'logos'>('colorways');
   
-  // Colorway state
-  const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
+  // Colorway state - use first available colorway as default
+  const [selectedColorwayId, setSelectedColorwayId] = useState(() => {
+    return colorways.length > 0 ? colorways[0].id : 'classic-forest';
+  });
   
-  // Get current colorway data
-  const colorways = colorwaysData.colorways;
+  // Get current colorway data from Shopify products
   const selectedColorway = colorways.find(c => c.id === selectedColorwayId) || colorways[0];
 
+  // Update selected colorway when colorways load
+  React.useEffect(() => {
+    if (colorways.length > 0 && !colorways.find(c => c.id === selectedColorwayId)) {
+      setSelectedColorwayId(colorways[0].id);
+    }
+  }, [colorways, selectedColorwayId]);
+
   // Handle colorway changes
-  const handleColorwayChange = (colorway: any) => {
+  const handleColorwayChange = (colorway: Colorway) => {
     setSelectedColorwayId(colorway.id);
     // Update splatter base colors from the colorway
     setUpperSplatterBaseColor(colorway.upper.splatterBaseColor);
