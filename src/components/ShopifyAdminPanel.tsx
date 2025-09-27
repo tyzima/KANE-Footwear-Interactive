@@ -783,9 +783,11 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
   const colorwayFields = [
     { key: 'upper_base_hex', label: 'Upper Base Color', description: 'Main color of the upper shoe material' },
     { key: 'upper_darkbase_hex', label: 'Upper Dark Base Color', description: 'Darker shade for upper material' },
-    { key: 'upper_splatter_hex', label: 'Upper Splatter Color', description: 'Splatter effect color on upper' },
+    { key: 'upper_splatter_hex', label: 'Upper Splatter Color', description: 'Primary splatter effect color on upper' },
+    { key: 'upper_splatter2_hex', label: 'Upper Splatter Color 2', description: 'Secondary splatter effect color on upper (dual splatter)' },
     { key: 'sole_base_hex', label: 'Sole Base Color', description: 'Main color of the shoe sole' },
-    { key: 'sole_splatter_hex', label: 'Sole Splatter Color', description: 'Splatter effect color on sole' },
+    { key: 'sole_splatter_hex', label: 'Sole Splatter Color', description: 'Primary splatter effect color on sole' },
+    { key: 'sole_splatter2_hex', label: 'Sole Splatter Color 2', description: 'Secondary splatter effect color on sole (dual splatter)' },
     { key: 'lace_color_hex', label: 'Lace Color', description: 'Color of the shoe laces' },
   ];
 
@@ -929,11 +931,15 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
                         topColor={metafields.upper_base_hex || '#000000'}
                         bottomColor={metafields.sole_base_hex || '#000000'}
                         upperSplatterColor={metafields.upper_splatter_hex || '#000000'}
+                        upperSplatterColor2={metafields.upper_splatter2_hex || '#000000'}
                         soleSplatterColor={metafields.sole_splatter_hex || '#000000'}
+                        soleSplatterColor2={metafields.sole_splatter2_hex || '#000000'}
                         upperSplatterBaseColor={metafields.upper_darkbase_hex || '#000000'}
                         laceColor={metafields.lace_color_hex || '#000000'}
                         upperHasSplatter={true}
                         soleHasSplatter={true}
+                        upperUseDualSplatter={!!(metafields.upper_splatter2_hex && metafields.upper_splatter2_hex !== '#000000')}
+                        soleUseDualSplatter={!!(metafields.sole_splatter2_hex && metafields.sole_splatter2_hex !== '#000000')}
                         scale={0.8}
                       />
                     </Suspense>
@@ -953,15 +959,47 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
                       />
                       <span className="text-gray-700">{field.label}</span>
                       <span className="text-gray-500 font-mono">{metafields[field.key] || '#000000'}</span>
+                      {(field.key === 'upper_splatter2_hex' || field.key === 'sole_splatter2_hex') && 
+                       metafields[field.key] && metafields[field.key] !== '#000000' && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">
+                          Dual
+                        </span>
+                      )}
                     </div>
                   ))}
+                </div>
+                
+                {/* Dual Splatter Status */}
+                <div className="mt-3 pt-2 border-t border-gray-200">
+                  <div className="text-xs text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <span>Upper Dual Splatter:</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        metafields.upper_splatter2_hex && metafields.upper_splatter2_hex !== '#000000'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {metafields.upper_splatter2_hex && metafields.upper_splatter2_hex !== '#000000' ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span>Sole Dual Splatter:</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        metafields.sole_splatter2_hex && metafields.sole_splatter2_hex !== '#000000'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {metafields.sole_splatter2_hex && metafields.sole_splatter2_hex !== '#000000' ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
           
           {/* Color Editors */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {colorwayFields.map((field) => (
               <div key={field.key} className="space-y-2">
                 <Label htmlFor={`${product.id}-${field.key}`} className="text-sm font-medium">
