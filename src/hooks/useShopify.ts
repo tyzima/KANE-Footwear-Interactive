@@ -195,7 +195,6 @@ export const useShopify = () => {
 
     // Generate OAuth URL
     const authUrl = generateShopifyAuthUrl(fullDomain);
-    console.log('Opening OAuth URL in new window:', authUrl);
     
     // Store the shop domain for the callback
     localStorage.setItem('shopify_oauth_shop', fullDomain);
@@ -203,14 +202,28 @@ export const useShopify = () => {
     // Check if we're in an embedded context
     const isEmbedded = window.self !== window.top;
     
+    console.log('OAuth Flow Debug:', {
+      isEmbedded,
+      windowSelf: window.self,
+      windowTop: window.top,
+      fullDomain,
+      authUrl
+    });
+    
     if (isEmbedded) {
       // If embedded, we need to break out of the iframe for OAuth
       // because accounts.shopify.com cannot be displayed in iframes
-      console.log('Breaking out of iframe for OAuth:', authUrl);
-      window.top!.location.href = authUrl;
+      console.log('Breaking out of iframe for OAuth to:', fullDomain);
+      try {
+        window.top!.location.href = authUrl;
+      } catch (error) {
+        console.error('Failed to break out of iframe, trying fallback:', error);
+        // Fallback: try to navigate the current window
+        window.location.href = authUrl;
+      }
     } else {
       // If not embedded, redirect normally
-      console.log('Redirecting to OAuth URL in same window:', authUrl);
+      console.log('Redirecting to OAuth for:', fullDomain);
       window.location.href = authUrl;
     }
   }, []);
