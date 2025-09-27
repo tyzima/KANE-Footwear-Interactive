@@ -26,6 +26,62 @@ import type { ShopifyProduct } from '@/lib/shopify';
 export const ShopifyAdminPanel: React.FC = () => {
   const { isConnected, getProducts, shop, connectViaOAuth } = useShopify();
   
+  // Check for credentials in URL parameters and store them
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedToken = urlParams.get('token');
+    const shop = urlParams.get('shop');
+    const connected = urlParams.get('connected');
+    
+    console.log('ShopifyAdminPanel - URL params check:', {
+      hasToken: !!encodedToken,
+      shop,
+      connected,
+      fullUrl: window.location.href
+    });
+    
+    if (encodedToken && shop && connected === 'true') {
+      try {
+        const accessToken = atob(encodedToken); // Decode base64
+        console.log('Found credentials in URL, storing them...');
+        
+        // Store credentials immediately
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        
+        const connectionData = {
+          shopDomain: shop,
+          accessToken,
+          expiresAt: expirationDate.toISOString(),
+          connectedAt: new Date().toISOString(),
+          shop: { name: shop.replace('.myshopify.com', ''), domain: shop }
+        };
+        
+        localStorage.setItem('shopify_connection', JSON.stringify(connectionData));
+        localStorage.setItem('shopify_domain', shop);
+        localStorage.setItem('shopify_access_token', accessToken);
+        
+        console.log('Credentials stored from URL params:', {
+          shop,
+          hasToken: !!accessToken,
+          expiresAt: connectionData.expiresAt
+        });
+        
+        // Clean the URL to remove credentials
+        const cleanUrl = window.location.origin + window.location.pathname + '?embed=1&shop=' + encodeURIComponent(shop);
+        window.history.replaceState({}, '', cleanUrl);
+        
+        // Force a page reload to pick up the new credentials
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Error processing URL credentials:', error);
+      }
+    }
+  }, []);
+
   // Debug localStorage on mount
   useEffect(() => {
     console.log('ShopifyAdminPanel - localStorage debug:', {

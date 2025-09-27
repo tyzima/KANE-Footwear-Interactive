@@ -98,10 +98,13 @@ const ShopifyCallback: React.FC = () => {
           }, 2000);
         } else {
           // If not embedded (OAuth broke out of iframe), redirect back to Shopify admin
-          // which will load our app in the iframe again, now with stored credentials
+          // Pass credentials via URL to ensure they're available in the embedded app
           console.log('Redirecting back to Shopify admin to reload embedded app');
           setTimeout(() => {
-            const shopifyAdminUrl = `https://${shopDomain}/admin/apps`;
+            // Encode credentials in URL for the embedded app to pick up
+            const encodedToken = btoa(accessToken); // Base64 encode for URL safety
+            // Use the correct Shopify app URL format
+            const shopifyAdminUrl = `https://${shopDomain}/admin/apps/d4d69ee44cf2dd4522f73989a961c273?shop=${encodeURIComponent(shopDomain)}&token=${encodedToken}&connected=true`;
             console.log('Redirecting to:', shopifyAdminUrl);
             window.location.href = shopifyAdminUrl;
           }, 2000);
