@@ -3,6 +3,8 @@
 
 // Helper function to make GraphQL requests to Shopify Storefront API via Netlify function
 const makeStorefrontRequest = async (shopDomain: string, query: string, variables?: any) => {
+  console.log('Making Storefront API request to:', shopDomain);
+  
   const response = await fetch('/.netlify/functions/shopify-storefront', {
     method: 'POST',
     headers: {
@@ -17,12 +19,15 @@ const makeStorefrontRequest = async (shopDomain: string, query: string, variable
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    console.error('Storefront API request failed:', response.status, errorData);
     throw new Error(errorData.error || `Storefront API request failed: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
+  console.log('Storefront API response received:', data);
   
   if (data.errors && data.errors.length > 0) {
+    console.error('Storefront API GraphQL errors:', data.errors);
     throw new Error(`Shopify Storefront GraphQL error: ${data.errors[0].message}`);
   }
 
@@ -237,14 +242,21 @@ export const storefrontAPI = {
 export const getColorwaysFromStorefront = async (shopDomain: string) => {
   console.log('Fetching colorways from Shopify Storefront API...');
   
-  // Get all products with their metafields
-  const products = await storefrontAPI.getProducts(shopDomain, 100);
+  try {
+    // Get all products with their metafields
+    const products = await storefrontAPI.getProducts(shopDomain, 100);
+    console.log('Storefront API products response:', products.length, 'products');
+    
+    // Debug: Log first product's metafields structure
+    if (products.length > 0) {
+      console.log('First product metafields:', products[0].metafields);
+    }
   
   const colorways = products
     .filter(product => {
       // Only include products that have at least some colorway metafields
       return product.metafields && product.metafields.some((m: any) => 
-        ['upper_base_hex', 'sole_base_hex', 'lace_color_hex'].includes(m.key)
+        m && m.key && ['upper_base_hex', 'sole_base_hex', 'lace_color_hex'].includes(m.key)
       );
     })
     .map(product => {
@@ -253,7 +265,7 @@ export const getColorwaysFromStorefront = async (shopDomain: string) => {
       
       // Helper function to get metafield value
       const getMetafield = (key: string) => {
-        const field = metafields.find((m: any) => m.key === key && m.namespace === 'custom');
+        const field = metafields.find((m: any) => m && m.key === key && m.namespace === 'custom');
         return field?.value || null;
       };
       
@@ -302,8 +314,13 @@ export const getColorwaysFromStorefront = async (shopDomain: string) => {
       };
     });
 
-  console.log(`Generated ${colorways.length} colorways from Shopify Storefront API:`, colorways);
-  return colorways;
+    console.log(`Generated ${colorways.length} colorways from Shopify Storefront API:`, colorways);
+    return colorways;
+    
+  } catch (error) {
+    console.error('Error in getColorwaysFromStorefront:', error);
+    throw error;
+  }
 };
 
 // Get inventory for a specific product
