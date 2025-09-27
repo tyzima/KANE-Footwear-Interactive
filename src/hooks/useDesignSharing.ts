@@ -82,14 +82,12 @@ export const useDesignSharing = () => {
           logo_rotation: designData.logoRotation,
           logo_scale: designData.logoScale,
           circle_logo_url: designData.circleLogoUrl,
-          custom_upper_base_color: designData.customColors.upperBaseColor,
-          custom_sole_base_color: designData.customColors.soleBaseColor,
-          custom_lace_color: designData.customColors.laceColor,
-          design_config: {
-            splatterConfig: designData.splatterConfig,
-            gradientConfig: designData.gradientConfig,
-            textureConfig: designData.textureConfig,
-          },
+          custom_upper_base_color: designData.customColors?.upperBaseColor,
+          custom_sole_base_color: designData.customColors?.soleBaseColor,
+          custom_lace_color: designData.customColors?.laceColor,
+          splatter_config: designData.splatterConfig,
+          gradient_config: designData.gradientConfig,
+          texture_config: designData.textureConfig,
           created_by: 'anonymous'
         })
         .select()

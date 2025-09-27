@@ -223,7 +223,14 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       const currentDesign = getCurrentDesign();
       const designName = `Custom Design - ${new Date().toLocaleDateString()}`;
       
-      const result = await saveDesign(designName, currentDesign, 'Custom shoe design created with KANE Footwear');
+      console.log('Saving design data:', currentDesign);
+      const result = await saveDesign(
+        designName, 
+        currentDesign, 
+        'Custom shoe design created with KANE Footwear',
+        true // isPublic
+      );
+      console.log('Save result:', result);
       
       if (result) {
         const baseUrl = window.location.origin + window.location.pathname;

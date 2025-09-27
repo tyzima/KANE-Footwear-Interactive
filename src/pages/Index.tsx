@@ -16,6 +16,9 @@ const Index = () => {
   // Shared design loading callback (memoized to prevent infinite re-renders)
   const onDesignLoaded = useCallback((design: any) => {
     console.log('Loading shared design:', design);
+    console.log('Design splatter_config:', design.splatter_config);
+    console.log('Design gradient_config:', design.gradient_config);
+    console.log('Design texture_config:', design.texture_config);
     
     // Apply the loaded design to the color configuration
     if (design) {
