@@ -1,4 +1,5 @@
-import { createAdminApiClient } from '@shopify/admin-api-client';
+// Note: We use direct fetch calls instead of @shopify/admin-api-client 
+// because that library is server-side only and cannot be used in browsers
 
 // Shopify App Configuration
 export const SHOPIFY_CONFIG = {
@@ -19,23 +20,56 @@ export const SHOPIFY_CONFIG = {
   redirectUri: typeof window !== 'undefined' ? `${window.location.origin}/auth/shopify/callback` : '',
 };
 
-// Shopify Admin API Client
-let shopifyClient: ReturnType<typeof createAdminApiClient> | null = null;
+// Shopify connection configuration
+let shopifyConfig: {
+  storeDomain: string;
+  accessToken: string;
+  apiVersion: string;
+} | null = null;
 
 export const initializeShopifyClient = (shopDomain: string, accessToken: string) => {
-  shopifyClient = createAdminApiClient({
-    storeDomain: shopDomain,
+  shopifyConfig = {
+    storeDomain: shopDomain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
     accessToken: accessToken,
     apiVersion: '2024-01',
-  });
-  return shopifyClient;
+  };
+  return shopifyConfig;
 };
 
-export const getShopifyClient = () => {
-  if (!shopifyClient) {
+export const getShopifyConfig = () => {
+  if (!shopifyConfig) {
     throw new Error('Shopify client not initialized. Please call initializeShopifyClient first.');
   }
-  return shopifyClient;
+  return shopifyConfig;
+};
+
+// Helper function to make GraphQL requests to Shopify
+const makeShopifyRequest = async (query: string, variables?: any) => {
+  const config = getShopifyConfig();
+  
+  const response = await fetch(`https://${config.storeDomain}/admin/api/${config.apiVersion}/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': config.accessToken,
+    },
+    body: JSON.stringify({
+      query,
+      variables,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Shopify API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  
+  if (data.errors && data.errors.length > 0) {
+    throw new Error(`Shopify GraphQL error: ${data.errors[0].message}`);
+  }
+
+  return data;
 };
 
 // OAuth URL Generator
@@ -86,7 +120,6 @@ export const exchangeCodeForToken = async (shopDomain: string, code: string): Pr
 export const shopifyAPI = {
   // Products
   async getProducts(limit = 50) {
-    const client = getShopifyClient();
     const query = `
       query getProducts($first: Int!) {
         products(first: $first) {
@@ -139,13 +172,17 @@ export const shopifyAPI = {
       }
     `;
 
-    const response = await client.request(query, { variables: { first: limit } });
-    return response.data?.products?.edges?.map((edge: any) => edge.node) || [];
+    const response = await makeShopifyRequest(query, { first: limit });
+    return response.data?.products?.edges?.map((edge: any) => ({
+      ...edge.node,
+      variants: edge.node.variants.edges.map((vEdge: any) => vEdge.node),
+      metafields: edge.node.metafields.edges.map((mEdge: any) => mEdge.node),
+      images: edge.node.images.edges.map((iEdge: any) => iEdge.node),
+    })) || [];
   },
 
   // Get specific product by ID
   async getProduct(productId: string) {
-    const client = getShopifyClient();
     const query = `
       query getProduct($id: ID!) {
         product(id: $id) {
@@ -185,8 +222,16 @@ export const shopifyAPI = {
       }
     `;
 
-    const response = await client.request(query, { variables: { id: productId } });
-    return response.data?.product;
+    const response = await makeShopifyRequest(query, { id: productId });
+    const product = response.data?.product;
+    if (product) {
+      return {
+        ...product,
+        variants: product.variants.edges.map((vEdge: any) => vEdge.node),
+        metafields: product.metafields.edges.map((mEdge: any) => mEdge.node),
+      };
+    }
+    return null;
   },
 
   // Customers
@@ -347,7 +392,6 @@ export const shopifyAPI = {
 // Shopify Connection Status
 export const checkShopifyConnection = async () => {
   try {
-    const client = getShopifyClient();
     const query = `
       query {
         shop {
@@ -360,7 +404,7 @@ export const checkShopifyConnection = async () => {
       }
     `;
 
-    const response = await client.request(query);
+    const response = await makeShopifyRequest(query);
     return {
       connected: true,
       shop: response.data?.shop,
