@@ -4,10 +4,24 @@ import { ShareButton } from '@/components/ShareButton';
 import { BuyButton } from '@/components/BuyButton';
 import FeatureIconsBar from '@/components/feature-icons-bar';
 import { useTheme } from '@/hooks/use-theme';
+import { useSharedDesignLoader, convertSavedDesignToDesignData } from '@/hooks/useSharedDesignLoader';
+import { DesignData } from '@/hooks/useDesignSharing';
+import { toast } from '@/components/ui/use-toast';
 
 const Index = () => {
   const { isDark } = useTheme();
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
+  
+  // Shared design loading
+  const { design: sharedDesign, isLoading: isLoadingSharedDesign, error: sharedDesignError, hasSharedDesign } = useSharedDesignLoader(
+    (design) => {
+      // This callback will be called when a shared design is loaded
+      toast({
+        title: "Design loaded!",
+        description: `Loaded "${design.name}" design.`,
+      });
+    }
+  );
 
   // Set initial background type based on system dark mode preference
   useEffect(() => {
@@ -51,6 +65,48 @@ const Index = () => {
   
   // Helper to determine if current background should use dark mode styling
   const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+
+  // Function to get current design state for sharing
+  const getCurrentDesignState = (): DesignData => {
+    // Note: This is a basic implementation. You may need to expand this
+    // to capture more detailed state from your ShoeViewer component
+    return {
+      colorwayId: 'classic-forest', // Default or get from current selection
+      logoColor1: '#2048FF',
+      logoColor2: '#000000', 
+      logoColor3: '#C01030',
+      logoPosition: [0.8, 0.2, 0.5],
+      logoRotation: [0, -0.3, 0],
+      logoScale: 1.0,
+      customColors: {
+        upperBaseColor: colorConfiguration?.upper?.baseColor,
+        soleBaseColor: colorConfiguration?.sole?.baseColor,
+        laceColor: colorConfiguration?.laces?.color,
+      },
+      splatterConfig: {
+        upperHasSplatter: colorConfiguration?.upper?.hasSplatter || false,
+        soleHasSplatter: colorConfiguration?.sole?.hasSplatter || false,
+        upperSplatterColor: colorConfiguration?.upper?.splatterColor || '#FFFFFF',
+        soleSplatterColor: colorConfiguration?.sole?.splatterColor || '#FFFFFF',
+        upperUseDualSplatter: false,
+        soleUseDualSplatter: false,
+        upperPaintDensity: colorConfiguration?.upper?.paintDensity || 50,
+        solePaintDensity: colorConfiguration?.sole?.paintDensity || 50,
+      },
+      gradientConfig: {
+        upperHasGradient: colorConfiguration?.upper?.hasGradient || false,
+        soleHasGradient: colorConfiguration?.sole?.hasGradient || false,
+        upperGradientColor1: colorConfiguration?.upper?.gradientColor1 || '#4a8c2b',
+        upperGradientColor2: colorConfiguration?.upper?.gradientColor2 || '#c25d1e',
+        soleGradientColor1: colorConfiguration?.sole?.gradientColor1 || '#4a8c2b',
+        soleGradientColor2: colorConfiguration?.sole?.gradientColor2 || '#c25d1e',
+      },
+      textureConfig: {
+        upperTexture: colorConfiguration?.upper?.texture,
+        soleTexture: colorConfiguration?.sole?.texture,
+      },
+    };
+  };
 
   const features = [
     {
@@ -144,6 +200,7 @@ const Index = () => {
           <ShareButton
             canvasRef={canvasRef}
             isDarkMode={isDarkMode}
+            getCurrentDesign={getCurrentDesignState}
           />
         </div>
 

@@ -10,6 +10,305 @@ Gadget.dev can generate a frontend, but for existing applications, you'll want t
 3. Connect them via API calls
 4. Deploy them separately
 
+## Data Models & Field Specifications
+
+### Colorway Model
+```javascript
+model Colorway {
+  fields {
+    // Basic Information
+    id: String (unique identifier)
+    name: String (e.g., "Classic Forest", "Crimson Splatter")
+    description: String (e.g., "Timeless forest green with natural tones")
+    isActive: Boolean (whether this colorway is available for selection)
+    
+    // Upper Configuration
+    upperBaseColor: String (hex color, e.g., "#2d5016")
+    upperHasSplatter: Boolean (whether upper has splatter effect)
+    upperSplatterColor: String (hex color for splatter, e.g., "#f8f8ff")
+    upperSplatterBaseColor: String (hex color for splatter base, e.g., "#060c03")
+    upperSplatterColor2: String (hex color for secondary splatter, e.g., "#0d1806")
+    upperUseDualSplatter: Boolean (whether to use dual splatter colors)
+    upperPaintDensity: Number (0-1, controls splatter intensity)
+    
+    // Sole Configuration
+    soleBaseColor: String (hex color, e.g., "#8b4513")
+    soleHasSplatter: Boolean (whether sole has splatter effect)
+    soleSplatterColor: String (hex color for splatter)
+    soleSplatterBaseColor: String (hex color for splatter base)
+    soleSplatterColor2: String (hex color for secondary splatter)
+    soleUseDualSplatter: Boolean (whether to use dual splatter colors)
+    solePaintDensity: Number (0-1, controls splatter intensity)
+    
+    // Lace Configuration
+    laceColor: String (hex color, e.g., "#FFFFFF")
+    
+    // Gradient Support (Advanced Features)
+    upperHasGradient: Boolean (whether upper has gradient effect)
+    upperGradientColor1: String (hex color for gradient start)
+    upperGradientColor2: String (hex color for gradient end)
+    soleHasGradient: Boolean (whether sole has gradient effect)
+    soleGradientColor1: String (hex color for gradient start)
+    soleGradientColor2: String (hex color for gradient end)
+    
+    // Texture Support
+    upperTexture: String (texture file path or URL)
+    soleTexture: String (texture file path or URL)
+    
+    // Shopify Integration
+    shopifyProductId: String (Shopify product ID)
+    shopifyVariantId: String (Shopify variant ID)
+    inventoryQuantity: Number (available stock quantity)
+    
+    // Metadata
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
+}
+```
+
+### SavedDesign Model
+```javascript
+model SavedDesign {
+  fields {
+    // Basic Information
+    id: String (unique identifier)
+    name: String (user-defined design name)
+    description: String (optional description)
+    shareToken: String (unique token for sharing, e.g., "abc123def456")
+    isPublic: Boolean (whether design can be shared publicly)
+    
+    // Design Configuration
+    colorwayId: String (reference to Colorway model)
+    
+    // Logo Configuration
+    logoUrl: String (URL to uploaded logo image)
+    logoColor1: String (hex color for logo part 1, e.g., blue parts)
+    logoColor2: String (hex color for logo part 2, e.g., black parts)
+    logoColor3: String (hex color for logo part 3, e.g., red parts)
+    logoPosition: JSON (3D position [x, y, z])
+    logoRotation: JSON (3D rotation [x, y, z])
+    logoScale: Number (logo size multiplier)
+    
+    // Circle Logo (SVG texture)
+    circleLogoUrl: String (URL to circle logo SVG)
+    
+    // Advanced Customization
+    upperHasGradient: Boolean
+    upperGradientColor1: String
+    upperGradientColor2: String
+    soleHasGradient: Boolean
+    soleGradientColor1: String
+    soleGradientColor2: String
+    
+    upperTexture: String
+    soleTexture: String
+    
+    // User Information
+    createdBy: String (user identifier or email)
+    viewCount: Number (number of times design has been viewed)
+    lastViewedAt: DateTime
+    
+    // Order Integration
+    shopifyDraftOrderId: String (if design was used in an order)
+    orderStatus: String ('draft', 'pending', 'completed', 'cancelled')
+    
+    // Metadata
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
+}
+```
+
+### OrderConfiguration Model
+```javascript
+model OrderConfiguration {
+  fields {
+    // Customer Information
+    customerInfo: JSON {
+      firstName: String
+      lastName: String
+      email: String
+      phone: String
+      address: {
+        line1: String
+        line2: String (optional)
+        city: String
+        state: String
+        zip: String
+        country: String
+      }
+      notes: String (optional)
+    }
+    
+    // Order Details
+    sizeQuantities: JSON {
+      "M3": Number
+      "M4": Number
+      "M5": Number
+      "M6": Number
+      "M7": Number
+      "M8": Number
+      "M9": Number
+      "M10": Number
+      "M11": Number
+      "W5": Number
+      "W6": Number
+      "W7": Number
+      "W8": Number
+      "W9": Number
+      "W10": Number
+      "W11": Number
+    }
+    
+    totalPairs: Number (sum of all size quantities)
+    totalPrice: Number (totalPairs * pricePerPair)
+    pricePerPair: Number (base price, e.g., 80)
+    
+    // Design Data
+    designId: String (reference to SavedDesign)
+    modelScreenshot: String (base64 encoded screenshot)
+    colorConfiguration: JSON (complete color state)
+    
+    // Status Tracking
+    status: String ('draft', 'pending', 'completed', 'cancelled')
+    shopifyDraftOrderId: String
+    shopifyOrderId: String (when order is completed)
+    
+    // Timestamps
+    createdAt: DateTime
+    updatedAt: DateTime
+    expiresAt: DateTime (for draft orders, typically 24 hours)
+  }
+}
+```
+
+### MetafieldMapping Model
+```javascript
+model MetafieldMapping {
+  fields {
+    // Basic Information
+    id: String (unique identifier)
+    name: String (human-readable mapping name)
+    description: String (description of what this mapping does)
+    isActive: Boolean (whether this mapping is currently used)
+    
+    // Shopify Metafield Configuration
+    shopifyNamespace: String (e.g., "custom")
+    shopifyKey: String (e.g., "upper_base_color")
+    shopifyMetafieldType: String (e.g., "single_line_text_field", "boolean", "number_integer")
+    
+    // Colorway Field Mapping
+    colorwayField: String (which Colorway field this maps to, e.g., "upperBaseColor")
+    fieldType: String ('color', 'boolean', 'number', 'text')
+    
+    // UI Configuration
+    displayName: String (how to display this field in admin)
+    displayOrder: Number (order in which to show fields)
+    isRequired: Boolean (whether this field is required)
+    defaultValue: String (default value if metafield is empty)
+    
+    // Validation Rules
+    validationPattern: String (regex pattern for validation)
+    minValue: Number (for numeric fields)
+    maxValue: Number (for numeric fields)
+    
+    // Metadata
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
+}
+```
+
+### School Model (for School Selector)
+```javascript
+model School {
+  fields {
+    // Basic Information
+    id: String (unique identifier)
+    name: String (school name, e.g., "University of California")
+    shortName: String (abbreviation, e.g., "UC")
+    city: String (e.g., "Berkeley")
+    state: String (e.g., "CA")
+    country: String (e.g., "USA")
+    
+    // Visual Configuration
+    primaryColor: String (hex color for school's primary color)
+    secondaryColor: String (hex color for school's secondary color)
+    logoUrl: String (URL to school logo)
+    
+    // Metadata
+    isActive: Boolean (whether school is available for selection)
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
+}
+```
+
+### Size Configuration
+```javascript
+// Size definitions used throughout the application
+const MENS_SIZES = ['M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11'];
+const WOMENS_SIZES = ['W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11'];
+const ALL_SIZES = [...MENS_SIZES, ...WOMENS_SIZES];
+
+// Size to Shopify Variant ID mapping
+const SIZE_TO_VARIANT_MAP = {
+  'M3': 'gid://shopify/ProductVariant/1234567890',
+  'M4': 'gid://shopify/ProductVariant/1234567891',
+  // ... etc for all sizes
+};
+```
+
+### Color Configuration Structure
+```javascript
+// Complete color configuration structure used in the application
+interface ColorConfiguration {
+  upper: {
+    baseColor: string;           // Hex color
+    hasSplatter: boolean;        // Whether splatter effect is enabled
+    splatterColor: string;       // Primary splatter color
+    splatterBaseColor: string;   // Base color for splatter effect
+    splatterColor2: string;      // Secondary splatter color
+    useDualSplatter: boolean;    // Whether to use dual splatter
+    paintDensity: number;        // 0-1, controls splatter intensity
+    hasGradient: boolean;        // Whether gradient effect is enabled
+    gradientColor1: string;      // Gradient start color
+    gradientColor2: string;      // Gradient end color
+    texture: string | null;      // Texture file path or URL
+  };
+  sole: {
+    baseColor: string;           // Hex color
+    hasSplatter: boolean;        // Whether splatter effect is enabled
+    splatterColor: string;       // Primary splatter color
+    splatterBaseColor: string;   // Base color for splatter effect
+    splatterColor2: string;      // Secondary splatter color
+    useDualSplatter: boolean;    // Whether to use dual splatter
+    paintDensity: number;        // 0-1, controls splatter intensity
+    hasGradient: boolean;        // Whether gradient effect is enabled
+    gradientColor1: string;      // Gradient start color
+    gradientColor2: string;      // Gradient end color
+    texture: string | null;      // Texture file path or URL
+  };
+  laces: {
+    color: string;               // Hex color
+  };
+  logo: {
+    color: string;               // Hex color (legacy, use logoColor1/2/3 instead)
+    url: string | null;          // Logo image URL
+    color1: string;              // Blue parts color
+    color2: string;              // Black parts color
+    color3: string;              // Red parts color
+    position: [number, number, number]; // 3D position
+    rotation: [number, number, number]; // 3D rotation
+    scale: number;               // Size multiplier
+  };
+  circleLogo: {
+    url: string | null;          // Circle logo SVG URL
+  };
+}
+```
+
 ## Option 1: Gadget Backend + Existing Frontend (Recommended)
 
 ### 1.1 Create Gadget Backend Only

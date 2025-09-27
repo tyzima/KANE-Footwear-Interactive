@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Share2, Download, Copy, Check } from 'lucide-react';
+import { Share2, Download, Copy, Check, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,19 +8,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/use-toast';
+import { useDesignSharing, DesignData } from '@/hooks/useDesignSharing';
 
 interface ShareButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   isDarkMode?: boolean;
   onCaptureModel?: () => Promise<string>;
+  // Function to get current design state
+  getCurrentDesign?: () => DesignData;
 }
 
 export const ShareButton: React.FC<ShareButtonProps> = ({
   canvasRef,
-  isDarkMode = false
+  isDarkMode = false,
+  getCurrentDesign
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const { saveDesign, isLoading: isSaving } = useDesignSharing();
 
   const generateInstagramPost = async () => {
     if (!canvasRef?.current) {
@@ -204,7 +209,46 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     }
   };
 
-  const copyShareLink = async () => {
+  const saveAndShareDesign = async () => {
+    if (!getCurrentDesign) {
+      toast({
+        title: "Error",
+        description: "Design capture function not available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const currentDesign = getCurrentDesign();
+      const designName = `Custom Design - ${new Date().toLocaleDateString()}`;
+      
+      const result = await saveDesign(designName, currentDesign, 'Custom shoe design created with KANE Footwear');
+      
+      if (result) {
+        const baseUrl = window.location.origin + window.location.pathname;
+        const shareUrl = `${baseUrl}?design=${result.shareToken}`;
+        
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+
+        toast({
+          title: "Design saved and link copied!",
+          description: "Anyone can view your custom design with this link.",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving and sharing design:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save and share design. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const copyCurrentPageLink = async () => {
     try {
       const shareUrl = window.location.href;
       await navigator.clipboard.writeText(shareUrl);
@@ -213,7 +257,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 
       toast({
         title: "Link copied!",
-        description: "Share link has been copied to your clipboard.",
+        description: "Current page link copied to clipboard.",
       });
     } catch (error) {
       toast({
@@ -234,24 +278,28 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
             ? 'bg-black/40 border-white/20 text-white hover:bg-white/20'
             : 'bg-white/80 border-gray-200 text-gray-700 hover:bg-black'
             }`}
-          disabled={isGenerating}
+          disabled={isGenerating || isSaving}
         >
           <Share2 className="w-4 h-4" />
           <span className="hidden md:block">Share</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 rounded-2xl">
-        <DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 hover:text-black rounded-xl">
-         <span className=' ml-3'> Instagram Post </span>
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl">
+        <DropdownMenuItem onClick={saveAndShareDesign} className="hover:bg-gray-100 hover:text-black rounded-xl" disabled={isSaving}>
+          <Save className="w-4 h-4 mr-2" />
+          <span className='flex-1'>{isSaving ? 'Saving...' : 'Save & Share Design'}</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={copyShareLink} className="hover:bg-gray-100 rounded-xl">
-        <span className=' ml-3 mr-2'>
-          Copy Link </span>
+        <DropdownMenuItem onClick={generateInstagramPost} className="hover:bg-gray-100 hover:text-black rounded-xl" disabled={isGenerating}>
+          <Download className="w-4 h-4 mr-2" />
+          <span className='flex-1'>Instagram Post</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={copyCurrentPageLink} className="hover:bg-gray-100 rounded-xl">
           {copied ? (
             <Check className="w-4 h-4 mr-2 text-green-500" />
           ) : (
             <Copy className="w-4 h-4 mr-2" />
           )}
+          <span className='flex-1'>{copied ? 'Copied!' : 'Copy Page Link'}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
