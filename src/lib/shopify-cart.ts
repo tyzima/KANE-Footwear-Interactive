@@ -77,14 +77,14 @@ export const buildCartUrl = (
     throw new Error('No valid line items to add to cart');
   }
 
-  // Build custom properties (limited by Shopify URL constraints)
-  const properties = buildCartProperties(designData);
+  // For now, let's try without properties to isolate the ID issue
+  // const properties = buildCartProperties(designData);
   
-  // Construct final cart URL
+  // Construct final cart URL without properties first
   const baseUrl = `https://${shopDomain}/cart/add`;
-  const cartUrl = `${baseUrl}?${lineItems}&${properties.join('&')}`;
+  const cartUrl = `${baseUrl}?${lineItems}`;
   
-  console.log('Generated cart URL:', cartUrl);
+  console.log('Generated cart URL (without properties):', cartUrl);
   return cartUrl;
 };
 
@@ -184,8 +184,15 @@ export const extractVariantMapping = (product: any): ColorwayVariants => {
     // Extract size from variant title, SKU, or option values
     const size = extractSizeFromVariant(variant);
     if (size && variant.id) {
-      // Clean variant ID (remove gid:// prefix if present)
-      const variantId = variant.id.toString().replace('gid://shopify/ProductVariant/', '');
+      // Use the variant ID as-is (might be numeric or GraphQL format)
+      let variantId = variant.id.toString();
+      
+      // If it's a GraphQL ID, extract just the numeric part for cart URLs
+      if (variantId.startsWith('gid://shopify/ProductVariant/')) {
+        variantId = variantId.replace('gid://shopify/ProductVariant/', '');
+      }
+      
+      console.log('Processing variant:', { originalId: variant.id, cleanedId: variantId });
       
       // Handle combined sizes like "M3 / W5" by creating mappings for both
       if (size.includes(' / ')) {
