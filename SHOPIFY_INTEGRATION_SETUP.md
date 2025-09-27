@@ -14,11 +14,22 @@ The KANE Footwear app is now integrated with Shopify to enable:
 
 ## Setup Steps
 
-### 1. Create a Private App in Shopify
-1. Go to your Shopify Admin panel
-2. Navigate to **Apps** → **App and sales channel settings**
-3. Click **"Develop apps"** → **"Create an app"**
-4. Name your app (e.g., "KANE Footwear Configurator")
+### 1. Create a Custom App in Shopify (New Method - dev.shopify.com)
+
+#### Option A: Using dev.shopify.com (Recommended for your setup)
+1. Go to **https://dev.shopify.com**
+2. Navigate to **"Apps"** in your partner dashboard
+3. Find your existing app with Client ID: `d4d69ee44cf2dd4522f73989a961c273`
+4. Click on your app to open it
+5. Go to **"App setup"** tab
+6. Look for **"Admin API access token"** section
+
+#### Option B: Direct Store Admin (Alternative)
+1. Go to your **Shopify store admin** (your-store.myshopify.com/admin)
+2. Navigate to **Settings** → **Apps and sales channels**
+3. Click **"Develop apps"** 
+4. Click **"Create an app"**
+5. Name your app (e.g., "KANE Footwear Configurator")
 
 ### 2. Configure API Permissions
 Enable the following scopes for your app:
@@ -42,9 +53,29 @@ Enable the following scopes for your app:
 - `write_inventory` - Modify inventory levels
 
 ### 3. Generate Access Token
-1. After configuring permissions, click **"Install app"**
-2. Copy the **Admin API access token**
-3. Keep this token secure - you'll need it for the connection
+
+#### For dev.shopify.com Apps:
+1. In your app dashboard on dev.shopify.com:
+   - Go to **"App setup"** tab
+   - Scroll to **"Admin API access token"** section
+   - If no token exists, click **"Generate token"**
+   - **Important**: You need to install the app on a development store first!
+
+#### Steps to Install on Development Store:
+1. In dev.shopify.com, go to **"Test your app"** tab
+2. Select a development store or create one
+3. Click **"Install app"** 
+4. After installation, go back to **"App setup"** tab
+5. The **Admin API access token** will now be visible
+6. Copy this token (starts with `shpat_...`)
+
+#### Alternative - Direct Store Method:
+1. After configuring permissions in your store admin
+2. Click **"Install app"** 
+3. Copy the **Admin API access token** that appears
+4. Keep this token secure - you'll need it for the connection
+
+**Note**: The access token is only generated AFTER you install the app on a store!
 
 ### 4. Connect to Your App
 1. Visit your app at `/admin` route (e.g., `http://localhost:8091/admin`)
@@ -146,17 +177,61 @@ mutation createDraftOrder($input: DraftOrderInput!) {
 
 ## Troubleshooting
 
+### Can't Find Access Token?
+**Issue**: Only seeing Client ID and Secret on dev.shopify.com
+
+**Common Issue**: App shows broken embedded view after installation
+
+**Root Cause**: Your app is configured as "embedded" but your React app isn't designed for iframe embedding.
+
+**Solutions**:
+
+#### Option 1: Fix Embedded App (Recommended)
+1. In dev.shopify.com, go to your app settings
+2. Find **"App setup"** → **"URLs"** section
+3. Set **App URL** to: `https://kaneconfig.netlify.app/shopify-embedded`
+4. We'll create this route to handle embedded mode properly
+
+#### Option 2: Disable Embedded Mode (Easier for testing)
+1. In dev.shopify.com, go to **"App setup"**
+2. Look for **"Embedded in Shopify admin"** setting
+3. **Turn OFF** embedded mode
+4. Set **App URL** to: `https://kaneconfig.netlify.app/admin`
+5. Save the settings
+6. **Reinstall the app** on your development store
+7. After reinstalling, the access token should appear in "App setup" tab
+
+**Note**: After changing embedded settings, you must reinstall the app!
+
+### Step-by-Step Token Generation:
+1. Go to https://dev.shopify.com
+2. Click on your app (Client ID: d4d69ee44cf2dd4522f73989a961c273)
+3. Go to **"Test your app"** tab
+4. Click **"Select store"** → Choose or create a development store
+5. Click **"Install app"** (this is crucial!)
+6. After installation, go to **"App setup"** tab
+7. Scroll to **"Admin API access token"** 
+8. Copy the token (should start with `shpat_`)
+
 ### Connection Issues
 1. Verify shop domain format (`shop.myshopify.com`)
-2. Check access token validity
+2. Check access token validity (starts with `shpat_`)
 3. Ensure all required scopes are enabled
-4. Check browser console for detailed errors
+4. Make sure app is installed on the store
+5. Check browser console for detailed errors
 
 ### API Errors
-- **401 Unauthorized**: Invalid access token
+- **401 Unauthorized**: Invalid access token or app not installed
 - **403 Forbidden**: Missing required scopes
 - **404 Not Found**: Invalid shop domain
 - **429 Rate Limited**: Too many requests
+
+### No Development Store?
+1. Go to https://partners.shopify.com
+2. Click **"Stores"** → **"Add store"** 
+3. Select **"Development store"**
+4. Create a new development store
+5. Use this store to install and test your app
 
 ## Files Created
 - `src/lib/shopify.ts` - Shopify API client and helpers
