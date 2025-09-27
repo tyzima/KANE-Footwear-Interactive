@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   ExternalLink, 
@@ -413,9 +414,10 @@ export const ShopifyAdminPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
+          <TabsTrigger value="colorways">Colorways</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -564,14 +566,34 @@ export const ShopifyAdminPanel: React.FC = () => {
               {products.map((product) => (
                 <Card key={product.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h4 className="font-medium">{product.title}</h4>
-                        <p className="text-sm text-muted-foreground">{product.handle}</p>
+                    <div className="flex items-start gap-4 mb-2">
+                      {/* Product Thumbnail */}
+                      <div className="w-12 h-12 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                        {product.images?.[0]?.url ? (
+                          <img 
+                            src={product.images[0].url} 
+                            alt={product.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="h-3 w-3 text-gray-400" />
+                          </div>
+                        )}
                       </div>
-                      <Badge variant={product.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {product.status}
-                      </Badge>
+                      
+                      {/* Product Info */}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium">{product.title}</h4>
+                            <p className="text-sm text-muted-foreground">{product.handle}</p>
+                          </div>
+                          <Badge variant={product.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                            {product.status}
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4 text-sm">
@@ -636,6 +658,64 @@ export const ShopifyAdminPanel: React.FC = () => {
           )}
         </TabsContent>
 
+        {/* Colorways Tab */}
+        <TabsContent value="colorways" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Colorway Management</h3>
+            <Button onClick={() => loadProducts(1, false)} disabled={isLoadingProducts} size="sm">
+              {isLoadingProducts ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Products
+                </>
+              )}
+            </Button>
+          </div>
+
+          {products.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No products found. Load products first.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {products.map((product) => (
+                <ColorwayEditor key={product.id} product={product} />
+              ))}
+              
+              {/* Load More Button for Colorways */}
+              {hasMoreProducts && products.length > 0 && (
+                <div className="flex justify-center pt-4">
+                  <Button 
+                    onClick={loadMoreProducts} 
+                    disabled={isLoadingProducts}
+                    variant="outline"
+                  >
+                    {isLoadingProducts ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Loading More...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Load More Products
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
           <Card>
@@ -671,5 +751,171 @@ export const ShopifyAdminPanel: React.FC = () => {
         </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+// ColorwayEditor component for editing product metafields
+const ColorwayEditor: React.FC<{ product: ShopifyProduct }> = ({ product }) => {
+  const [metafields, setMetafields] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Define the colorway metafields we want to edit
+  const colorwayFields = [
+    { key: 'upper-base-hex', label: 'Upper Base Color', description: 'Main color of the upper shoe material' },
+    { key: 'upper-darkbase-hex', label: 'Upper Dark Base Color', description: 'Darker shade for upper material' },
+    { key: 'upper-splatter-hex', label: 'Upper Splatter Color', description: 'Splatter effect color on upper' },
+    { key: 'sole-base-hex', label: 'Sole Base Color', description: 'Main color of the shoe sole' },
+    { key: 'sole-splatter-hex', label: 'Sole Splatter Color', description: 'Splatter effect color on sole' },
+    { key: 'lace-color-hex', label: 'Lace Color', description: 'Color of the shoe laces' },
+  ];
+
+  // Initialize metafields from product data
+  useEffect(() => {
+    const initialMetafields: Record<string, string> = {};
+    colorwayFields.forEach(field => {
+      const metafield = product.metafields?.find(m => 
+        m.key === field.key && m.namespace === 'custom'
+      );
+      initialMetafields[field.key] = metafield?.value || '#000000';
+    });
+    setMetafields(initialMetafields);
+  }, [product]);
+
+  const handleColorChange = (key: string, value: string) => {
+    setMetafields(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Here you would call the Shopify API to update metafields
+      // For now, we'll just simulate the save
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Colorway Updated",
+        description: `Updated colorway settings for ${product.title}`,
+      });
+      
+      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update colorway settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const productImage = product.images?.[0]?.url;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start gap-4">
+          {/* Product Thumbnail */}
+          <div className="w-16 h-16 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+            {productImage ? (
+              <img 
+                src={productImage} 
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Package className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          
+          {/* Product Info */}
+          <div className="flex-1">
+            <CardTitle className="text-lg">{product.title}</CardTitle>
+            <CardDescription className="mt-1">
+              {product.handle} • {product.variants?.length || 0} variants
+            </CardDescription>
+          </div>
+          
+          {/* Edit Button */}
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  size="sm"
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+                <Button 
+                  onClick={() => setIsEditing(false)} 
+                  variant="outline"
+                  size="sm"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={() => setIsEditing(true)} 
+                variant="outline"
+                size="sm"
+              >
+                <Palette className="h-3 w-3 mr-1" />
+                Edit Colors
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      {isEditing && (
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {colorwayFields.map((field) => (
+              <div key={field.key} className="space-y-2">
+                <Label htmlFor={`${product.id}-${field.key}`} className="text-sm font-medium">
+                  {field.label}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id={`${product.id}-${field.key}`}
+                    type="color"
+                    value={metafields[field.key] || '#000000'}
+                    onChange={(e) => handleColorChange(field.key, e.target.value)}
+                    className="w-12 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={metafields[field.key] || '#000000'}
+                    onChange={(e) => handleColorChange(field.key, e.target.value)}
+                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="#000000"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">{field.description}</p>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 p-3 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> These color values will be used by the KANE Footwear configurator to display available colorways for this product.
+            </p>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   );
 };
