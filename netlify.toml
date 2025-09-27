@@ -20,16 +20,17 @@
 
 # Allow Shopify embedding for the embedded route
 [[headers]]
-  for = "/shopify-embedded"
+  for = "/shopify-embedded*"
   [headers.values]
     Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com"
 
-# Deny framing for other routes (security)
+# Also allow embedding for the root if needed (but with restrictions)
 [[headers]]
   for = "/"
   [headers.values]
-    X-Frame-Options = "DENY"
+    Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com"
 
+# Deny framing for admin route (security)
 [[headers]]
   for = "/admin"
   [headers.values]

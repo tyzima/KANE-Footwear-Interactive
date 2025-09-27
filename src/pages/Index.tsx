@@ -8,10 +8,53 @@ import { useSharedDesignLoader, convertSavedDesignToDesignData } from '@/hooks/u
 import { DesignData } from '@/hooks/useDesignSharing';
 import { toast } from '@/components/ui/use-toast';
 import { useCallback } from 'react';
+import { ShopifyEmbedded } from '@/components/ShopifyEmbedded';
 
 const Index = () => {
   const { isDark } = useTheme();
   const [backgroundType, setBackgroundType] = useState<'light' | 'dark' | 'turf'>('light');
+  const [isEmbedded, setIsEmbedded] = useState(false);
+
+  // Check if we're in an embedded context (Shopify iframe)
+  useEffect(() => {
+    const embedded = window.self !== window.top;
+    setIsEmbedded(embedded);
+    
+    // If embedded and has shop parameter, this is likely a Shopify embed
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop');
+    
+    if (embedded && shop) {
+      // Suppress Shopify-related errors
+      const originalError = window.onerror;
+      window.onerror = (message, source, lineno, colno, error) => {
+        if (
+          (source && (source.includes('share-modal.js') || source.includes('shopifycloud'))) ||
+          (typeof message === 'string' && (message.includes('SendBeacon') || message.includes('addEventListener')))
+        ) {
+          console.warn('Suppressed Shopify script error:', message);
+          return true; // Prevent default error handling
+        }
+        if (originalError) {
+          return originalError(message, source, lineno, colno, error);
+        }
+        return false;
+      };
+
+      return () => {
+        window.onerror = originalError;
+      };
+    }
+  }, []);
+
+  // If this is an embedded Shopify context, show the embedded component
+  if (isEmbedded) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const shop = urlParams.get('shop');
+    if (shop) {
+      return <ShopifyEmbedded />;
+    }
+  }
   
   // Shared design loading callback (memoized to prevent infinite re-renders)
   const onDesignLoaded = useCallback((design: any) => {

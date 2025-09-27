@@ -189,7 +189,9 @@ mutation createDraftOrder($input: DraftOrderInput!) {
 #### Option 1: Fix Embedded App (Recommended)
 1. In dev.shopify.com, go to your app settings
 2. Find **"App setup"** → **"URLs"** section
-3. Set **App URL** to: `https://kaneconfig.netlify.app/shopify-embedded`
+3. Configure the URLs as follows:
+   - **App URL**: `https://kaneconfig.netlify.app/shopify-embedded`
+   - **Allowed redirection URL(s)**: `https://kaneconfig.netlify.app/auth/shopify/callback`
 4. Make sure **"Embedded in Shopify admin"** is turned ON
 5. Save settings and reinstall the app
 6. The embedded route is now configured to work properly in iframes
@@ -198,12 +200,42 @@ mutation createDraftOrder($input: DraftOrderInput!) {
 1. In dev.shopify.com, go to **"App setup"**
 2. Look for **"Embedded in Shopify admin"** setting
 3. **Turn OFF** embedded mode
-4. Set **App URL** to: `https://kaneconfig.netlify.app/admin`
+4. Configure the URLs as follows:
+   - **App URL**: `https://kaneconfig.netlify.app/admin`
+   - **Allowed redirection URL(s)**: `https://kaneconfig.netlify.app/auth/shopify/callback`
 5. Save the settings
 6. **Reinstall the app** on your development store
 7. After reinstalling, the access token should appear in "App setup" tab
 
 **Note**: After changing embedded settings, you must reinstall the app!
+
+## 📋 Complete URL Configuration
+
+In your Shopify app settings on dev.shopify.com, you need to configure these URLs:
+
+### For Embedded App (Recommended):
+```
+App URL: https://kaneconfig.netlify.app/
+Allowed redirection URL(s): https://kaneconfig.netlify.app/auth/shopify/callback
+```
+
+### For Non-Embedded App (Testing):
+```
+App URL: https://kaneconfig.netlify.app/admin
+Allowed redirection URL(s): https://kaneconfig.netlify.app/auth/shopify/callback
+```
+
+**Note**: For embedded apps, use the root URL (`/`) - the app will automatically detect it's embedded and show the appropriate interface.
+
+### What Each URL Does:
+- **App URL**: Where Shopify loads your app (embedded in iframe or as standalone)
+- **Allowed redirection URL(s)**: Where Shopify redirects after OAuth authentication
+
+### Important Notes:
+- ✅ Always use `https://` (required by Shopify)
+- ✅ Use your actual domain: `kaneconfig.netlify.app`
+- ✅ The redirect URL is the same for both modes
+- ✅ You can add multiple redirect URLs (one per line) if needed
 
 ### Step-by-Step Token Generation:
 1. Go to https://dev.shopify.com
