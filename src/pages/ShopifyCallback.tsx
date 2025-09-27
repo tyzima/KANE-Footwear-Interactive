@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { exchangeCodeForToken, initializeShopifyClient } from '@/lib/shopify';
+import { exchangeCodeForToken, initializeShopifyClient, checkShopifyConnection } from '@/lib/shopify';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,11 +44,34 @@ const ShopifyCallback: React.FC = () => {
         // Initialize Shopify client with the new token
         initializeShopifyClient(shopDomain, accessToken);
 
-        // Store credentials securely
+        // Test the connection to get shop info
+        const connectionResult = await checkShopifyConnection();
+
+        // Store credentials in new format with expiration (30 days)
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        
+        const connectionData = {
+          shopDomain,
+          accessToken,
+          expiresAt: expirationDate.toISOString(),
+          connectedAt: new Date().toISOString(),
+          shop: connectionResult.shop
+        };
+        
+        localStorage.setItem('shopify_connection', JSON.stringify(connectionData));
+        
+        // Also store in old format for backward compatibility
         localStorage.setItem('shopify_domain', shopDomain);
         localStorage.setItem('shopify_access_token', accessToken);
 
         console.log('OAuth flow completed successfully');
+        console.log('Stored connection data:', {
+          shopDomain,
+          hasToken: !!accessToken,
+          shopInfo: connectionResult.shop,
+          expiresAt: connectionData.expiresAt
+        });
         
         setStatus('success');
         
