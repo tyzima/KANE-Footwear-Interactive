@@ -57,6 +57,17 @@ CREATE POLICY "Anyone can update public designs" ON saved_designs
 CREATE INDEX IF NOT EXISTS idx_saved_designs_share_token ON saved_designs(share_token);
 CREATE INDEX IF NOT EXISTS idx_saved_designs_created_at ON saved_designs(created_at DESC);
 
+-- Connection storage for server-side token usage (SERVICE-ROLE only)
+CREATE TABLE IF NOT EXISTS shopify_connections (
+  shop_domain TEXT PRIMARY KEY,
+  access_token TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- RLS: deny all by default
+ALTER TABLE shopify_connections ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "deny all" ON shopify_connections FOR ALL USING (false) WITH CHECK (false);
+
 -- Insert a test design
 INSERT INTO saved_designs (
   share_token,

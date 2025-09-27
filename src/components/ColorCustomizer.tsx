@@ -12,7 +12,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useColorways } from '@/hooks/useColorways';
-import { usePublicColorways } from '@/hooks/usePublicColorways';
 
 interface Colorway {
   id: string;
@@ -242,19 +241,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
   // Get dynamic colorways from Shopify
-  // Use public API for customer embeds, admin API for admin use
-  const adminColorways = useColorways();
-  const publicColorways = usePublicColorways(
-    productContext?.shop,
-    productContext?.productId
-  );
-  
-  // Choose which colorways to use based on context
-  const {
-    colorways,
-    isLoading: colorwaysLoading,
-    isUsingDynamicData
-  } = productContext?.isCustomerEmbed ? publicColorways : adminColorways;
+  const { colorways, isLoading: colorwaysLoading, isUsingDynamicData } = useColorways();
   
   // Filter colorways based on product context (for customer embeds)
   const availableColorways = React.useMemo(() => {

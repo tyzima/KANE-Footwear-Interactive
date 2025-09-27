@@ -394,7 +394,6 @@ const Index = () => {
             currentProduct={getCurrentProduct()}
             currentColorway={selectedColorway}
             getColorConfiguration={() => colorConfiguration}
-            productContext={productContext}
           />
           <ShareButton
             canvasRef={canvasRef}

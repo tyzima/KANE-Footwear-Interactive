@@ -1,266 +1,89 @@
-/**
- * Public API endpoint for fetching colorways
- * This endpoint can be called by customers without authentication
- * It uses stored admin credentials to fetch data from Shopify
- */
+const { getShopToken } = require('./_supabase');
 
-exports.handler = async (event, context) => {
-  // CORS headers for cross-origin requests
+exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json'
   };
 
-  // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: '',
-    };
+    return { statusCode: 200, headers, body: '' };
   }
-
-  // Only allow GET requests
   if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    // Parse query parameters
-    const { shop, productId } = event.queryStringParameters || {};
-    
+    const shop = (event.queryStringParameters?.shop || '').trim();
     if (!shop) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Shop parameter is required' }),
-      };
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing shop parameter' }) };
+    }
+    const accessToken = await getShopToken(shop);
+    if (!accessToken) {
+      return { statusCode: 401, headers, body: JSON.stringify({ error: 'Shop not connected' }) };
     }
 
-    // Get stored credentials for this shop
-    // In a production app, you'd store these in a secure database
-    // For now, we'll use environment variables or a simple storage solution
-    const shopCredentials = await getShopCredentials(shop);
-    
-    if (!shopCredentials) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ 
-          error: 'Shop not found or not connected',
-          fallback: true // Indicate client should use fallback data
-        }),
-      };
-    }
-
-    // Fetch colorways from Shopify using admin credentials
-    const colorways = await fetchColorwaysFromShopify(shopCredentials, productId);
-    
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        shop,
-        productId,
-        colorways,
-        timestamp: new Date().toISOString(),
-        source: 'shopify'
-      }),
-    };
-
-  } catch (error) {
-    console.error('Error fetching colorways:', error);
-    
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ 
-        error: 'Failed to fetch colorways',
-        message: error.message,
-        fallback: true // Indicate client should use fallback data
-      }),
-    };
-  }
-};
-
-/**
- * Get stored credentials for a shop
- * This would typically query a database, but for now we'll use environment variables
- */
-async function getShopCredentials(shop) {
-  // For development, you can store credentials in environment variables
-  // In production, use a secure database like Supabase, PlanetScale, etc.
-  
-  // Check if this is the connected shop
-  const connectedShop = process.env.SHOPIFY_SHOP_DOMAIN;
-  const accessToken = process.env.SHOPIFY_ACCESS_TOKEN;
-  
-  if (shop === connectedShop && accessToken) {
-    return {
-      shop: connectedShop,
-      accessToken: accessToken
-    };
-  }
-  
-  // TODO: In production, query database for stored shop credentials
-  // const credentials = await db.query('SELECT * FROM shop_tokens WHERE shop = ?', [shop]);
-  
-  return null;
-}
-
-/**
- * Fetch colorways from Shopify using admin credentials
- */
-async function fetchColorwaysFromShopify(credentials, productId = null) {
-  const { shop, accessToken } = credentials;
-  
-  // GraphQL query to get products with metafields
-  const query = productId 
-    ? `
-      query getProduct($id: ID!) {
-        product(id: $id) {
-          id
-          title
-          handle
-          metafields(first: 50, namespace: "custom") {
-            edges {
-              node {
-                id
-                namespace
-                key
-                value
-                type
-              }
-            }
-          }
-        }
-      }
-    `
-    : `
-      query getProducts($first: Int!) {
-        products(first: $first) {
+    const cleanDomain = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const query = `#graphql
+      query {
+        products(first: 100) {
           edges {
             node {
               id
               title
-              handle
-              metafields(first: 20, namespace: "custom") {
-                edges {
-                  node {
-                    id
-                    namespace
-                    key
-                    value
-                    type
-                  }
-                }
-              }
+              metafields(first: 50, namespace: "custom") { edges { node { key value type } } }
             }
           }
         }
       }
     `;
 
-  const variables = productId 
-    ? { id: productId.startsWith('gid://') ? productId : `gid://shopify/Product/${productId}` }
-    : { first: 100 };
+    const resp = await fetch(`https://${cleanDomain}/admin/api/2024-01/graphql.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': accessToken },
+      body: JSON.stringify({ query })
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      return { statusCode: resp.status, headers, body: JSON.stringify({ error: 'Shopify request failed', details: text }) };
+    }
+    const data = await resp.json();
+    const products = data?.data?.products?.edges?.map(e => e.node) || [];
 
-  // Make request to Shopify GraphQL API
-  const response = await fetch(`https://${shop}.myshopify.com/admin/api/2023-10/graphql.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': accessToken,
-    },
-    body: JSON.stringify({
-      query,
-      variables,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Shopify API error: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  
-  if (data.errors) {
-    throw new Error(`GraphQL errors: ${data.errors.map(e => e.message).join(', ')}`);
-  }
-
-  // Transform data to colorways format
-  const products = productId 
-    ? (data.data?.product ? [data.data.product] : [])
-    : (data.data?.products?.edges?.map(edge => edge.node) || []);
-
-  const colorways = products
-    .filter(product => {
-      // Only include products that have colorway metafields
-      const metafields = product.metafields?.edges?.map(edge => edge.node) || [];
-      return metafields.some(m => 
-        ['upper_base_hex', 'sole_base_hex', 'lace_color_hex'].includes(m.key)
-      );
-    })
-    .map(product => {
-      const metafields = product.metafields?.edges?.map(edge => edge.node) || [];
-      
-      // Helper function to get metafield value
-      const getMetafield = (key) => {
-        const field = metafields.find(m => m.key === key && m.namespace === 'custom');
-        return field?.value || null;
-      };
-      
-      // Extract colorway data from metafields
-      const upperBaseColor = getMetafield('upper_base_hex') || '#000000';
-      const upperDarkBaseColor = getMetafield('upper_darkbase_hex') || null;
-      const upperSplatterColor = getMetafield('upper_splatter_hex') || null;
-      const upperSplatterColor2 = getMetafield('upper_splatter2_hex') || null;
-      const soleBaseColor = getMetafield('sole_base_hex') || '#000000';
-      const soleSplatterColor = getMetafield('sole_splatter_hex') || null;
-      const soleSplatterColor2 = getMetafield('sole_splatter2_hex') || null;
-      const laceColor = getMetafield('lace_color_hex') || '#FFFFFF';
-      
-      // Determine if splatter is enabled
-      const upperHasSplatter = !!(upperSplatterColor && upperSplatterColor !== '#000000');
-      const soleHasSplatter = !!(soleSplatterColor && soleSplatterColor !== '#000000');
-      
-      // Determine if dual splatter is enabled
-      const upperUseDualSplatter = !!(upperSplatterColor2 && upperSplatterColor2 !== '#000000');
-      const soleUseDualSplatter = !!(soleSplatterColor2 && soleSplatterColor2 !== '#000000');
-      
+    // Transform to colorways shape
+    const colorways = products.map(p => {
+      const m = {}; (p.metafields?.edges || []).forEach(edge => { m[edge.node.key] = edge.node.value; });
       return {
-        id: `product-${product.id.replace('gid://shopify/Product/', '')}`,
-        name: product.title,
-        description: `Custom colorway for ${product.title}`,
-        productId: product.id.replace('gid://shopify/Product/', ''),
+        id: `product-${p.id.replace('gid://shopify/Product/', '')}`,
+        name: p.title,
+        description: '',
+        productId: p.id.replace('gid://shopify/Product/', ''),
         upper: {
-          baseColor: upperBaseColor,
-          hasSplatter: upperHasSplatter,
-          splatterColor: upperSplatterColor,
-          splatterBaseColor: upperDarkBaseColor,
-          splatterColor2: upperSplatterColor2,
-          useDualSplatter: upperUseDualSplatter,
+          baseColor: m.upper_base_hex || '#000000',
+          hasSplatter: !!m.upper_splatter_hex,
+          splatterColor: m.upper_splatter_hex || null,
+          splatterBaseColor: m.upper_darkbase_hex || null,
+          splatterColor2: m.upper_splatter2_hex || null,
+          useDualSplatter: !!m.upper_splatter2_hex
         },
         sole: {
-          baseColor: soleBaseColor,
-          hasSplatter: soleHasSplatter,
-          splatterColor: soleSplatterColor,
-          splatterBaseColor: upperDarkBaseColor, // Use upper dark base for sole too
-          splatterColor2: soleSplatterColor2,
-          useDualSplatter: soleUseDualSplatter,
+          baseColor: m.sole_base_hex || '#000000',
+          hasSplatter: !!m.sole_splatter_hex,
+          splatterColor: m.sole_splatter_hex || null,
+          splatterBaseColor: m.sole_splatter_base_hex || null,
+          splatterColor2: m.sole_splatter2_hex || null,
+          useDualSplatter: !!m.sole_splatter2_hex
         },
-        laces: {
-          color: laceColor,
-        },
+        laces: { color: m.lace_color_hex || '#000000' }
       };
     });
 
-  return colorways;
-}
+    return { statusCode: 200, headers, body: JSON.stringify({ colorways }) };
+  } catch (err) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Internal error', message: err.message }) };
+  }
+};
+
+

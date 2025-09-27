@@ -1,3 +1,5 @@
+const { upsertShopToken } = require('./_supabase');
+
 exports.handler = async (event, context) => {
   // Enable CORS
   const headers = {
@@ -69,6 +71,15 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ error: 'No access token received from Shopify' }),
       };
+    }
+
+    // Persist token server-side if Supabase configured (best effort)
+    try {
+      if (upsertShopToken && process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        await upsertShopToken(shop, data.access_token);
+      }
+    } catch (e) {
+      console.warn('Supabase token save skipped:', e?.message);
     }
 
     // Return the access token
