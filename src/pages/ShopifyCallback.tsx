@@ -52,15 +52,38 @@ const ShopifyCallback: React.FC = () => {
         
         setStatus('success');
         
-        toast({
-          title: "Successfully connected to Shopify!",
-          description: `Connected to ${shopDomain}`,
-        });
+        // Check if we're in a popup (opened by embedded app)
+        const isPopup = window.opener && window.opener !== window;
+        
+        if (isPopup) {
+          // Send success message to parent window
+          window.opener.postMessage({
+            type: 'SHOPIFY_OAUTH_SUCCESS',
+            shop: shopDomain,
+            accessToken: accessToken.substring(0, 10) + '...' // Don't send full token
+          }, window.location.origin);
+          
+          // Show brief success message then close
+          toast({
+            title: "Successfully connected!",
+            description: "Closing popup...",
+          });
+          
+          setTimeout(() => {
+            window.close();
+          }, 1500);
+        } else {
+          // Normal flow - show success and redirect
+          toast({
+            title: "Successfully connected to Shopify!",
+            description: `Connected to ${shopDomain}`,
+          });
 
-        // Redirect to admin after a brief delay
-        setTimeout(() => {
-          navigate('/shopify-admin');
-        }, 2000);
+          // Redirect to admin after a brief delay
+          setTimeout(() => {
+            navigate('/shopify-admin');
+          }, 2000);
+        }
 
       } catch (err) {
         console.error('OAuth callback error:', err);
@@ -68,11 +91,30 @@ const ShopifyCallback: React.FC = () => {
         setError(errorMessage);
         setStatus('error');
         
-        toast({
-          title: "Connection failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        // Check if we're in a popup
+        const isPopup = window.opener && window.opener !== window;
+        
+        if (isPopup) {
+          // Send error message to parent window
+          window.opener.postMessage({
+            type: 'SHOPIFY_OAUTH_ERROR',
+            error: errorMessage
+          }, window.location.origin);
+          
+          toast({
+            title: "Connection failed",
+            description: "Check the main window for details.",
+            variant: "destructive",
+          });
+          
+          // Keep popup open so user can see the error
+        } else {
+          toast({
+            title: "Connection failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       }
     };
 

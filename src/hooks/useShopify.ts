@@ -140,15 +140,51 @@ export const useShopify = () => {
       ? cleanDomain 
       : `${cleanDomain}.myshopify.com`;
 
-    // Generate OAuth URL and redirect
+    // Generate OAuth URL
     const authUrl = generateShopifyAuthUrl(fullDomain);
-    console.log('Redirecting to OAuth URL:', authUrl);
+    console.log('Opening OAuth URL in new window:', authUrl);
     
     // Store the shop domain for the callback
     localStorage.setItem('shopify_oauth_shop', fullDomain);
     
-    // Redirect to Shopify OAuth
-    window.location.href = authUrl;
+    // Check if we're in an iframe (embedded app)
+    const isEmbedded = window.self !== window.top;
+    
+    if (isEmbedded) {
+      // If embedded, open OAuth in a new window/tab
+      const authWindow = window.open(authUrl, 'shopify-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes');
+      
+      // Listen for the callback message from the popup
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data.type === 'SHOPIFY_OAUTH_SUCCESS') {
+          console.log('OAuth success received from popup');
+          authWindow?.close();
+          window.removeEventListener('message', handleMessage);
+          
+          // Reload the current page to pick up the new connection
+          window.location.reload();
+        } else if (event.data.type === 'SHOPIFY_OAUTH_ERROR') {
+          console.error('OAuth error received from popup:', event.data.error);
+          authWindow?.close();
+          window.removeEventListener('message', handleMessage);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      // Check if popup was closed manually
+      const checkClosed = setInterval(() => {
+        if (authWindow?.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
+        }
+      }, 1000);
+    } else {
+      // If not embedded, redirect normally
+      window.location.href = authUrl;
+    }
   }, []);
 
   return {

@@ -181,7 +181,7 @@ export const ShopifyConnection: React.FC = () => {
                 <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <h4 className="text-sm font-medium text-blue-900 mb-1">OAuth Flow:</h4>
                   <p className="text-xs text-blue-700">
-                    You'll be redirected to Shopify to authorize the connection. No need to find access tokens!
+                    A popup window will open for Shopify authorization. No need to find access tokens!
                   </p>
                 </div>
 
