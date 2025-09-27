@@ -1,4 +1,4 @@
-# Environment Setup for KANE Footwear Sharing
+# Environment Setup for KANE Footwear
 
 ## Required Environment Variables
 
@@ -7,6 +7,10 @@ Create a `.env.local` file in your project root with:
 ```env
 # Supabase Configuration (VITE prefix for Vite apps)
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Shopify Configuration (Optional - can be set via UI)
+VITE_SHOPIFY_CLIENT_ID=d4d69ee44cf2dd4522f73989a961c273
+VITE_SHOPIFY_CLIENT_SECRET=3c4fbf1eb5b479e223c4f940871bd489
 ```
 
 ## Getting Your Supabase Keys
