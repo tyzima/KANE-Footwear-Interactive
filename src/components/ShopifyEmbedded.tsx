@@ -21,12 +21,33 @@ export const ShopifyEmbedded: React.FC = () => {
 
     // If embedded, we can communicate with the parent Shopify admin
     if (embedded) {
-      // Send a message to parent to indicate we're ready
-      window.parent.postMessage({
-        type: 'KANE_APP_READY',
-        payload: { status: 'loaded' }
-      }, '*');
+      try {
+        // Send a message to parent to indicate we're ready
+        window.parent.postMessage({
+          type: 'KANE_APP_READY',
+          payload: { status: 'loaded' }
+        }, '*');
+      } catch (error) {
+        console.warn('Could not communicate with parent frame:', error);
+      }
     }
+
+    // Suppress any share-modal.js errors by providing a fallback
+    const originalError = window.onerror;
+    window.onerror = (message, source, lineno, colno, error) => {
+      if (source && source.includes('share-modal.js')) {
+        console.warn('Suppressed share-modal.js error:', message);
+        return true; // Prevent default error handling
+      }
+      if (originalError) {
+        return originalError(message, source, lineno, colno, error);
+      }
+      return false;
+    };
+
+    return () => {
+      window.onerror = originalError;
+    };
   }, []);
 
   const openFullApp = () => {

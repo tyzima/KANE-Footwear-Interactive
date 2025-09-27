@@ -14,10 +14,26 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Allow Shopify embedding for the embedded route
+[[headers]]
+  for = "/shopify-embedded"
+  [headers.values]
+    Content-Security-Policy = "frame-ancestors *.myshopify.com https://*.shopify.com https://admin.shopify.com"
+
+# Deny framing for other routes (security)
+[[headers]]
+  for = "/"
+  [headers.values]
+    X-Frame-Options = "DENY"
+
+[[headers]]
+  for = "/admin"
+  [headers.values]
+    X-Frame-Options = "DENY"
 
 [[headers]]
   for = "/static/*"

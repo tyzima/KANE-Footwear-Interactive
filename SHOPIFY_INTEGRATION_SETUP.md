@@ -190,7 +190,9 @@ mutation createDraftOrder($input: DraftOrderInput!) {
 1. In dev.shopify.com, go to your app settings
 2. Find **"App setup"** → **"URLs"** section
 3. Set **App URL** to: `https://kaneconfig.netlify.app/shopify-embedded`
-4. We'll create this route to handle embedded mode properly
+4. Make sure **"Embedded in Shopify admin"** is turned ON
+5. Save settings and reinstall the app
+6. The embedded route is now configured to work properly in iframes
 
 #### Option 2: Disable Embedded Mode (Easier for testing)
 1. In dev.shopify.com, go to **"App setup"**
