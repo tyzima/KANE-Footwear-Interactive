@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { 
   initializeShopifyClient, 
   checkShopifyConnection, 
+  generateShopifyAuthUrl,
   shopifyAPI,
   type ShopifyProduct 
 } from '@/lib/shopify';
@@ -128,12 +129,35 @@ export const useShopify = () => {
     return await shopifyAPI.getInventoryLevels(inventoryItemIds);
   }, [connectionState.isConnected]);
 
+  // OAuth connection flow
+  const connectViaOAuth = useCallback((shopDomain: string) => {
+    // Clean shop domain (remove protocol, ensure .myshopify.com)
+    const cleanDomain = shopDomain
+      .replace(/^https?:\/\//, '')
+      .replace(/\/$/, '');
+    
+    const fullDomain = cleanDomain.endsWith('.myshopify.com') 
+      ? cleanDomain 
+      : `${cleanDomain}.myshopify.com`;
+
+    // Generate OAuth URL and redirect
+    const authUrl = generateShopifyAuthUrl(fullDomain);
+    console.log('Redirecting to OAuth URL:', authUrl);
+    
+    // Store the shop domain for the callback
+    localStorage.setItem('shopify_oauth_shop', fullDomain);
+    
+    // Redirect to Shopify OAuth
+    window.location.href = authUrl;
+  }, []);
+
   return {
     // Connection state
     ...connectionState,
     
     // Connection management
     initializeConnection,
+    connectViaOAuth,
     disconnect,
     
     // API functions

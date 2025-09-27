@@ -7,6 +7,7 @@ import { useTheme } from "@/hooks/use-theme";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import ShopifyAdmin from "./pages/ShopifyAdmin";
+import ShopifyCallback from "./pages/ShopifyCallback";
 import ShopifyEmbeddedPage from "./pages/ShopifyEmbedded";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const AppContent = () => {
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/shopify-admin" element={<ShopifyAdmin />} />
+            <Route path="/auth/shopify/callback" element={<ShopifyCallback />} />
             <Route path="/shopify-embedded" element={<ShopifyEmbeddedPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

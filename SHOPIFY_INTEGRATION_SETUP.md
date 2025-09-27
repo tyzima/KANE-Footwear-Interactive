@@ -77,6 +77,29 @@ Enable the following scopes for your app:
 
 **Note**: The access token is only generated AFTER you install the app on a store!
 
+### 🆕 **For New dev.shopify.com Platform (2024+)**
+
+If you only see Client ID and Secret but no `shpat_` token, try these methods:
+
+**Method 1: Store Admin Access**
+1. Go to your store admin: `https://kane-customs.myshopify.com/admin`
+2. Settings → **Apps and sales channels**
+3. Look for **"Develop apps"** or **"Private apps"**
+4. Find your app → **API credentials**
+5. Copy the **Admin API access token** (starts with `shpat_`)
+
+**Method 2: Generate Token in App Setup**
+1. In dev.shopify.com → Your app
+2. Look for **"API access"** or **"Tokens"** section
+3. Click **"Generate access token"** or **"Create new token"**
+4. Select required scopes and generate
+
+**Method 3: OAuth Flow (Modern Approach)**
+The new platform prefers OAuth. Your app can redirect users to:
+```
+https://kane-customs.myshopify.com/admin/oauth/authorize?client_id=YOUR_CLIENT_ID&scope=read_products,write_products,read_customers,write_customers,read_draft_orders,write_draft_orders&redirect_uri=https://kaneconfig.netlify.app/auth/shopify/callback
+```
+
 ### 4. Connect to Your App
 1. Visit your app at `/admin` route (e.g., `http://localhost:8091/admin`)
 2. Click **"Connect to Shopify"**

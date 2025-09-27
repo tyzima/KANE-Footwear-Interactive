@@ -55,6 +55,34 @@ const generateRandomState = () => {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 };
 
+// Exchange OAuth code for access token
+export const exchangeCodeForToken = async (shopDomain: string, code: string): Promise<string> => {
+  const response = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: SHOPIFY_CONFIG.clientId,
+      client_secret: SHOPIFY_CONFIG.clientSecret,
+      code: code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OAuth token exchange failed: ${response.status} ${response.statusText} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  
+  if (!data.access_token) {
+    throw new Error('No access token received from Shopify');
+  }
+
+  return data.access_token;
+};
+
 // Shopify API Helper Functions
 export const shopifyAPI = {
   // Products
