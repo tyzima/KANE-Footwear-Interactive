@@ -25,6 +25,11 @@ import type { ShopifyProduct } from '@/lib/shopify';
 
 export const ShopifyAdminPanel: React.FC = () => {
   const { isConnected, getProducts, shop, connectViaOAuth } = useShopify();
+  
+  // Debug connection state
+  useEffect(() => {
+    console.log('ShopifyAdminPanel - Connection state:', { isConnected, shop });
+  }, [isConnected, shop]);
   const [products, setProducts] = useState<ShopifyProduct[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');

@@ -56,11 +56,11 @@ const ShopifyCallback: React.FC = () => {
         const isPopup = window.opener && window.opener !== window;
         
         if (isPopup) {
-          // Send success message to parent window
+          // Send success message to parent window with full credentials
           window.opener.postMessage({
             type: 'SHOPIFY_OAUTH_SUCCESS',
             shop: shopDomain,
-            accessToken: accessToken.substring(0, 10) + '...' // Don't send full token
+            accessToken: accessToken // Send full token for immediate initialization
           }, window.location.origin);
           
           // Show brief success message then close

@@ -91,6 +91,18 @@ export const useShopify = () => {
     };
 
     checkExistingConnection();
+
+    // Listen for custom connection events
+    const handleConnectionEvent = () => {
+      console.log('Shopify connection event received, checking connection...');
+      checkExistingConnection();
+    };
+
+    window.addEventListener('shopify-connected', handleConnectionEvent);
+
+    return () => {
+      window.removeEventListener('shopify-connected', handleConnectionEvent);
+    };
   }, [initializeConnection]);
 
   // Shopify API wrapper functions
@@ -155,16 +167,37 @@ export const useShopify = () => {
       const authWindow = window.open(authUrl, 'shopify-oauth', 'width=500,height=600,scrollbars=yes,resizable=yes');
       
       // Listen for the callback message from the popup
-      const handleMessage = (event: MessageEvent) => {
+      const handleMessage = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
         
         if (event.data.type === 'SHOPIFY_OAUTH_SUCCESS') {
-          console.log('OAuth success received from popup');
+          console.log('OAuth success received from popup', event.data);
           authWindow?.close();
           window.removeEventListener('message', handleMessage);
           
-          // Reload the current page to pick up the new connection
-          window.location.reload();
+          // Use credentials from the message for immediate initialization
+          const { shop, accessToken } = event.data;
+          
+          if (shop && accessToken) {
+            console.log('Initializing connection with popup credentials');
+            try {
+              const result = await initializeConnection(shop, accessToken);
+              if (result.success) {
+                console.log('Connection successful:', result.shop?.name);
+                // Force a re-render by triggering a state update
+                window.dispatchEvent(new CustomEvent('shopify-connected'));
+              } else {
+                console.error('Connection failed:', result.error);
+                window.location.reload();
+              }
+            } catch (error) {
+              console.error('Error initializing connection:', error);
+              window.location.reload();
+            }
+          } else {
+            console.log('Missing credentials in popup message, reloading page');
+            window.location.reload();
+          }
         } else if (event.data.type === 'SHOPIFY_OAUTH_ERROR') {
           console.error('OAuth error received from popup:', event.data.error);
           authWindow?.close();
