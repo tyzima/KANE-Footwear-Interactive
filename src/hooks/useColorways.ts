@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useShopify } from './useShopify';
-import { usePublicColorways } from './usePublicColorways';
 import colorwaysData from '../data/colorways.json';
 
 export interface Colorway {
@@ -28,19 +27,12 @@ export interface Colorway {
   };
 }
 
-export const useColorways = (shopDomain?: string) => {
+export const useColorways = () => {
   const { isConnected, getColorways } = useShopify();
   const [colorways, setColorways] = useState<Colorway[]>(colorwaysData.colorways);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
-  // Use public colorways hook for embedded contexts
-  const publicColorways = usePublicColorways(shopDomain);
-  
-  // Detect if we're in an embedded context (not admin)
-  const isEmbeddedContext = typeof window !== 'undefined' && 
-    (window.location.pathname === '/' || !window.location.pathname.includes('admin'));
 
   // Load dynamic colorways from Shopify
   const loadDynamicColorways = useCallback(async () => {
@@ -77,35 +69,17 @@ export const useColorways = (shopDomain?: string) => {
     }
   }, [isConnected, getColorways]);
 
-  // Load colorways based on context
+  // Load colorways when connected
   useEffect(() => {
-    if (isEmbeddedContext && shopDomain) {
-      // In embedded context, use public colorways
-      console.log('Using public colorways for embedded context');
-      if (publicColorways.colorways.length > 0) {
-        setColorways(publicColorways.colorways);
-        setLastUpdated(new Date());
-        setError(publicColorways.error);
-      } else if (!publicColorways.isLoading) {
-        // Fallback to static if no public colorways found
-        setColorways(colorwaysData.colorways);
-        setLastUpdated(null);
-        setError(null);
-      }
-      setIsLoading(publicColorways.isLoading);
-    } else if (isConnected) {
-      // In admin context with connection, use admin API
-      console.log('Using admin colorways for connected admin context');
+    if (isConnected) {
       loadDynamicColorways();
     } else {
-      // Default: use static colorways
-      console.log('Using static colorways as fallback');
+      // Use static colorways when not connected
       setColorways(colorwaysData.colorways);
       setLastUpdated(null);
       setError(null);
-      setIsLoading(false);
     }
-  }, [isConnected, isEmbeddedContext, shopDomain, publicColorways, loadDynamicColorways]);
+  }, [isConnected, loadDynamicColorways]);
 
   // Manual refresh function
   const refreshColorways = useCallback(async () => {
@@ -120,7 +94,7 @@ export const useColorways = (shopDomain?: string) => {
     error,
     lastUpdated,
     refreshColorways,
-    isUsingDynamicData: (isEmbeddedContext && shopDomain && publicColorways.isUsingDynamicData) || (isConnected && !error),
+    isUsingDynamicData: isConnected && !error,
     totalCount: colorways.length
   };
 };
