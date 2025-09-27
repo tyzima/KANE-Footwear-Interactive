@@ -30,16 +30,26 @@ export const useShopify = () => {
 
   // Initialize connection with stored credentials
   const initializeConnection = useCallback(async (shopDomain: string, accessToken: string) => {
+    console.log('initializeConnection called with:', {
+      shopDomain,
+      hasToken: !!accessToken,
+      tokenPrefix: accessToken?.substring(0, 10) + '...'
+    });
+    
     setConnectionState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
       // Initialize the Shopify client
+      console.log('Initializing Shopify client...');
       initializeShopifyClient(shopDomain, accessToken);
 
       // Test the connection
+      console.log('Testing Shopify connection...');
       const connectionResult = await checkShopifyConnection();
+      console.log('Connection test result:', connectionResult);
 
       if (connectionResult.connected) {
+        console.log('Connection successful, updating state...');
         setConnectionState({
           isConnected: true,
           isLoading: false,
@@ -96,6 +106,8 @@ export const useShopify = () => {
   // Check for existing connection on mount
   useEffect(() => {
     const checkExistingConnection = async () => {
+      console.log('Checking for existing Shopify connection...');
+      
       // Try new storage format first
       const connectionDataStr = localStorage.getItem('shopify_connection');
       
@@ -105,6 +117,13 @@ export const useShopify = () => {
           const now = new Date();
           const expiresAt = new Date(connectionData.expiresAt);
           
+          console.log('Found stored connection data:', {
+            shopDomain: connectionData.shopDomain,
+            hasToken: !!connectionData.accessToken,
+            expiresAt: connectionData.expiresAt,
+            isExpired: now > expiresAt
+          });
+          
           // Check if connection has expired
           if (now > expiresAt) {
             console.log('Shopify connection expired, clearing stored data');
@@ -112,8 +131,9 @@ export const useShopify = () => {
             return;
           }
           
-          console.log('Found valid stored connection, reconnecting...');
-          await initializeConnection(connectionData.shopDomain, connectionData.accessToken);
+          console.log('Attempting to reconnect with stored credentials...');
+          const result = await initializeConnection(connectionData.shopDomain, connectionData.accessToken);
+          console.log('Reconnection result:', result);
           return;
         } catch (error) {
           console.error('Error parsing stored connection data:', error);
@@ -126,8 +146,14 @@ export const useShopify = () => {
       const storedToken = localStorage.getItem('shopify_access_token');
 
       if (storedDomain && storedToken) {
-        console.log('Found old format connection, reconnecting...');
-        await initializeConnection(storedDomain, storedToken);
+        console.log('Found old format connection, attempting reconnect...', {
+          domain: storedDomain,
+          hasToken: !!storedToken
+        });
+        const result = await initializeConnection(storedDomain, storedToken);
+        console.log('Old format reconnection result:', result);
+      } else {
+        console.log('No stored connection found');
       }
     };
 

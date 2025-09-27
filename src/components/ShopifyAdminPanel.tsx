@@ -26,9 +26,22 @@ import type { ShopifyProduct } from '@/lib/shopify';
 export const ShopifyAdminPanel: React.FC = () => {
   const { isConnected, getProducts, shop, connectViaOAuth } = useShopify();
   
+  // Debug localStorage on mount
+  useEffect(() => {
+    console.log('ShopifyAdminPanel - localStorage debug:', {
+      shopify_connection: localStorage.getItem('shopify_connection'),
+      shopify_domain: localStorage.getItem('shopify_domain'),
+      shopify_access_token: localStorage.getItem('shopify_access_token') ? 'present' : 'missing'
+    });
+  }, []);
+  
   // Debug connection state
   useEffect(() => {
-    console.log('ShopifyAdminPanel - Connection state:', { isConnected, shop });
+    console.log('ShopifyAdminPanel - Connection state update:', { 
+      isConnected, 
+      shop: shop ? { name: shop.name, domain: shop.domain } : null,
+      hasShop: !!shop
+    });
   }, [isConnected, shop]);
 
   // Suppress Shopify script errors
