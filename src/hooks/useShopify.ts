@@ -107,6 +107,17 @@ export const useShopify = () => {
   useEffect(() => {
     const checkExistingConnection = async () => {
       console.log('Checking for existing Shopify connection...');
+      console.log('Current context:', {
+        hostname: window.location.hostname,
+        origin: window.location.origin,
+        href: window.location.href,
+        isEmbedded: window.self !== window.top,
+        localStorage: {
+          shopify_connection: !!localStorage.getItem('shopify_connection'),
+          shopify_domain: localStorage.getItem('shopify_domain'),
+          shopify_access_token: !!localStorage.getItem('shopify_access_token')
+        }
+      });
       
       // Try new storage format first
       const connectionDataStr = localStorage.getItem('shopify_connection');
