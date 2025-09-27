@@ -55,12 +55,17 @@ export const buildCartUrl = (
   console.log('Building cart URL:', { shopDomain, sizeQuantities, colorwayVariants, designData });
   
   // Build line items (variant:quantity pairs)
+  console.log('Available variant mappings:', Object.keys(colorwayVariants));
+  console.log('Requested sizes:', Object.keys(sizeQuantities).filter(size => sizeQuantities[size] > 0));
+  
   const lineItems = Object.entries(sizeQuantities)
     .filter(([size, qty]) => qty > 0)
     .map(([size, qty]) => {
       const variantId = colorwayVariants[size];
+      console.log(`Looking for size ${size}: found variant ID ${variantId}`);
       if (!variantId) {
         console.warn(`No variant ID found for size ${size}`);
+        console.warn('Available sizes:', Object.keys(colorwayVariants));
         return null;
       }
       return `id=${variantId}:${qty}`;
@@ -181,7 +186,15 @@ export const extractVariantMapping = (product: any): ColorwayVariants => {
     if (size && variant.id) {
       // Clean variant ID (remove gid:// prefix if present)
       const variantId = variant.id.toString().replace('gid://shopify/ProductVariant/', '');
-      variants[size] = variantId;
+      
+      // Handle combined sizes like "M3 / W5" by creating mappings for both
+      if (size.includes(' / ')) {
+        const [mensSize, womensSize] = size.split(' / ');
+        variants[mensSize.trim()] = variantId;
+        variants[womensSize.trim()] = variantId;
+      } else {
+        variants[size] = variantId;
+      }
     }
   });
   
@@ -199,7 +212,9 @@ const extractSizeFromVariant = (variant: any): string | null => {
       option.name.toLowerCase() === 'size'
     );
     if (sizeOption?.value) {
-      return formatSize(sizeOption.value);
+      // Return the raw size value (e.g., "M3 / W5") without formatting
+      // The extractVariantMapping function will handle splitting combined sizes
+      return sizeOption.value;
     }
   }
   
