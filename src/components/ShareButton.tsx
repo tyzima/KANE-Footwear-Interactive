@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Share2, Download, Copy, Check, Save, X } from 'lucide-react';
+import { Share2, Download, Copy, Check, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -7,13 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { useDesignSharing, DesignData } from '@/hooks/useDesignSharing';
 
@@ -32,8 +25,6 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareUrl, setShareUrl] = useState<string>('');
   const { saveDesign, isLoading: isSaving } = useDesignSharing();
 
   const generateInstagramPost = async () => {
@@ -238,11 +229,11 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         const baseUrl = window.location.origin + window.location.pathname;
         const shareUrl = `${baseUrl}?design=${result.shareToken}`;
         
-    // Try to copy to clipboard with Safari-compatible approach
+    // Quick copy - try multiple methods silently
     let copySuccessful = false;
     
     try {
-      // First try modern clipboard API
+      // Method 1: Modern clipboard API
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(shareUrl);
         copySuccessful = true;
@@ -250,39 +241,19 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         throw new Error('Clipboard API not available');
       }
     } catch (clipboardError) {
-      console.warn('Clipboard API failed, trying fallback:', clipboardError);
-      
-      // Safari-compatible fallback method
+      // Method 2: Quick fallback for Safari
       try {
         const textArea = document.createElement('textarea');
         textArea.value = shareUrl;
-        
-        // Make textarea visible but off-screen for Safari
-        textArea.style.position = 'absolute';
-        textArea.style.left = '-9999px';
-        textArea.style.top = '0';
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
         textArea.style.opacity = '0';
-        textArea.style.pointerEvents = 'none';
-        textArea.setAttribute('readonly', '');
         
         document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
         
-        // For iOS Safari, we need to use a different approach
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          textArea.contentEditable = 'true';
-          textArea.readOnly = false;
-          const range = document.createRange();
-          range.selectNodeContents(textArea);
-          const selection = window.getSelection();
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-          textArea.setSelectionRange(0, 999999);
-        } else {
-          textArea.select();
-          textArea.setSelectionRange(0, 999999);
-        }
-        
-        // Try to copy
         const successful = document.execCommand('copy');
         document.body.removeChild(textArea);
         
@@ -290,33 +261,47 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
           copySuccessful = true;
         }
       } catch (fallbackError) {
-        console.warn('Fallback copy method failed:', fallbackError);
-        // Clean up if textarea was created
-        const textArea = document.querySelector('textarea[readonly]');
-        if (textArea) {
+        // Method 3: iOS Safari specific
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = shareUrl;
+          textArea.contentEditable = 'true';
+          textArea.readOnly = false;
+          textArea.style.position = 'absolute';
+          textArea.style.left = '-9999px';
+          
+          document.body.appendChild(textArea);
+          
+          const range = document.createRange();
+          range.selectNodeContents(textArea);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          
+          const successful = document.execCommand('copy');
           document.body.removeChild(textArea);
+          
+          if (successful) {
+            copySuccessful = true;
+          }
+        } catch (iosError) {
+          // All methods failed - just continue silently
+          console.warn('All copy methods failed');
         }
       }
     }
     
-    if (copySuccessful) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      
-      toast({
-        title: "Design saved and link copied!",
-        description: "Anyone can view your custom design with this link.",
-      });
-    } else {
-      // If all copy methods fail, show a nice modal for manual copying
-      setShareUrl(shareUrl);
-      setShowShareModal(true);
-      
-      toast({
-        title: "Design saved!",
-        description: "Share modal opened - copy the link from there.",
-      });
-    }
+    // Always show success (even if copy failed, the design is still saved and shareable)
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    
+    toast({
+      title: copySuccessful ? "Design saved and link copied!" : "Design saved!",
+      description: copySuccessful 
+        ? "Anyone can view your custom design with this link." 
+        : `Share this link: ${shareUrl}`,
+      duration: copySuccessful ? 3000 : 8000,
+    });
       }
     } catch (error) {
       console.error('Error saving and sharing design:', error);
@@ -384,99 +369,5 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
       </DropdownMenuContent>
     </DropdownMenu>
 
-    {/* Share Modal for Safari and other browsers that can't auto-copy */}
-    <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5" />
-            Share Your Design
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Your design has been saved! Copy the link below to share it with others:
-          </p>
-          
-          <div className="flex items-center space-x-2">
-            <Input
-              value={shareUrl}
-              readOnly
-              className="flex-1"
-              onClick={(e) => {
-                const input = e.target as HTMLInputElement;
-                input.select();
-              }}
-            />
-            <Button
-              size="sm"
-              onClick={async () => {
-                try {
-                  // Try one more time to copy when user explicitly clicks
-                  if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(shareUrl);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                    toast({
-                      title: "Link copied!",
-                      description: "Share link has been copied to clipboard.",
-                    });
-                  } else {
-                    // Select the input for manual copying
-                    const input = document.querySelector('input[readonly]') as HTMLInputElement;
-                    if (input) {
-                      input.focus();
-                      input.select();
-                      toast({
-                        title: "Link selected",
-                        description: "Press Cmd+C (Mac) or Ctrl+C (PC) to copy.",
-                      });
-                    }
-                  }
-                } catch (error) {
-                  // Select the input for manual copying
-                  const input = document.querySelector('input[readonly]') as HTMLInputElement;
-                  if (input) {
-                    input.focus();
-                    input.select();
-                    toast({
-                      title: "Link selected",
-                      description: "Press Cmd+C (Mac) or Ctrl+C (PC) to copy.",
-                    });
-                  }
-                }
-              }}
-              className="shrink-0"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 mr-1" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 mr-1" />
-                  Copy
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <div className="flex justify-between items-center pt-2">
-            <p className="text-xs text-muted-foreground">
-              Anyone with this link can view your design
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowShareModal(false)}
-            >
-              Done
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };
