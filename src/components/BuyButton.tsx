@@ -1235,11 +1235,11 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   {screenshot && (
                     <div className="space-y-2">
                       <h3 className="font-semibold text-lg">Your Design</h3>
-                      <div className="border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                      <div className="border border-gray-200 rounded-lg overflow-hidden bg-transparent">
                         <img
                           src={screenshot}
                           alt="Custom shoe design"
-                          className="w-full h-40 object-contain"
+                          className="w-full h-20 object-contain"
                         />
                       </div>
                     </div>
