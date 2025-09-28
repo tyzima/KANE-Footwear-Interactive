@@ -781,7 +781,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-white rounded-bl-[40px] rounded-r-none shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
         {/* Header */}
         <div className="flex items-center justify-center pl-6 pt-3 pb-2 bg-transparent flex-shrink-0">
