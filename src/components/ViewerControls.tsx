@@ -99,7 +99,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       {isMobile && !isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className={`fixed top-32 w-9 h-9 md:w-auto border border-white/20 right-8 rounded-full shadow-elegant backdrop-blur-sm p-3 transition-all duration-300 ease-in-out ${isDarkMode ? 'bg-black/40 text-white/80 hover:bg-black/50 hover:text-white' : 'bg-white/95 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
+          className={`fixed top-32 w-9 h-9 md:w-auto border border-white/20 right-8 rounded-full shadow-elegant backdrop-blur-sm p-3 transition-all duration-300 ease-in-out ${isDarkMode ? 'bg-black/40 text-white/80 hover:bg-black/50 hover:text-white' : 'bg-white/5 text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}
           title="Open controls"
           disabled={disabled}
         >
@@ -108,7 +108,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       )}
       <div 
         className={`backdrop-blur-sm rounded-[20px] shadow-elegant p-4 pt-2 space-y-3 transition-all duration-300 ease-in-out w-20 
-          ${isDarkMode ? 'bg-black/40  ' : 'bg-white/95 '} 
+          ${isDarkMode ? 'bg-black/40  ' : 'bg-white/5 '} 
           ${isMobile ? 'fixed top-1/2 right-4 -translate-y-1/2 z-50' : ''} 
           ${isMobile ? (isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none') : ''}`}
       >

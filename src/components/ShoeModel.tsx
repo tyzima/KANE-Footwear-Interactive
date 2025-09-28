@@ -267,8 +267,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Memoized gradient paint texture creation - like painting over the shoe
     const createGradientTexture = useCallback((baseColor: string, color1: string, color2: string, isUpper: boolean = false): Texture => {
+        // Apply darkening to light colors to prevent overexposure
+        const adjustedBaseColor = darkenLightMaterials(baseColor);
+        const adjustedColor1 = darkenLightMaterials(color1);
+        const adjustedColor2 = darkenLightMaterials(color2);
         // Create cache key
-        const cacheKey = `gradient-paint-${baseColor}-${color1}-${color2}-${isUpper}`;
+        const cacheKey = `gradient-paint-${adjustedBaseColor}-${adjustedColor1}-${adjustedColor2}-${isUpper}`;
 
         // Check cache first
         if (textureCache.current.has(cacheKey)) {
@@ -284,8 +288,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Start with the base color as background
-        ctx.fillStyle = baseColor;
+        // Start with the adjusted base color as background
+        ctx.fillStyle = adjustedBaseColor;
         ctx.fillRect(0, 0, 1024, 1024);
 
         // Create gradient paint effect - like brush strokes
@@ -295,13 +299,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             // Calculate gradient position (0 to 1)
             const gradientPos = i / numStrokes;
 
-            // Interpolate between colors
-            const r1 = parseInt(color1.slice(1, 3), 16);
-            const g1 = parseInt(color1.slice(3, 5), 16);
-            const b1 = parseInt(color1.slice(5, 7), 16);
-            const r2 = parseInt(color2.slice(1, 3), 16);
-            const g2 = parseInt(color2.slice(3, 5), 16);
-            const b2 = parseInt(color2.slice(5, 7), 16);
+            // Interpolate between adjusted colors
+            const r1 = parseInt(adjustedColor1.slice(1, 3), 16);
+            const g1 = parseInt(adjustedColor1.slice(3, 5), 16);
+            const b1 = parseInt(adjustedColor1.slice(5, 7), 16);
+            const r2 = parseInt(adjustedColor2.slice(1, 3), 16);
+            const g2 = parseInt(adjustedColor2.slice(3, 5), 16);
+            const b2 = parseInt(adjustedColor2.slice(5, 7), 16);
 
             const r = Math.round(r1 + (r2 - r1) * gradientPos);
             const g = Math.round(g1 + (g2 - g1) * gradientPos);
@@ -479,7 +483,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Create inner shadow texture for sole parts
     const createInnerShadowTexture = useCallback((baseColor: string): Texture => {
-        const cacheKey = `inner-shadow-${baseColor}`;
+        // Apply darkening to light colors to prevent overexposure
+        const adjustedColor = darkenLightMaterials(baseColor);
+        const cacheKey = `inner-shadow-${adjustedColor}`;
 
         // Check cache first
         if (textureCache.current.has(cacheKey)) {
@@ -495,8 +501,8 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Start with the base color
-        ctx.fillStyle = baseColor;
+        // Start with the adjusted base color
+        ctx.fillStyle = adjustedColor;
         ctx.fillRect(0, 0, 1024, 1024);
 
         // Create radial gradient for inner shadow effect
@@ -589,11 +595,17 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
 
     // Memoized splatter texture creation with caching
     const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, splatterBaseColor: string | null = null, splatterColor2: string | null = null, useDualSplatter: boolean = false, isUpper: boolean = false, paintDensity: number = 20): Texture => {
-        // Use splatterBaseColor if provided, otherwise fall back to baseColor
-        const textureBaseColor = splatterBaseColor || baseColor;
+        // Apply darkening to light colors to prevent overexposure
+        const adjustedBaseColor = darkenLightMaterials(baseColor);
+        const adjustedSplatterColor = darkenLightMaterials(splatterColor);
+        const adjustedSplatterBaseColor = splatterBaseColor ? darkenLightMaterials(splatterBaseColor) : null;
+        const adjustedSplatterColor2 = splatterColor2 ? darkenLightMaterials(splatterColor2) : null;
+        
+        // Use adjusted splatterBaseColor if provided, otherwise fall back to adjusted baseColor
+        const textureBaseColor = adjustedSplatterBaseColor || adjustedBaseColor;
         
         // Create cache key
-        const cacheKey = `${textureBaseColor}-${splatterColor}-${splatterColor2 || 'none'}-${useDualSplatter}-${isUpper}-${paintDensity}`;
+        const cacheKey = `${textureBaseColor}-${adjustedSplatterColor}-${adjustedSplatterColor2 || 'none'}-${useDualSplatter}-${isUpper}-${paintDensity}`;
 
         // Check cache first
         if (textureCache.current.has(cacheKey)) {
@@ -640,12 +652,12 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
             // Use varying opacity for more natural look
             ctx.globalAlpha = 0.7 + Math.random() * 0.3;
             
-            // Choose splatter color based on dual splatter setting
-            if (useDualSplatter && splatterColor2) {
-                // Use both colors with some randomness
-                ctx.fillStyle = Math.random() < 0.6 ? splatterColor : splatterColor2;
+            // Choose adjusted splatter color based on dual splatter setting
+            if (useDualSplatter && adjustedSplatterColor2) {
+                // Use both adjusted colors with some randomness
+                ctx.fillStyle = Math.random() < 0.6 ? adjustedSplatterColor : adjustedSplatterColor2;
             } else {
-                ctx.fillStyle = splatterColor;
+                ctx.fillStyle = adjustedSplatterColor;
             }
 
             ctx.beginPath();
@@ -1027,6 +1039,10 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     child.material = material;
                 }
 
+                // Ensure shadow properties are maintained for consistency
+                child.castShadow = true;
+                child.receiveShadow = true;
+
                 // Force material update to ensure texture is properly applied
                 material.needsUpdate = true;
             }
@@ -1152,7 +1168,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                 if (material.map !== originalTexture) {
                     material.map = originalTexture;
                 }
-                material.color.set(topColor);
+                // Apply darkening to light colors to prevent overexposure
+                const adjustedColor = darkenLightMaterials(topColor);
+                material.color.set(adjustedColor);
                 if (originalTexture) {
                     material.roughness = originalMaterial?.roughness ?? 0.8;
                     material.metalness = originalMaterial?.metalness ?? 0.1;
@@ -1266,6 +1284,29 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         }
     });
 
+    // Helper function to darken white/light materials to prevent overexposure
+    const darkenLightMaterials = useCallback((color: string): string => {
+        const hex = color.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Calculate brightness (0-255)
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        
+        // If brightness is above 200 (very light), apply darkening
+        if (brightness > 200) {
+            const darkenFactor = 0.85; // Darken by 15%
+            const newR = Math.floor(r * darkenFactor);
+            const newG = Math.floor(g * darkenFactor);
+            const newB = Math.floor(b * darkenFactor);
+            
+            return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+        }
+        
+        return color;
+    }, []);
+
     // Helper function to clone material for unique interaction
     const makeMaterialUnique = useCallback((object: Mesh) => {
         if (object.userData.isMaterialCloned) {
@@ -1289,7 +1330,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return (
         <group
             ref={groupRef}
-            position={[0, .1, 0]}
+            position={[0, 0.03, 0]}
         >
             <primitive
                 object={gltf.scene}
