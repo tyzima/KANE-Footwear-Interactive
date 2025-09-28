@@ -380,11 +380,13 @@ const Index = () => {
       <main className="h-screen max-h-screen overflow-y-hidden relative">
         {/* Product Branding - Top Left */}
         <div className="absolute top-10 ml-10 md:ml-20 z-30 flex flex-col sm:flex-col items-start sm:items-center gap-2 sm:gap-4">
-  <img
-    src="/mainkanelogo.png"
-    alt="KANE Logo"
-    className={`h-6 md:h-8 w-auto  md:-ml-20 transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
-  />
+  {!isEmbedded && (
+    <img
+      src="/mainkanelogo.png"
+      alt="KANE Logo"
+      className={`h-6 md:h-8 w-auto  md:-ml-20 transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
+    />
+  )}
   <div className="max-w-[280px]">
     <div className="flex md:ml-0 items-center gap-3 sm:gap-3">
       <h1 className={`text-2xl mt-2 font-normal transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
