@@ -944,7 +944,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
                   {/* Size Grid with fade out */}
                   <div className="relative pt-3">
-                    <div className="grid grid-cols-2 gap-4 max-h-[50vh] pb-4 overflow-y-auto pr-2">
+                    <div className="grid grid-cols-3 gap-3 max-h-[50vh] pb-4 overflow-y-auto pr-2">
                       {getAvailableSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
                         const available = getAvailableQuantity(size);
