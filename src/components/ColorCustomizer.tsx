@@ -603,7 +603,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                    transition={{ duration: 0.2, ease: "easeInOut" }}
                    className="absolute inset-0 p-4 pt-2"
                  >
-                <div className="text-center mb-3">
+                <div className="text-center mb-0">
                   {/* Mobile Selected Colorway Badge */}
                   {selectedColorwayId && (
                     <div className="flex md:hidden justify-center mb-2">
