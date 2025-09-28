@@ -257,7 +257,7 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
       {/* Realistic contact shadows with proper falloff */}
       {isLightingReady && (
         <ContactShadows
-          position={[0, -0.17, 0]}
+          position={[0, -0.06, 0]}
           opacity={shadowIntensity * 0.9}
           scale={5}
           blur={1.2}

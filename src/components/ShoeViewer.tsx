@@ -690,7 +690,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
         <Canvas
           ref={canvasRef}
           camera={{
-            position: [2.863, 1.961, 1.44],
+            position: [2.863, 2.2, 1.44],
             fov: 40,
             near: 0.1,
             far: 100,

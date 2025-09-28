@@ -1330,7 +1330,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     return (
         <group
             ref={groupRef}
-            position={[0, 0.03, 0]}
+            position={[0, 0.15, 0]}
         >
             <primitive
                 object={gltf.scene}
