@@ -8,7 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
 import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
-import { buildCartUrl, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
+import { addToCartAjax, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -586,7 +586,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     };
   };
 
-  // Redirect to Shopify cart with selected items
+  // Add items to Shopify cart using Cart Ajax API
   const redirectToCart = async () => {
     if (!shopDomain) {
       toast({
@@ -609,38 +609,34 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     try {
       const designData = buildDesignData();
       console.log('Design data for cart:', designData);
-      const cartUrl = buildCartUrl(shopDomain, formData.sizeQuantities, variantMapping, designData);
       
-      // Validate URL length
-      const validation = validateCartUrl(cartUrl);
-      if (!validation.isValid) {
-        console.warn(`Cart URL too long: ${validation.length}/${validation.maxLength} characters`);
-        toast({
-          title: "Design Too Complex",
-          description: "Your design has too many customizations. Please simplify and try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Redirecting to cart:', cartUrl);
-      
-      // Show success message
+      // Show loading message
       toast({
         title: "Adding to Cart",
-        description: `Adding ${getTotalPairs()} pairs to your Shopify cart...`,
+        description: `Adding ${getTotalPairs()} pairs with custom design to your cart...`,
       });
 
-      // Small delay to show the toast, then redirect
+      // Use Cart Ajax API to add items with line item properties
+      const cartUrl = await addToCartAjax(shopDomain, formData.sizeQuantities, variantMapping, designData);
+      
+      console.log('Items added to cart, redirecting to:', cartUrl);
+      
+      // Success message
+      toast({
+        title: "Added to Cart!",
+        description: `${getTotalPairs()} pairs added with your custom design. Redirecting to cart...`,
+      });
+
+      // Small delay to show the success toast, then redirect
       setTimeout(() => {
         window.open(cartUrl, '_blank');
-      }, 1000);
+      }, 1500);
       
       // Close the modal
       setIsOpen(false);
       
     } catch (error) {
-      console.error('Error building cart URL:', error);
+      console.error('Error adding to cart:', error);
       toast({
         title: "Cart Error",
         description: error instanceof Error ? error.message : "Failed to add items to cart",

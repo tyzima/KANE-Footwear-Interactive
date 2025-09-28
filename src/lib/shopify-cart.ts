@@ -44,21 +44,20 @@ export interface ColorwayVariants {
 }
 
 /**
- * Build Shopify cart URL with line items and custom properties
+ * Build Cart Ajax API payload with line items and custom properties
  */
-export const buildCartUrl = (
-  shopDomain: string,
+export const buildCartAjaxPayload = (
   sizeQuantities: SizeQuantities,
   colorwayVariants: ColorwayVariants,
   designData: DesignData
-): string => {
-  console.log('Building cart URL:', { shopDomain, sizeQuantities, colorwayVariants, designData });
+) => {
+  console.log('Building Cart Ajax payload:', { sizeQuantities, colorwayVariants, designData });
   
-  // Build line items using Shopify cart permalink format: VARIANT_ID:QUANTITY
+  // Build line items for Cart Ajax API
   console.log('Available variant mappings:', Object.keys(colorwayVariants));
   console.log('Requested sizes:', Object.keys(sizeQuantities).filter(size => sizeQuantities[size] > 0));
   
-  const lineItems = Object.entries(sizeQuantities)
+  const items = Object.entries(sizeQuantities)
     .filter(([size, qty]) => qty > 0)
     .map(([size, qty]) => {
       const variantId = colorwayVariants[size];
@@ -68,34 +67,147 @@ export const buildCartUrl = (
         console.warn('Available sizes:', Object.keys(colorwayVariants));
         return null;
       }
-      return `${variantId}:${qty}`; // Shopify cart permalink format
+      
+      // Build line item properties for this specific item
+      const properties = buildLineItemProperties(designData, size);
+      
+      return {
+        id: variantId,
+        quantity: qty,
+        properties: properties
+      };
     })
-    .filter(Boolean)
-    .join(','); // Multiple items separated by commas
+    .filter(Boolean);
 
-  if (!lineItems) {
+  if (items.length === 0) {
     throw new Error('No valid line items to add to cart');
   }
 
-  // Build custom properties for cart permalink
-  const properties = buildCartProperties(designData);
-  
-  // Construct Shopify cart permalink URL (correct format)
-  const baseUrl = `https://${shopDomain}/cart`;
-  let cartUrl = `${baseUrl}/${lineItems}`;
-  
-  // Add properties as query parameters if any
-  if (properties.length > 0) {
-    cartUrl += `?${properties.join('&')}`;
-  }
-  
-  console.log('Generated cart permalink:', cartUrl);
-  return cartUrl;
+  console.log('Generated Cart Ajax items:', items);
+  return { items };
 };
 
 /**
- * Build cart properties array from design data for cart permalinks
- * Note: Shopify cart permalinks use different property format than cart/add URLs
+ * Add items to cart using Shopify Cart Ajax API
+ */
+export const addToCartAjax = async (
+  shopDomain: string,
+  sizeQuantities: SizeQuantities,
+  colorwayVariants: ColorwayVariants,
+  designData: DesignData
+): Promise<string> => {
+  const payload = buildCartAjaxPayload(sizeQuantities, colorwayVariants, designData);
+  
+  try {
+    const response = await fetch(`https://${shopDomain}/cart/add.js`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Cart API error: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log('Cart Ajax response:', result);
+    
+    // Return the cart URL to redirect to
+    return `https://${shopDomain}/cart`;
+    
+  } catch (error) {
+    console.error('Error adding to cart via Ajax:', error);
+    throw error;
+  }
+};
+
+/**
+ * Build line item properties for Cart Ajax API
+ * These properties will be attached to each individual line item
+ */
+const buildLineItemProperties = (designData: DesignData, size: string): Record<string, string> => {
+  const properties: Record<string, string> = {};
+  
+  // Essential design properties
+  if (designData.colorwayName) {
+    properties['Colorway'] = designData.colorwayName;
+  }
+  
+  if (designData.upperColor) {
+    properties['Upper Color'] = designData.upperColor;
+  }
+  
+  if (designData.soleColor) {
+    properties['Sole Color'] = designData.soleColor;
+  }
+  
+  if (designData.laceColor) {
+    properties['Lace Color'] = designData.laceColor;
+  }
+  
+  // Splatter properties
+  if (designData.upperHasSplatter && designData.upperSplatterColor) {
+    const splatterInfo = designData.upperUseDualSplatter && designData.upperSplatterColor2
+      ? `${designData.upperSplatterColor} + ${designData.upperSplatterColor2}`
+      : designData.upperSplatterColor;
+    properties['Upper Splatter'] = splatterInfo;
+  }
+  
+  if (designData.soleHasSplatter && designData.soleSplatterColor) {
+    const splatterInfo = designData.soleUseDualSplatter && designData.soleSplatterColor2
+      ? `${designData.soleSplatterColor} + ${designData.soleSplatterColor2}`
+      : designData.soleSplatterColor;
+    properties['Sole Splatter'] = splatterInfo;
+  }
+  
+  // Logo properties
+  if (designData.logoUrl) {
+    properties['Side Logo'] = 'Custom Logo Uploaded';
+  }
+  
+  if (designData.circleLogoUrl) {
+    properties['Back Logo'] = 'Custom Logo Uploaded';
+  }
+  
+  // Logo colors (if logos are present)
+  if ((designData.logoUrl || designData.circleLogoUrl) && designData.logoColor1) {
+    const logoColors = [
+      designData.logoColor1,
+      designData.logoColor2,
+      designData.logoColor3
+    ].filter(Boolean).join(', ');
+    properties['Logo Colors'] = logoColors;
+  }
+  
+  // Design context
+  if (designData.colorwayId && designData.colorwayId !== 'custom') {
+    properties['Colorway ID'] = designData.colorwayId;
+  }
+  
+  if (designData.notes) {
+    // Truncate notes to fit in property value limit
+    const truncatedNotes = designData.notes.length > 200 
+      ? designData.notes.substring(0, 200) + '...'
+      : designData.notes;
+    properties['Special Notes'] = truncatedNotes;
+  }
+  
+  if (designData.timestamp) {
+    properties['Design Created'] = designData.timestamp;
+  }
+  
+  // Add size information
+  properties['Size'] = size;
+  
+  console.log(`Generated line item properties for size ${size}:`, properties);
+  return properties;
+};
+
+/**
+ * Build cart attributes for cart permalinks (legacy - kept for fallback)
  */
 const buildCartProperties = (designData: DesignData): string[] => {
   const properties: string[] = [];
