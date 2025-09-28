@@ -601,9 +601,11 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         const adjustedSplatterBaseColor = splatterBaseColor ? darkenLightMaterials(splatterBaseColor) : null;
         const adjustedSplatterColor2 = splatterColor2 ? darkenLightMaterials(splatterColor2) : null;
         
-        // For dual splatter, use the original baseColor if no splatterBaseColor is provided
-        // This ensures the base color shows through properly for dual splatter effects
-        const textureBaseColor = splatterBaseColor ? adjustedSplatterBaseColor : baseColor;
+        // For dual splatter, use the original baseColor as the background if no splatterBaseColor is provided
+        // This ensures the base color shows through properly instead of being darkened
+        const textureBaseColor = useDualSplatter && !splatterBaseColor 
+            ? baseColor 
+            : (adjustedSplatterBaseColor || adjustedBaseColor);
         
         // Create cache key
         const cacheKey = `${textureBaseColor}-${adjustedSplatterColor}-${adjustedSplatterColor2 || 'none'}-${useDualSplatter}-${isUpper}-${paintDensity}`;
