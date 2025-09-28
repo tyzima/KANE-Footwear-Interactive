@@ -799,7 +799,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 59px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 9px)' }}>
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Stepper - Simplified titles for less text */}
             <nav className="mb-2">
