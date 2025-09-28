@@ -13,12 +13,12 @@
         "useDualSplatter": false
       },
       "sole": {
-        "baseColor": "#5fdf",
-        "hasSplatter": true,
-        "splatterColor": "#4d4d4d",
-        "splatterBaseColor": "#fffff",
-        "splatterColor2": "#5fd4fd",
-        "useDualSplatter": true
+        "baseColor": "#ffffff",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor":  null,
+        "splatterColor2": null,
+        "useDualSplatter": false
       },
       "laces": {
         "color": "#FFFFFF"
