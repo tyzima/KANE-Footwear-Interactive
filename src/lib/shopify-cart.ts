@@ -88,40 +88,85 @@ export const buildCartAjaxPayload = (
 };
 
 /**
- * Add items to cart using Shopify Cart Ajax API
+ * Build cart URL using cart/add approach with line item properties
+ * This approach works around CORS limitations by using GET requests
  */
-export const addToCartAjax = async (
+export const buildCartAddUrl = (
   shopDomain: string,
   sizeQuantities: SizeQuantities,
   colorwayVariants: ColorwayVariants,
   designData: DesignData
-): Promise<string> => {
-  const payload = buildCartAjaxPayload(sizeQuantities, colorwayVariants, designData);
+): string => {
+  console.log('Building cart/add URL:', { shopDomain, sizeQuantities, colorwayVariants, designData });
   
-  try {
-    const response = await fetch(`https://${shopDomain}/cart/add.js`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Cart API error: ${response.status} - ${errorText}`);
-    }
-    
-    const result = await response.json();
-    console.log('Cart Ajax response:', result);
-    
-    // Return the cart URL to redirect to
-    return `https://${shopDomain}/cart`;
-    
-  } catch (error) {
-    console.error('Error adding to cart via Ajax:', error);
-    throw error;
+  // Build line items for cart/add URL
+  console.log('Available variant mappings:', Object.keys(colorwayVariants));
+  console.log('Requested sizes:', Object.keys(sizeQuantities).filter(size => sizeQuantities[size] > 0));
+  
+  const items = Object.entries(sizeQuantities)
+    .filter(([size, qty]) => qty > 0)
+    .map(([size, qty]) => {
+      const variantId = colorwayVariants[size];
+      console.log(`Looking for size ${size}: found variant ID ${variantId}`);
+      if (!variantId) {
+        console.warn(`No variant ID found for size ${size}`);
+        console.warn('Available sizes:', Object.keys(colorwayVariants));
+        return null;
+      }
+      
+      // Build line item properties for this specific item
+      const properties = buildLineItemProperties(designData, size);
+      
+      return {
+        id: variantId,
+        quantity: qty,
+        properties: properties
+      };
+    })
+    .filter(Boolean);
+
+  if (items.length === 0) {
+    throw new Error('No valid line items to add to cart');
   }
+
+  // Build cart/add URL with multiple items
+  const baseUrl = `https://${shopDomain}/cart/add`;
+  const params = new URLSearchParams();
+  
+  if (items.length === 1) {
+    // Single item - use simple format
+    const item = items[0];
+    params.set('id', item.id);
+    params.set('quantity', item.quantity.toString());
+    
+    // Add properties
+    Object.entries(item.properties).forEach(([key, value]) => {
+      params.set(`properties[${key}]`, value);
+    });
+  } else {
+    // Multiple items - use array format
+    items.forEach((item, index) => {
+      params.set(`items[${index}][id]`, item.id);
+      params.set(`items[${index}][quantity]`, item.quantity.toString());
+      
+      // Add properties for each item
+      Object.entries(item.properties).forEach(([key, value]) => {
+        params.set(`items[${index}][properties][${key}]`, value);
+      });
+    });
+  }
+  
+  const cartUrl = `${baseUrl}?${params.toString()}`;
+  console.log('Generated cart/add URL:', cartUrl);
+  
+  // Validate URL length
+  const validation = validateCartUrl(cartUrl);
+  if (!validation.isValid) {
+    console.warn(`Cart URL too long: ${validation.length}/${validation.maxLength} characters`);
+    throw new Error('Design too complex - URL exceeds browser limits');
+  }
+  
+  return cartUrl;
 };
 
 /**

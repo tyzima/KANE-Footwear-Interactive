@@ -8,7 +8,7 @@ import { toast } from '@/components/ui/use-toast';
 import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
 import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
-import { addToCartAjax, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
+import { buildCartAddUrl, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -35,19 +35,27 @@ interface BuyButtonProps {
       baseColor: string;
       hasSplatter: boolean;
       splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
       hasGradient: boolean;
       gradientColor1: string;
       gradientColor2: string;
       texture: string | null;
+      paintDensity: number;
     };
     sole: {
       baseColor: string;
       hasSplatter: boolean;
       splatterColor: string;
+      splatterColor2?: string | null;
+      splatterBaseColor?: string | null;
+      useDualSplatter?: boolean;
       hasGradient: boolean;
       gradientColor1: string;
       gradientColor2: string;
       texture: string | null;
+      paintDensity: number;
     };
     laces: {
       color: string;
@@ -55,6 +63,11 @@ interface BuyButtonProps {
     logo: {
       color: string;
       url: string | null;
+      color1?: string;
+      color2?: string;
+      color3?: string;
+      logoUrl?: string | null;
+      circleLogoUrl?: string | null;
     };
   };
 }
@@ -526,26 +539,39 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         baseColor: '#8b4513',
         hasSplatter: false,
         splatterColor: '#f8f8ff',
+        splatterColor2: null,
+        splatterBaseColor: null,
+        useDualSplatter: false,
         hasGradient: false,
         gradientColor1: '#4a8c2b',
         gradientColor2: '#c25d1e',
-        texture: null
+        texture: null,
+        paintDensity: 1
       },
       sole: {
         baseColor: '#2d5016',
         hasSplatter: false,
         splatterColor: '#f8f8ff',
+        splatterColor2: null,
+        splatterBaseColor: null,
+        useDualSplatter: false,
         hasGradient: false,
         gradientColor1: '#4a8c2b',
         gradientColor2: '#c25d1e',
-        texture: null
+        texture: null,
+        paintDensity: 1
       },
       laces: {
         color: '#FFFFFF'
       },
       logo: {
         color: '#FFFFFF',
-        url: null
+        url: null,
+        color1: undefined,
+        color2: undefined,
+        color3: undefined,
+        logoUrl: null,
+        circleLogoUrl: null
       }
     };
   };
@@ -564,20 +590,20 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       // Enhanced splatter data
       upperHasSplatter: colorConfig.upper.hasSplatter,
       upperSplatterColor: colorConfig.upper.hasSplatter ? colorConfig.upper.splatterColor : undefined,
-      upperSplatterColor2: colorConfig.upper.splatterColor2 || undefined,
-      upperUseDualSplatter: colorConfig.upper.useDualSplatter || false,
+      upperSplatterColor2: colorConfig.upper.splatterColor2 ?? undefined,
+      upperUseDualSplatter: colorConfig.upper.useDualSplatter ?? false,
       
       soleHasSplatter: colorConfig.sole.hasSplatter,
       soleSplatterColor: colorConfig.sole.hasSplatter ? colorConfig.sole.splatterColor : undefined,
-      soleSplatterColor2: colorConfig.sole.splatterColor2 || undefined,
-      soleUseDualSplatter: colorConfig.sole.useDualSplatter || false,
+      soleSplatterColor2: colorConfig.sole.splatterColor2 ?? undefined,
+      soleUseDualSplatter: colorConfig.sole.useDualSplatter ?? false,
       
       // Logo data
-      logoUrl: colorConfig.logo.url || undefined,
-      circleLogoUrl: colorConfig.logo.circleUrl || undefined,
-      logoColor1: colorConfig.logo.color1 || undefined,
-      logoColor2: colorConfig.logo.color2 || undefined,
-      logoColor3: colorConfig.logo.color3 || undefined,
+      logoUrl: colorConfig.logo.logoUrl || colorConfig.logo.url || undefined,
+      circleLogoUrl: colorConfig.logo.circleLogoUrl ?? undefined,
+      logoColor1: colorConfig.logo.color1 ?? undefined,
+      logoColor2: colorConfig.logo.color2 ?? undefined,
+      logoColor3: colorConfig.logo.color3 ?? undefined,
       
       // Design context
       screenshot: screenshot || undefined,
@@ -586,7 +612,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     };
   };
 
-  // Add items to Shopify cart using Cart Ajax API
+  // Add items to Shopify cart using cart/add URL with line item properties
   const redirectToCart = async () => {
     if (!shopDomain) {
       toast({
@@ -610,33 +636,27 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       const designData = buildDesignData();
       console.log('Design data for cart:', designData);
       
-      // Show loading message
+      // Build cart/add URL with line item properties
+      const cartUrl = buildCartAddUrl(shopDomain, formData.sizeQuantities, variantMapping, designData);
+      
+      console.log('Generated cart/add URL:', cartUrl);
+      
+      // Show success message
       toast({
         title: "Adding to Cart",
         description: `Adding ${getTotalPairs()} pairs with custom design to your cart...`,
       });
 
-      // Use Cart Ajax API to add items with line item properties
-      const cartUrl = await addToCartAjax(shopDomain, formData.sizeQuantities, variantMapping, designData);
-      
-      console.log('Items added to cart, redirecting to:', cartUrl);
-      
-      // Success message
-      toast({
-        title: "Added to Cart!",
-        description: `${getTotalPairs()} pairs added with your custom design. Redirecting to cart...`,
-      });
-
-      // Small delay to show the success toast, then redirect
+      // Small delay to show the toast, then redirect
       setTimeout(() => {
         window.open(cartUrl, '_blank');
-      }, 1500);
+      }, 1000);
       
       // Close the modal
       setIsOpen(false);
       
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('Error building cart URL:', error);
       toast({
         title: "Cart Error",
         description: error instanceof Error ? error.message : "Failed to add items to cart",
