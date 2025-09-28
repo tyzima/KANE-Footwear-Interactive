@@ -775,7 +775,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       {/* Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-[#F8F9FA]/50 z-40 transition-opacity duration-300"
           onClick={() => handleOpenChange(false)}
         />
       )}
