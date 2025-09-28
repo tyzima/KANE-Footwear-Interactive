@@ -1105,7 +1105,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.roughness = 0.8;
                 }
             } else if (soleHasSplatter) {
-                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, soleSplatterBaseColor, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
+                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, null, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
@@ -1126,7 +1126,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(soleFilter, soleUpdate);
-    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleSplatterBaseColor, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
+    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
 
     // Update upper/top parts only when upper-related props change
     useEffect(() => {
