@@ -493,7 +493,7 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   }, [onHeightChange]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 px-4 pb-4">
+    <div className="fixed bottom-0 left-0 right-0 z-20 px-4 max-w-[80%] mx-auto pb-4">
       <div ref={customizerRef} className="space-y-3">
         {/* Main Control Card */}
          <div className={`backdrop-blur-sm max-w-6xl mx-auto rounded-[20px] transition-all duration-300 ${isDarkMode ? 'bg-black/5' : 'bg-white/5'} w-full md:w-4/5`}>
