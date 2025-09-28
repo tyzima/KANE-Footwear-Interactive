@@ -1,6 +1,30 @@
 {
   "colorways": [
     {
+      "id": "all-white",
+      "name": "All White",
+      "description": "Clean all-white design",
+      "upper": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "sole": {
+        "baseColor": "#FFFFFF",
+        "hasSplatter": false,
+        "splatterColor": null,
+        "splatterBaseColor": null,
+        "splatterColor2": null,
+        "useDualSplatter": false
+      },
+      "laces": {
+        "color": "#FFFFFF"
+      }
+    },
+    {
       "id": "classic-forest",
       "name": "Classic Forest",
       "description": "Timeless forest green with natural tones",

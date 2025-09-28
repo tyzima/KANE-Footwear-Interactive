@@ -163,8 +163,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   );
 
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
-  const [bottomColor, setBottomColor] = useState('#2d5016'); // Forest Green
-  const [topColor, setTopColor] = useState('#8b4513'); // Redwood
+  const [bottomColor, setBottomColor] = useState('#FFFFFF'); // White default
+  const [topColor, setTopColor] = useState('#FFFFFF'); // White default
   const [upperHasSplatter, setUpperHasSplatter] = useState(false);
   const [soleHasSplatter, setSoleHasSplatter] = useState(false);
   const [upperSplatterColor, setUpperSplatterColor] = useState('#f8f8ff'); // Glacier White
@@ -209,24 +209,61 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
     return colorways;
   }, [colorways, productContext, isUsingDynamicData]);
   
-  // Colorway state
-  const [selectedColorwayId, setSelectedColorwayId] = useState('classic-forest');
+  // Colorway state - use first colorway as default
+  const [selectedColorwayId, setSelectedColorwayId] = useState<string | null>(null);
   
+  // Set initial colorway to first in list when colorways are loaded
+  useEffect(() => {
+    if (availableColorways.length > 0 && selectedColorwayId === null) {
+      const firstColorway = availableColorways[0];
+      setSelectedColorwayId(firstColorway.id);
+      
+      // Immediately apply the first colorway's colors
+      setTopColor(firstColorway.upper.baseColor);
+      setBottomColor(firstColorway.sole.baseColor);
+      setLaceColor(firstColorway.laces.color);
+      setUpperHasSplatter(firstColorway.upper.hasSplatter);
+      setSoleHasSplatter(firstColorway.sole.hasSplatter);
+      if (firstColorway.upper.splatterColor) {
+        setUpperSplatterColor(firstColorway.upper.splatterColor);
+      }
+      if (firstColorway.sole.splatterColor) {
+        setSoleSplatterColor(firstColorway.sole.splatterColor);
+      }
+    }
+  }, [availableColorways, selectedColorwayId]);
+
   // Get current colorway data from available colorways
   const selectedColorway = availableColorways.find(c => c.id === selectedColorwayId) || availableColorways[0];
 
   // Handle colorway changes
   const handleColorwayChange = (colorway: any) => {
     setSelectedColorwayId(colorway.id);
+    
+    // Apply all colorway properties immediately
+    setTopColor(colorway.upper.baseColor);
+    setBottomColor(colorway.sole.baseColor);
+    setLaceColor(colorway.laces.color);
+    setUpperHasSplatter(colorway.upper.hasSplatter);
+    setSoleHasSplatter(colorway.sole.hasSplatter);
+    
+    // Update splatter colors
+    if (colorway.upper.splatterColor) {
+      setUpperSplatterColor(colorway.upper.splatterColor);
+    }
+    if (colorway.sole.splatterColor) {
+      setSoleSplatterColor(colorway.sole.splatterColor);
+    }
+    
     // Update splatter base colors from the colorway
     setUpperSplatterBaseColor(colorway.upper.splatterBaseColor);
     setSoleSplatterBaseColor(colorway.sole.splatterBaseColor);
+    
     // Update dual splatter colors and settings
     setUpperSplatterColor2(colorway.upper.splatterColor2);
     setSoleSplatterColor2(colorway.sole.splatterColor2);
     setUpperUseDualSplatter(colorway.upper.useDualSplatter);
     setSoleUseDualSplatter(colorway.sole.useDualSplatter);
-    // The ColorCustomizer will handle updating the individual color states
   };
 
   // ColorCustomizer height tracking for AIChat positioning
