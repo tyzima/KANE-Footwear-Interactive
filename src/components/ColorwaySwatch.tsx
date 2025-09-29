@@ -41,7 +41,7 @@ export const ColorwaySwatch: React.FC<ColorwaySwatchProps> = ({
     <motion.button
       onClick={onClick}
       className={`
-        relative p-4 rounded-xl border-2 transition-all duration-300 group flex-shrink-0
+        relative p-2 rounded-lg border-2 transition-all duration-300 group flex-shrink-0
         ${isSelected 
           ? 'border-primary ring-2 ring-primary/20 scale-105' 
           : isDarkMode 
@@ -53,52 +53,46 @@ export const ColorwaySwatch: React.FC<ColorwaySwatchProps> = ({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      {/* Color Preview - Horizontal Layout */}
-      <div className="flex items-center gap-2">
+      {/* Color Preview - Vertical Stacked Rectangles */}
+      <div className="flex flex-col gap-1">
         {/* Upper Color */}
         <div className="relative">
           <div
-            className="w-8 h-8 rounded-full border border-white shadow-sm"
+            className="w-6 h-4 rounded-sm border border-white shadow-sm"
             style={{ backgroundColor: colorway.upper.baseColor }}
           />
           {colorway.upper.hasSplatter && colorway.upper.splatterColor && (
-            <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div className="absolute inset-0 rounded-sm overflow-hidden">
               <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
+                width="24"
+                height="16"
+                viewBox="0 0 24 16"
                 fill="none"
                 className="opacity-70"
               >
-                <circle cx="4" cy="4" r="1.2" fill={colorway.upper.splatterColor} />
-                <circle cx="10" cy="3" r="0.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="20" cy="5" r="1.5" fill={colorway.upper.splatterColor} />
-                <circle cx="28" cy="8" r="0.9" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="6" cy="11" r="1.1" fill={colorway.upper.splatterColor} />
-                <circle cx="16" cy="13" r="1.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="24" cy="16" r="0.7" fill={colorway.upper.splatterColor} />
-                <circle cx="3" cy="20" r="1.3" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="12" cy="22" r="1" fill={colorway.upper.splatterColor} />
-                <circle cx="21" cy="25" r="1.4" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="29" cy="28" r="0.6" fill={colorway.upper.splatterColor} />
-                <circle cx="8" cy="29" r="1.6" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="17" cy="27" r="0.8" fill={colorway.upper.splatterColor} />
-                <circle cx="26" cy="24" r="1.2" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="2" cy="7" r="0.9" fill={colorway.upper.splatterColor} />
-                <circle cx="14" cy="6" r="1.3" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="25" cy="12" r="0.7" fill={colorway.upper.splatterColor} />
-                <circle cx="7" cy="18" r="1.5" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="18" cy="19" r="1.1" fill={colorway.upper.splatterColor} />
-                <circle cx="30" cy="20" r="0.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="1" cy="15" r="1.4" fill={colorway.upper.splatterColor} />
-                <circle cx="11" cy="14" r="0.6" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="22" cy="9" r="1.7" fill={colorway.upper.splatterColor} />
-                <circle cx="5" cy="25" r="0.9" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="15" cy="30" r="1.2" fill={colorway.upper.splatterColor} />
-                <circle cx="27" cy="17" r="0.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="9" cy="1" r="1.1" fill={colorway.upper.splatterColor} />
-                <circle cx="19" cy="2" r="0.7" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
-                <circle cx="31" cy="15" r="1.3" fill={colorway.upper.splatterColor} />
+                <circle cx="3" cy="3" r="0.8" fill={colorway.upper.splatterColor} />
+                <circle cx="8" cy="2" r="0.6" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="15" cy="4" r="1" fill={colorway.upper.splatterColor} />
+                <circle cx="21" cy="6" r="0.7" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="4" cy="8" r="0.8" fill={colorway.upper.splatterColor} />
+                <circle cx="12" cy="10" r="1.2" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="18" cy="12" r="0.5" fill={colorway.upper.splatterColor} />
+                <circle cx="2" cy="14" r="0.9" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="9" cy="13" r="0.7" fill={colorway.upper.splatterColor} />
+                <circle cx="16" cy="15" r="1.1" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="22" cy="11" r="0.4" fill={colorway.upper.splatterColor} />
+                <circle cx="6" cy="5" r="0.6" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="10" cy="7" r="0.9" fill={colorway.upper.splatterColor} />
+                <circle cx="19" cy="9" r="0.7" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="1" cy="11" r="0.5" fill={colorway.upper.splatterColor} />
+                <circle cx="14" cy="1" r="0.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="20" cy="3" r="0.6" fill={colorway.upper.splatterColor} />
+                <circle cx="7" cy="15" r="0.7" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="13" cy="6" r="0.4" fill={colorway.upper.splatterColor} />
+                <circle cx="17" cy="8" r="1.1" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="5" cy="12" r="0.6" fill={colorway.upper.splatterColor} />
+                <circle cx="11" cy="4" r="0.8" fill={colorway.upper.useDualSplatter && colorway.upper.splatterColor2 ? colorway.upper.splatterColor2 : colorway.upper.splatterColor} />
+                <circle cx="23" cy="14" r="0.5" fill={colorway.upper.splatterColor} />
               </svg>
             </div>
           )}
@@ -107,47 +101,41 @@ export const ColorwaySwatch: React.FC<ColorwaySwatchProps> = ({
         {/* Sole Color */}
         <div className="relative">
           <div
-            className="w-8 h-8 rounded-full border border-white shadow-sm"
+            className="w-6 h-4 rounded-sm border border-white shadow-sm"
             style={{ backgroundColor: colorway.sole.baseColor }}
           />
           {colorway.sole.hasSplatter && colorway.sole.splatterColor && (
-            <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div className="absolute inset-0 rounded-sm overflow-hidden">
               <svg
-                width="32"
-                height="32"
-                viewBox="0 0 32 32"
+                width="24"
+                height="16"
+                viewBox="0 0 24 16"
                 fill="none"
                 className="opacity-70"
               >
-                <circle cx="4" cy="4" r="1.2" fill={colorway.sole.splatterColor} />
-                <circle cx="10" cy="3" r="0.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="20" cy="5" r="1.5" fill={colorway.sole.splatterColor} />
-                <circle cx="28" cy="8" r="0.9" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="6" cy="11" r="1.1" fill={colorway.sole.splatterColor} />
-                <circle cx="16" cy="13" r="1.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="24" cy="16" r="0.7" fill={colorway.sole.splatterColor} />
-                <circle cx="3" cy="20" r="1.3" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="12" cy="22" r="1" fill={colorway.sole.splatterColor} />
-                <circle cx="21" cy="25" r="1.4" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="29" cy="28" r="0.6" fill={colorway.sole.splatterColor} />
-                <circle cx="8" cy="29" r="1.6" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="17" cy="27" r="0.8" fill={colorway.sole.splatterColor} />
-                <circle cx="26" cy="24" r="1.2" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="2" cy="7" r="0.9" fill={colorway.sole.splatterColor} />
-                <circle cx="14" cy="6" r="1.3" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="25" cy="12" r="0.7" fill={colorway.sole.splatterColor} />
-                <circle cx="7" cy="18" r="1.5" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="18" cy="19" r="1.1" fill={colorway.sole.splatterColor} />
-                <circle cx="30" cy="20" r="0.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="1" cy="15" r="1.4" fill={colorway.sole.splatterColor} />
-                <circle cx="11" cy="14" r="0.6" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="22" cy="9" r="1.7" fill={colorway.sole.splatterColor} />
-                <circle cx="5" cy="25" r="0.9" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="15" cy="30" r="1.2" fill={colorway.sole.splatterColor} />
-                <circle cx="27" cy="17" r="0.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="9" cy="1" r="1.1" fill={colorway.sole.splatterColor} />
-                <circle cx="19" cy="2" r="0.7" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
-                <circle cx="31" cy="15" r="1.3" fill={colorway.sole.splatterColor} />
+                <circle cx="3" cy="3" r="0.8" fill={colorway.sole.splatterColor} />
+                <circle cx="8" cy="2" r="0.6" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="15" cy="4" r="1" fill={colorway.sole.splatterColor} />
+                <circle cx="21" cy="6" r="0.7" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="4" cy="8" r="0.8" fill={colorway.sole.splatterColor} />
+                <circle cx="12" cy="10" r="1.2" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="18" cy="12" r="0.5" fill={colorway.sole.splatterColor} />
+                <circle cx="2" cy="14" r="0.9" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="9" cy="13" r="0.7" fill={colorway.sole.splatterColor} />
+                <circle cx="16" cy="15" r="1.1" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="22" cy="11" r="0.4" fill={colorway.sole.splatterColor} />
+                <circle cx="6" cy="5" r="0.6" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="10" cy="7" r="0.9" fill={colorway.sole.splatterColor} />
+                <circle cx="19" cy="9" r="0.7" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="1" cy="11" r="0.5" fill={colorway.sole.splatterColor} />
+                <circle cx="14" cy="1" r="0.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="20" cy="3" r="0.6" fill={colorway.sole.splatterColor} />
+                <circle cx="7" cy="15" r="0.7" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="13" cy="6" r="0.4" fill={colorway.sole.splatterColor} />
+                <circle cx="17" cy="8" r="1.1" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="5" cy="12" r="0.6" fill={colorway.sole.splatterColor} />
+                <circle cx="11" cy="4" r="0.8" fill={colorway.sole.useDualSplatter && colorway.sole.splatterColor2 ? colorway.sole.splatterColor2 : colorway.sole.splatterColor} />
+                <circle cx="23" cy="14" r="0.5" fill={colorway.sole.splatterColor} />
               </svg>
             </div>
           )}
@@ -155,7 +143,7 @@ export const ColorwaySwatch: React.FC<ColorwaySwatchProps> = ({
 
         {/* Laces Color */}
         <div
-          className="w-8 h-8 rounded-full border border-white shadow-sm"
+          className="w-6 h-4 rounded-sm border border-white shadow-sm"
           style={{ backgroundColor: colorway.laces.color }}
         />
       </div>

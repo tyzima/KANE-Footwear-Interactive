@@ -240,6 +240,11 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
   const [originalLogoColor2, setOriginalLogoColor2] = useState(logoColor2);
   const [originalLogoColor3, setOriginalLogoColor3] = useState(logoColor3);
   
+  // Scroll state for colorway navigation
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   // Get dynamic colorways from Shopify (use customer API for embeds)
   const isCustomerContext = productContext?.isCustomerEmbed || false;
   const shopDomain = productContext?.shop;
@@ -454,6 +459,36 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
     }
   };
 
+  // Scroll handling functions
+  const updateScrollButtons = () => {
+    if (!scrollContainerRef.current) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1); // -1 for rounding errors
+  };
+
+  const handleScroll = () => {
+    updateScrollButtons();
+  };
+
+  const scrollColorways = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+    
+    // Calculate scroll amount based on new smaller swatch size (approximately 32px + 8px gap = 40px per swatch)
+    // 5 swatches = 5 * 40px = 200px
+    const scrollAmount = 200; // Move approximately 5 colorway swatches per click
+    const currentScroll = scrollContainerRef.current.scrollLeft;
+    const newScroll = direction === 'left' 
+      ? Math.max(0, currentScroll - scrollAmount)
+      : currentScroll + scrollAmount;
+    
+    scrollContainerRef.current.scrollTo({
+      left: newScroll,
+      behavior: 'smooth'
+    });
+  };
+
 
   const activeTab = externalActiveTab || internalActiveTab;
   const handleTabChange = (tab: 'colorways' | 'logos') => {
@@ -491,6 +526,16 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
       resizeObserver.disconnect();
     };
   }, [onHeightChange]);
+
+  // Update scroll buttons when colorways change or component mounts
+  useEffect(() => {
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      updateScrollButtons();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [availableColorways, colorwaysLoading]);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 px-4 max-w-[80%] mx-auto pb-4">
@@ -659,9 +704,43 @@ export const ColorCustomizer: React.FC<ColorCustomizerProps> = ({
                   )}
                 </div>
 
-                {/* Colorway Horizontal Scroll */}
+                {/* Colorway Horizontal Scroll with Navigation */}
                 <div className="relative pt-0">
-                  <div className="flex gap-2 overflow-x-auto pb-2 pt-2 scrollbar-hide bg-slate-500/10 rounded-xl">
+                  {/* Left Arrow */}
+                  <button
+                    onClick={() => scrollColorways('left')}
+                    className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg ${
+                      canScrollLeft 
+                        ? (isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+                        : (isDarkMode ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-400')
+                    }`}
+                    disabled={!canScrollLeft}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {/* Right Arrow */}
+                  <button
+                    onClick={() => scrollColorways('right')}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 shadow-lg ${
+                      canScrollRight 
+                        ? (isDarkMode ? 'bg-white text-gray-900 hover:bg-gray-100' : 'bg-gray-200 text-gray-700 hover:bg-gray-300')
+                        : (isDarkMode ? 'bg-gray-600 text-gray-400' : 'bg-gray-100 text-gray-400')
+                    }`}
+                    disabled={!canScrollRight}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+
+                  <div 
+                    ref={scrollContainerRef}
+                    className="flex gap-2 overflow-x-auto pb-2 pt-2 scrollbar-hide bg-slate-500/10 rounded-xl scroll-smooth"
+                    style={{ 
+                      scrollBehavior: 'smooth',
+                      touchAction: 'pan-x' // Prevent vertical scroll and browser navigation
+                    }}
+                    onScroll={handleScroll}
+                  >
                     {colorwaysLoading ? (
                       // Loading skeleton
                       Array.from({ length: 6 }).map((_, idx) => (
