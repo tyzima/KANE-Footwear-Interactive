@@ -21,11 +21,13 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
   const groupRef = useRef<Group>(null);
   const [texture, setTexture] = useState<Texture | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(1); // Store the aspect ratio of the loaded image
 
   // Load texture when logoUrl changes
   useEffect(() => {
     if (!logoUrl) {
       setTexture(null);
+      setAspectRatio(1); // Reset to square aspect ratio
       return;
     }
 
@@ -42,15 +44,18 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d')!;
 
+        // Calculate and store aspect ratio
+        const imageAspectRatio = img.width / img.height;
+        setAspectRatio(imageAspectRatio);
+
         // Set canvas size to maintain aspect ratio
         const maxSize = 256;
-        const aspectRatio = img.width / img.height;
 
-        if (aspectRatio > 1) {
+        if (imageAspectRatio > 1) {
           canvas.width = maxSize;
-          canvas.height = maxSize / aspectRatio;
+          canvas.height = maxSize / imageAspectRatio;
         } else {
-          canvas.width = maxSize * aspectRatio;
+          canvas.width = maxSize * imageAspectRatio;
           canvas.height = maxSize;
         }
 
@@ -65,7 +70,7 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
 
         setTexture(canvasTexture);
         setIsLoading(false);
-        console.log('Logo loaded successfully (data URL)');
+        console.log('Logo loaded successfully (data URL), aspect ratio:', imageAspectRatio);
       };
 
       img.onerror = () => {
@@ -83,9 +88,12 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
         logoUrl,
         (loadedTexture) => {
           // Successfully loaded with TextureLoader
+          // Calculate aspect ratio from texture dimensions
+          const imageAspectRatio = loadedTexture.image.width / loadedTexture.image.height;
+          setAspectRatio(imageAspectRatio);
           setTexture(loadedTexture);
           setIsLoading(false);
-          console.log('Logo loaded successfully (TextureLoader)');
+          console.log('Logo loaded successfully (TextureLoader), aspect ratio:', imageAspectRatio);
         },
         undefined,
         (loaderError) => {
@@ -100,15 +108,18 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
               const canvas = document.createElement('canvas');
               const ctx = canvas.getContext('2d')!;
 
+              // Calculate and store aspect ratio
+              const imageAspectRatio = img.width / img.height;
+              setAspectRatio(imageAspectRatio);
+
               // Set canvas size to maintain aspect ratio
               const maxSize = 256;
-              const aspectRatio = img.width / img.height;
 
-              if (aspectRatio > 1) {
+              if (imageAspectRatio > 1) {
                 canvas.width = maxSize;
-                canvas.height = maxSize / aspectRatio;
+                canvas.height = maxSize / imageAspectRatio;
               } else {
-                canvas.width = maxSize * aspectRatio;
+                canvas.width = maxSize * imageAspectRatio;
                 canvas.height = maxSize;
               }
 
@@ -123,7 +134,7 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
 
               setTexture(canvasTexture);
               setIsLoading(false);
-              console.log('Logo loaded successfully (Image fallback)');
+              console.log('Logo loaded successfully (Image fallback), aspect ratio:', imageAspectRatio);
             } catch (canvasError) {
               console.error('Canvas drawing failed:', canvasError);
               setIsLoading(false);
@@ -154,6 +165,13 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
     return null;
   }
 
+  // Calculate geometry dimensions based on aspect ratio
+  // We'll use the aspect ratio to determine width and height
+  // For landscape images (aspectRatio > 1): width = 1, height = 1/aspectRatio
+  // For portrait images (aspectRatio <= 1): width = aspectRatio, height = 1
+  const geometryWidth = aspectRatio > 1 ? 1 : aspectRatio;
+  const geometryHeight = aspectRatio > 1 ? 1 / aspectRatio : 1;
+
   return (
     <group
       ref={groupRef}
@@ -167,7 +185,7 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
         castShadow
         receiveShadow={false}
       >
-        <planeGeometry args={[1, 1]} />
+        <planeGeometry args={[geometryWidth, geometryHeight]} />
         <meshStandardMaterial
           map={texture}
           transparent={true}
@@ -184,7 +202,7 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
         castShadow
         receiveShadow={false}
       >
-        <planeGeometry args={[1, 1]} />
+        <planeGeometry args={[geometryWidth, geometryHeight]} />
         <meshStandardMaterial
           map={texture}
           transparent={true}
@@ -202,7 +220,7 @@ export const JibbitLogo: React.FC<JibbitLogoProps> = ({
         castShadow
         receiveShadow={false}
       >
-        <planeGeometry args={[1, 1]} />
+        <planeGeometry args={[geometryWidth, geometryHeight]} />
         <meshStandardMaterial
           map={texture}
           transparent={true}
