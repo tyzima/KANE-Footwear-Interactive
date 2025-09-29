@@ -1289,7 +1289,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border border-slate-400/20 mx-3 my-5 mb-12 bg-gradient-to-r from-slate-400/10 to-slate-400/0 rounded-2xl p-4">
+          <div className=" mx-3 my-5 mb-12 bg-gradient-to-r from-slate-400/0 to-slate-400/0 rounded-2xl p-4">
             <div className="flex justify-between gap-3">
               <Button
                 type="button"
