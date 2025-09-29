@@ -15,6 +15,7 @@ interface ShoeModelProps {
     onError?: (error: Error) => void;
     onPartClick?: (partType: 'upper' | 'sole' | 'laces' | 'logos') => void;
     scale?: number;
+    wireframeMode?: boolean;
     // Add defaultColorway prop to handle both static and dynamic colorways
     defaultColorway?: {
         upper: {
@@ -88,6 +89,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
     onError,
     onPartClick,
     scale = 1,
+    wireframeMode = false,
     // Use defaultColorway prop or fallback to static colorway to prevent visual jump
     defaultColorway,
     bottomColor = defaultColorway?.sole.baseColor || fallbackColorway.sole.baseColor,
@@ -401,6 +403,67 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
 
                             return () => clearTimeout(timeoutId);
                         }, [gltf, circleLogoUrl, logoColor1, logoColor2, logoColor3, textureManager, materialManager, topColor, upperHasSplatter, upperTexture]);
+
+                        // Wireframe effect - apply to all materials when wireframe mode is enabled
+                        useEffect(() => {
+                            if (!gltf) return;
+
+                            const applyWireframeEffect = (object: any) => {
+                                if (object.isMesh && object.material) {
+                                    const originalMaterial = object.material;
+                                    
+                                    if (wireframeMode) {
+                                        // Store original material properties if not already stored
+                                        if (!object.userData.originalMaterial) {
+                                            object.userData.originalMaterial = {
+                                                color: originalMaterial.color.clone(),
+                                                wireframe: originalMaterial.wireframe,
+                                                opacity: originalMaterial.opacity,
+                                                transparent: originalMaterial.transparent,
+                                                roughness: originalMaterial.roughness,
+                                                metalness: originalMaterial.metalness
+                                            };
+                                        }
+
+                                        // Apply wireframe styling
+                                        originalMaterial.wireframe = true;
+                                        originalMaterial.opacity = 0.9;
+                                        originalMaterial.transparent = true;
+                                        originalMaterial.roughness = 1.0;
+                                        originalMaterial.metalness = 0.0;
+                                        
+                                        // Set wireframe colors based on part type
+                                        const name = object.name.toLowerCase();
+                                        if (name.includes('sole') || name.includes('bottom')) {
+                                            originalMaterial.color.setHex(0x0066cc); // Blue for sole
+                                        } else if (name.includes('upper') || name.includes('top')) {
+                                            originalMaterial.color.setHex(0xcc6600); // Orange for upper
+                                        } else if (name.includes('lace')) {
+                                            originalMaterial.color.setHex(0x00cc66); // Green for laces
+                                        } else if (name.includes('logo')) {
+                                            originalMaterial.color.setHex(0xcc0066); // Magenta for logos
+                                        } else {
+                                            originalMaterial.color.setHex(0x666666); // Gray for other parts
+                                        }
+                                    } else {
+                                        // Restore original material properties
+                                        if (object.userData.originalMaterial) {
+                                            const original = object.userData.originalMaterial;
+                                            originalMaterial.color.copy(original.color);
+                                            originalMaterial.wireframe = original.wireframe;
+                                            originalMaterial.opacity = original.opacity;
+                                            originalMaterial.transparent = original.transparent;
+                                            originalMaterial.roughness = original.roughness;
+                                            originalMaterial.metalness = original.metalness;
+                                        }
+                                    }
+                                    
+                                    originalMaterial.needsUpdate = true;
+                                }
+                            };
+
+                            gltf.scene.traverse(applyWireframeEffect);
+                        }, [gltf, wireframeMode]);
 
                         return (
                             <group

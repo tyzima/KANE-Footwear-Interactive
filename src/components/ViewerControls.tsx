@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, Trees, X, Camera } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, TreePine, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
@@ -14,8 +14,8 @@ interface ViewerControlsProps {
   activeHotspot: string | null;
   disabled?: boolean;
   onCameraMove?: (position: [number, number, number], target: [number, number, number], zoom?: number) => void;
-  backgroundType?: 'light' | 'dark' | 'turf';
-  onBackgroundToggle?: (type: 'light' | 'dark' | 'turf') => void;
+  backgroundType?: 'light' | 'dark' | 'wireframe';
+  onBackgroundToggle?: (type: 'light' | 'dark' | 'wireframe') => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -57,14 +57,14 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   };
 
   // Helper to determine if current background should use dark mode styling
-  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+  const isDarkMode = backgroundType === 'dark';
 
   // Function to cycle through background types
   const handleBackgroundToggle = () => {
     if (!onBackgroundToggle) return;
     
     const nextType = backgroundType === 'light' ? 'dark' : 
-                     backgroundType === 'dark' ? 'turf' : 'light';
+                     backgroundType === 'dark' ? 'wireframe' : 'light';
     onBackgroundToggle(nextType);
   };
 
@@ -72,12 +72,12 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   const getBackgroundIcon = () => {
     switch (backgroundType) {
       case 'dark':
-        return <Trees className="h-4 w-4" />;
-      case 'turf':
-        return <Sun className="h-4 w-4" />;
+        return <Moon className="h-4 w-4" />;
+      case 'wireframe':
+        return <TreePine className="h-4 w-4" />;
       case 'light':
       default:
-        return <Moon className="h-4 w-4" />;
+        return <Sun className="h-4 w-4" />;
     }
   };
 
@@ -86,8 +86,8 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       case 'light':
         return "Switch to dark background";
       case 'dark':
-        return "Switch to turf field background";
-      case 'turf':
+        return "Switch to wireframe mode";
+      case 'wireframe':
         return "Switch to light background";
       default:
         return "Switch background";

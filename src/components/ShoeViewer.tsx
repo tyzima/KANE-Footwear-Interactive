@@ -45,81 +45,31 @@ const getColorForSpeckle = (baseColor: string, hasSpeckle: boolean): string => {
 };
 
 // Background component to reactively update scene background
-const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'turf' }> = ({ backgroundType }) => {
+const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'wireframe' }> = ({ backgroundType }) => {
   const { scene } = useThree();
 
   React.useEffect(() => {
-    if (backgroundType === 'turf') {
-      // Load forest/turf image as background
-      const loader = new THREE.TextureLoader();
-      loader.load(
-        '/rogland_moonlit_night.jpg',
-        (texture) => {
-          // Configure texture for background
-          texture.wrapS = THREE.RepeatWrapping;
-          texture.wrapT = THREE.RepeatWrapping;
-          texture.repeat.set(1, 1);
-          texture.offset.set(0, 0);
-          
-          // Enhance texture quality and color
-          texture.generateMipmaps = true;
-          texture.minFilter = THREE.LinearMipmapLinearFilter;
-          texture.magFilter = THREE.LinearFilter;
-          texture.anisotropy = 16; // Maximum anisotropic filtering for better quality
-          texture.colorSpace = THREE.SRGBColorSpace; // Ensure proper color space
-          
-          // Create a sphere geometry for the background
-          const geometry = new THREE.SphereGeometry(10, 12, 32);
-          const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            side: THREE.BackSide,
-            // Enhance color saturation and contrast
-            color: new THREE.Color(1.2, 1.2, 1.2), // Brighten the texture
-            transparent: false,
-            opacity: 1.0
-          });
-          
-          // Remove existing background
-          scene.background = null;
-          
-          // Remove existing background sphere if it exists
-          const existingBackground = scene.getObjectByName('backgroundSphere');
-          if (existingBackground) {
-            scene.remove(existingBackground);
-          }
-          
-          // Create new background sphere
-          const backgroundSphere = new THREE.Mesh(geometry, material);
-          backgroundSphere.name = 'backgroundSphere';
-          scene.add(backgroundSphere);
-        },
-        undefined,
-        (error) => {
-          console.warn('Failed to load forest background image, falling back to solid color:', error);
-          // Fallback to solid color if image fails to load
-          scene.background = new THREE.Color('#1b4f2a');
-        }
-      );
-    } else {
-      // Remove background sphere for non-turf backgrounds
-      const existingBackground = scene.getObjectByName('backgroundSphere');
-      if (existingBackground) {
-        scene.remove(existingBackground);
-      }
-      
-      // Set solid color background
-      let backgroundColor: string;
-      switch (backgroundType) {
-        case 'dark':
-          backgroundColor = '#1a1a1a';
-          break;
-        case 'light':
-        default:
-          backgroundColor = '#f8f9fa';
-          break;
-      }
-      scene.background = new THREE.Color(backgroundColor);
+    // Remove any existing background spheres
+    const existingBackground = scene.getObjectByName('backgroundSphere');
+    if (existingBackground) {
+      scene.remove(existingBackground);
     }
+    
+    // Set solid color background
+    let backgroundColor: string;
+    switch (backgroundType) {
+      case 'wireframe':
+        backgroundColor = '#f0f8ff'; // Light blue for wireframe mode
+        break;
+      case 'dark':
+        backgroundColor = '#1a1a1a';
+        break;
+      case 'light':
+      default:
+        backgroundColor = '#f8f9fa';
+        break;
+    }
+    scene.background = new THREE.Color(backgroundColor);
   }, [scene, backgroundType]);
 
   return null;
@@ -127,8 +77,8 @@ const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'turf' }> =
 
 interface ShoeViewerProps {
   className?: string;
-  backgroundType?: 'light' | 'dark' | 'turf';
-  onBackgroundTypeChange?: (type: 'light' | 'dark' | 'turf') => void;
+  backgroundType?: 'light' | 'dark' | 'wireframe';
+  onBackgroundTypeChange?: (type: 'light' | 'dark' | 'wireframe') => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   onColorConfigurationChange?: (config: any) => void;
   colorConfiguration?: any;
@@ -418,7 +368,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   const setBackgroundType = onBackgroundTypeChange ?? (() => { });
   
   // Helper function to determine if current background should use dark mode styling
-  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+  const isDarkMode = backgroundType === 'dark';
 
   // Effect to handle responsive zoom
   useEffect(() => {
@@ -718,8 +668,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             preset={lightingPreset}
             intensity={lightingIntensity}
             shadowIntensity={shadowIntensity}
-            useHDRI={backgroundType === 'turf'}
-            hdriPath={backgroundType === 'turf' ? '/rogland_moonlit_night.jpg' : undefined}
+            useHDRI={false}
+            hdriPath={undefined}
           />
 
           {/* Controls */}
@@ -793,6 +743,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               // Second logo props
               logo2Position={logo2Position}
               logo2Rotation={logo2Rotation}
+              // Wireframe mode
+              wireframeMode={backgroundType === 'wireframe'}
             />
           </Suspense>
 
