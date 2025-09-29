@@ -733,7 +733,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             maxDistance={5}
             maxPolarAngle={Math.PI / 2.2}
             minPolarAngle={Math.PI / 6}
-            enableZoom
+            enableZoom={false}
             enablePan={false}
             target={[0, 0, 0]}
             makeDefault
