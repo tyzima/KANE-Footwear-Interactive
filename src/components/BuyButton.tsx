@@ -439,6 +439,11 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     setCurrentStep(Math.max(prevStep, 0));
   };
 
+  // Function to go back to order type selection
+  const handleChangeOrderType = () => {
+    setCurrentStep(1); // Go back to the Order step
+  };
+
   // Address validation using Nominatim (OpenStreetMap) - Free service
   const validateAddress = useCallback(async () => {
     const { addressLine1, city, state, zip, country } = formData;
@@ -515,15 +520,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     return () => clearTimeout(timer);
   }, [formData.addressLine1, formData.city, formData.state, formData.zip, formData.country, validateAddress]);
 
-  // Reset step when order type changes to ensure proper step flow
-  useEffect(() => {
-    if (orderType && currentStep === 1) {
-      // If we're on the order type step and an order type is selected, move to next step
-      // The dynamic steps will handle whether to show contact or go to review
-      const nextStep = currentStep + 1;
-      setCurrentStep(Math.min(nextStep, steps.length - 1));
-    }
-  }, [orderType, currentStep, steps.length]);
+  // Note: Order type selection now auto-advances via button click handlers
 
   const applySuggestion = (suggestion: {
     display_name: string;
@@ -1136,7 +1133,14 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     {/* Buy Now Option */}
                     <button
                       type="button"
-                      onClick={() => setOrderType('buy_now')}
+                      onClick={() => {
+                        setOrderType('buy_now');
+                        // Auto-advance to next step after selection
+                        setTimeout(() => {
+                          const nextStep = currentStep + 1;
+                          setCurrentStep(Math.min(nextStep, steps.length - 1));
+                        }, 100);
+                      }}
                       className={`p-4 border-2 rounded-lg text-left transition-all duration-200 ${
                         orderType === 'buy_now'
                           ? 'border-primary bg-primary/5 shadow-md'
@@ -1168,7 +1172,14 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     {/* Order Request Option */}
                     <button
                       type="button"
-                      onClick={() => setOrderType('order_request')}
+                      onClick={() => {
+                        setOrderType('order_request');
+                        // Auto-advance to next step after selection
+                        setTimeout(() => {
+                          const nextStep = currentStep + 1;
+                          setCurrentStep(Math.min(nextStep, steps.length - 1));
+                        }, 100);
+                      }}
                       className={`p-4 border-2 rounded-lg text-left transition-all duration-200 ${
                         orderType === 'order_request'
                           ? 'border-primary bg-primary/5 shadow-md'
@@ -1446,7 +1457,18 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
                   {/* Order Summary - Simplified */}
                   <div className="space-y-1">
-                    <h3 className="font-semibold text-lg -mt-2">Order Summary</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-lg -mt-2">Order Summary</h3>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleChangeOrderType}
+                        className="text-xs"
+                      >
+                        Change Order Type
+                      </Button>
+                    </div>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="flex-1 text-gray-700 text-sm">Order Type</span>
