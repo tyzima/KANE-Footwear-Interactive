@@ -952,53 +952,77 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                         const isLoading = isLoadingInventory;
                         
                         return (
-                          <div key={size} className={`flex items-center justify-between p-3 border rounded-lg transition-all ${
+                          <div key={size} className={`relative group transition-all duration-200 ${
                             !isAvailable && !isLoading
-                              ? 'border-red-200 bg-red-50 opacity-60'
-                              : quantity > 0 
-                                ? 'border-slate-500/20 bg-slate-400/5' 
-                                : 'border-gray-200 hover:border-gray-300'
+                              ? 'opacity-60'
+                              : 'hover:scale-[1.02]'
+                          }`}>
+                            <div className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                              !isAvailable && !isLoading
+                                ? 'border-gray-200 bg-gray-50'
+                                : quantity > 0 
+                                  ? 'border-primary bg-primary/5 shadow-lg' 
+                                  : 'border-gray-200 bg-white hover:border-primary/40 hover:shadow-md'
                             }`}>
-                            <div className="flex flex-col">
-                              <span className={`font-medium text-sm ${!isAvailable && !isLoading ? 'text-gray-500' : ''}`}>
-                                {size}
-                              </span>
-                              <span className={`text-xs ${
-                                isLoading 
-                                  ? 'text-gray-400' 
-                                  : !isAvailable 
-                                    ? 'text-red-500' 
-                                    : available <= 5 
-                                      ? 'text-orange-600' 
-                                      : 'text-green-600'
-                              }`}>
-                                {isLoading ? 'Loading...' : 
-                                 !isAvailable ? 'Out of Stock' : 
-                                 available <= 5 ? `Only ${available} left` : 
-                                 `${available} available`}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="number"
-                                value={quantity}
-                                onChange={(e) => updateQuantity(size, Math.max(0, parseInt(e.target.value) || 0))}
-                                disabled={!isAvailable || isLoading}
-                                max={available}
-                                className={`w-12 text-center font-medium border rounded-md h-8 focus:outline-none focus:ring-1 focus:ring-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                  !isAvailable || isLoading ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
-                                }`}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => updateQuantity(size, quantity + 1)}
-                                disabled={!isAvailable || isLoading || quantity >= available}
-                              >
-                                <Plus className="w-4 h-4" />
-                              </Button>
+                              {/* Size and Controls on Same Row */}
+                              <div className="flex items-center justify-between">
+                                <span className={`text-base font-bold ${
+                                  !isAvailable && !isLoading ? 'text-gray-400' : 'text-gray-900'
+                                }`}>
+                                  {size}
+                                </span>
+
+                                {/* Quantity Controls - Right Side */}
+                                <div className="flex items-center gap-2">
+                                  <div className="text-center">
+                                    <span className={`text-lg font-bold ${
+                                      !isAvailable && !isLoading ? 'text-gray-300' : 'text-gray-900'
+                                    }`}>
+                                      {quantity}
+                                    </span>
+                                  </div>
+                                  
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className={`h-7 w-7 p-0 rounded-lg transition-all ${
+                                      !isAvailable || isLoading || quantity >= available
+                                        ? 'opacity-30 cursor-not-allowed'
+                                        : 'hover:bg-primary/10 hover:text-primary active:bg-primary/20'
+                                    }`}
+                                    onClick={() => updateQuantity(size, quantity + 1)}
+                                    disabled={!isAvailable || isLoading || quantity >= available}
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* Stock Status - Below the main row */}
+                              <div className="mt-2">
+                                {isLoading ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse" />
+                                    <span className="text-xs text-gray-500">Loading...</span>
+                                  </div>
+                                ) : !isAvailable ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                                    <span className="text-xs font-medium text-red-600">Out of Stock</span>
+                                  </div>
+                                ) : available < 15 ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
+                                    <span className="text-xs font-medium text-red-600">{available} left</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                                    <span className="text-xs font-medium text-green-600">In Stock</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
