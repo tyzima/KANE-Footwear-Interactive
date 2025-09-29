@@ -767,22 +767,17 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:right-4 md:h-[calc(100vh-2rem)] md:rounded-2xl border border-gray-200/50 backdrop-blur-sm ${isOpen ? 'translate-x-0' : 'translate-x-full'
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:h-[calc(100vh-2rem)] md:rounded-2xl border border-gray-200/50 backdrop-blur-sm ${isOpen ? 'translate-x-0 md:right-4' : 'translate-x-full md:right-0'
         }`}>
-        {/* Header */}
-        <div className="flex items-center justify-center pl-6 pt-3 pb-2 bg-transparent flex-shrink-0">
-          <div className="flex items-center gap-3">
-          
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleOpenChange(false)}
-            className="h-8 right-4 fixed w-8 p-0 hover:bg-gray-200"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
+        {/* Floating X Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleOpenChange(false)}
+          className="absolute -top-3 -right-3 h-8 w-8 p-0 rounded-full bg-white border border-gray-200 hover:bg-gray-50 shadow-lg z-[100]"
+        >
+          <X className="w-5 h-5" />
+        </Button>
 
         {/* Progress Indicator - Sticky at top */}
         <div className="sticky top-0 z-10 bg-[#F8F9FA] border-b border-gray-200 px-6 py-4">
