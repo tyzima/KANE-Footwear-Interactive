@@ -32,8 +32,8 @@ const NATIONAL_PARK_COLORS = [
 
 // Define breakpoints for responsive design
 const DESKTOP_BREAKPOINT = 768;
-const DESKTOP_ZOOM = 1.0;
-const MOBILE_ZOOM = 0.6;
+const DESKTOP_ZOOM = 0.8;
+const MOBILE_ZOOM = 0.5;
 
 
 // Helper function to get the appropriate color based on speckle state
@@ -80,6 +80,12 @@ interface ShoeViewerProps {
   onColorConfigurationChange?: (config: any) => void;
   colorConfiguration?: any;
   onSelectedColorwayChange?: (colorway: any) => void; // External color configuration to apply (for shared designs)
+  onCameraUpdate?: (cameraInfo: {
+    position: [number, number, number];
+    target: [number, number, number];
+    rotation: [number, number, number];
+    zoom: number;
+  }) => void;
   productContext?: {
     productId: string;
     shop: string;
@@ -97,6 +103,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
   onColorConfigurationChange,
   colorConfiguration: externalColorConfiguration,
   onSelectedColorwayChange,
+  onCameraUpdate,
   productContext
 }) => {
   const { isDark } = useTheme();
@@ -359,6 +366,13 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
     zoom: 1
   });
   const controlsRef = useRef<any>(null);
+
+  // Notify parent component when camera info changes
+  React.useEffect(() => {
+    if (onCameraUpdate) {
+      onCameraUpdate(cameraInfo);
+    }
+  }, [cameraInfo, onCameraUpdate]);
 
   // Use external background type or fallback to internal state
   const backgroundType = externalBackgroundType;
@@ -641,7 +655,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             fov: 40,
             near: 0.1,
             far: 100,
-            zoom: 1.25
+            zoom: 1.0
           }}
           shadows
           className="w-full h-full"
@@ -686,10 +700,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
             makeDefault
           />
 
-          {/* Debug Data Collector */}
-          {debugVisible && (
-            <DebugDataCollector onCameraUpdate={setCameraInfo} />
-          )}
+          {/* Debug Data Collector - Always enabled for camera tracking */}
+          <DebugDataCollector onCameraUpdate={setCameraInfo} />
 
           {/* 3D Model */}
           <Suspense fallback={null}>

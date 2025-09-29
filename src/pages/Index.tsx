@@ -251,6 +251,12 @@ const Index = () => {
     }
   }, [isDark]);
   const [showInfo, setShowInfo] = useState(false);
+  const [cameraInfo, setCameraInfo] = useState({
+    position: [0, 0, 0] as [number, number, number],
+    target: [0, 0, 0] as [number, number, number],
+    rotation: [0, 0, 0] as [number, number, number],
+    zoom: 1
+  });
   
   // Helper function to determine if a color is dark
   const isColorDark = (color: string): boolean => {
@@ -269,9 +275,52 @@ const Index = () => {
     return luminance < 0.5;
   };
 
+  // Helper function to determine if a color is light
+  const isColorLight = (color: string): boolean => {
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Convert to RGB
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return true if luminance is greater than 0.7 (light)
+    return luminance > 0.7;
+  };
+
   // Helper to determine if current background should use dark mode styling
   const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf' || 
     (backgroundType === 'light' && selectedColorway && isColorDark(selectedColorway.upper.baseColor));
+
+  // Helper function to detect if camera is viewing from above (top-down view)
+  const isViewingFromAbove = (cameraPosition: [number, number, number]): boolean => {
+    // Camera is viewing from above if Y position is significantly higher than X and Z
+    // This indicates the camera is positioned above the model looking down
+    const [x, y, z] = cameraPosition;
+    return y > Math.abs(x) && y > Math.abs(z) && y > -0.5;
+  };
+
+  // Helper function to detect if camera is viewing from above for logo inversion (slightly higher threshold)
+  const isViewingFromAboveForLogo = (cameraPosition: [number, number, number]): boolean => {
+    // Camera is viewing from above if Y position is significantly higher than X and Z
+    // This indicates the camera is positioned above the model looking down
+    const [x, y, z] = cameraPosition;
+    return y > Math.abs(x) && y > Math.abs(z) && y > -0.2;
+  };
+
+  // Helper to determine if text should be inverted for better contrast
+  // This happens when:
+  // 1. Background is light AND shoe color is also light (white/light colors), OR
+  // 2. Camera is viewing from above (top-down view) where white floor is visible
+  const shouldInvertText = (backgroundType === 'light' && selectedColorway && 
+    (selectedColorway.upper.baseColor === '#ffffff' || 
+     selectedColorway.upper.baseColor === '#FFFFFF' ||
+     isColorLight(selectedColorway.upper.baseColor))) ||
+    isViewingFromAbove(cameraInfo.position);
 
   // Convert selected colorway to product format for BuyButton
   const getCurrentProduct = () => {
@@ -397,45 +446,50 @@ const Index = () => {
       {/* Main Viewer Section - Full Height */}
       <main className="h-screen max-h-screen overflow-y-hidden relative">
         {/* Product Branding - Top Left */}
-        <div className="absolute top-10 ml-10 md:ml-20 z-30 flex flex-col sm:flex-col items-start sm:items-center gap-2 sm:gap-4">
+        <div className="absolute top-10 ml-6 md:ml-16 z-30 flex flex-col sm:flex-col items-start sm:items-center gap-2 sm:gap-4">
   {!isEmbedded && (
     <img
       src="/mainkanelogo.png"
       alt="KANE Logo"
-      className={`h-6 md:h-8 w-auto  md:-ml-20 transition-all duration-300 ${isDarkMode ? 'invert' : ''}`}
+      className="h-6 md:h-8 w-auto md:-ml-20 transition-all duration-300"
+      style={{ 
+        filter: shouldInvertText ? 'invert(1) brightness(0)' : (isDarkMode ? 'invert(1)' : 'none')
+      }}
     />
   )}
   <div className="max-w-[280px]">
     <div className="flex md:ml-0 items-center gap-3 sm:gap-3">
-      <h1 className={`text-3xl mt-2 font-bold transition-colors uppercase duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
+      <h1 className={`text-3xl mt-2 font-bold transition-colors uppercase duration-300 ${shouldInvertText ? 'text-black' : (isDarkMode ? 'text-white' : 'text-foreground')}`}>Revive</h1>
       <span className={`px-2 py-[2px] md:py-1 mt-2 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${
-        selectedColorway && selectedColorway.upper.baseColor === '#ffffff' || selectedColorway && selectedColorway.upper.baseColor === '#FFFFFF'
-          ? 'bg-accent/20 text-accent'
-          : 'bg-transparent border border-white/20 text-white/90'
+        shouldInvertText
+          ? 'bg-black/20 text-black border border-black/20'
+          : (selectedColorway && selectedColorway.upper.baseColor === '#ffffff' || selectedColorway && selectedColorway.upper.baseColor === '#FFFFFF'
+            ? 'bg-accent/20 text-accent'
+            : 'bg-transparent border border-white/20 text-white/90')
         }`}>
         CUSTOM
       </span>
       <button
         onClick={() => setShowInfo(true)}
-        className={` md:hidden w-6 h-6 mt-1.5 rounded-full text-sm font-normal transition-colors duration-300 ${isDarkMode ? 'border border-white/10 text-white' : 'bg-gray-200 text-gray-800'}`}
+        className={` md:hidden w-6 h-6 mt-1.5 rounded-full text-sm font-normal transition-colors duration-300 ${shouldInvertText ? 'border border-black/20 text-black' : (isDarkMode ? 'border border-white/10 text-white' : 'bg-gray-200 text-gray-800')}`}
       >
         +
       </button>
     </div>
     <div className="hidden md:block mt-4 ">
-      <p className={`text-sm transition-colors duration-300 ${isDarkMode ? 'text-white/80' : 'text-foreground/70'}`}>
+      <p className={`text-sm transition-colors duration-300 ${shouldInvertText ? 'text-black/80' : (isDarkMode ? 'text-white/80' : 'text-foreground/70')}`}>
         A transformative, sustainably designed injection molded shoe for active recovery.
       </p>
       <div className={`flex flex-wrap gap-3 mt-2 transition-colors duration-300`}>
      
 </div>
 
-      <p className={`text-lg font-bold mt-2 bg-slate-400/10  border border-slate-500/10 w-12 h-12 flex items-center justify-center pr-3 rounded-lg px-2 py-1 transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>
-        <span className={`text-xs relative top-[-2px] mr-.5 ${isDarkMode ? 'text-white/80' : 'text-foreground/70'}`}>$</span>75
+      <p className={`text-lg font-bold mt-2 bg-slate-400/10  border border-slate-500/10 w-12 h-12 flex items-center justify-center pr-3 rounded-lg px-2 py-1 transition-colors duration-300 ${shouldInvertText ? 'text-black' : (isDarkMode ? 'text-white' : 'text-foreground')}`}>
+        <span className={`text-xs relative top-[-2px] mr-.5 ${shouldInvertText ? 'text-black/80' : (isDarkMode ? 'text-white/80' : 'text-foreground/70')}`}>$</span>75
       </p>
   
     </div>
-    <FeatureIconsBar isDarkMode={false}/>
+    <FeatureIconsBar isDarkMode={shouldInvertText}/>
   </div>
 </div>
 
@@ -465,6 +519,7 @@ const Index = () => {
             onColorConfigurationChange={setColorConfiguration}
             colorConfiguration={colorConfiguration}
             onSelectedColorwayChange={setSelectedColorway}
+            onCameraUpdate={setCameraInfo}
             productContext={productContext}
           />
         </div>
