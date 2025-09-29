@@ -2,7 +2,7 @@ import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { Environment, OrbitControls, PresentationControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { ShoeModel } from './ShoeModel';
+import { ShoeModel } from './shoe-model';
 import { ViewerControls } from './ViewerControls';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -751,6 +751,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               onError={handleModelError}
               onPartClick={handlePartClick}
               scale={zoom}
+              // Pass first available colorway as default to prevent visual jump on initial load
+              defaultColorway={availableColorways[0]}
               bottomColor={getColorForSpeckle(bottomColor, soleHasSplatter)}
               topColor={getColorForSpeckle(topColor, upperHasSplatter)}
               upperHasSplatter={upperHasSplatter}

@@ -1,298 +1,28 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import React, { useRef, useCallback } from 'react';
 import * as THREE from 'three';
-import { Mesh, Group, AnimationMixer, Box3, Vector3, MeshStandardMaterial, Texture, CanvasTexture } from 'three';
-import { useGLTF } from '@react-three/drei';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { JibbitLogo } from './JibbitLogo';
-import gsap from 'gsap';
-// Import colorways data to get first colorway as fallback default
-import colorwaysData from '../data/colorways.json';
+import { Texture, CanvasTexture } from 'three';
+import { useColorProcessor } from './ColorProcessor';
 
-interface ShoeModelProps {
-    onLoad?: () => void;
-    onError?: (error: Error) => void;
-    onPartClick?: (partType: 'upper' | 'sole' | 'laces' | 'logos') => void;
-    scale?: number;
-    // Add defaultColorway prop to handle both static and dynamic colorways
-    defaultColorway?: {
-        upper: {
-            baseColor: string;
-            hasSplatter: boolean;
-            splatterColor: string | null;
-            splatterBaseColor: string | null;
-            splatterColor2: string | null;
-            useDualSplatter: boolean;
-        };
-        sole: {
-            baseColor: string;
-            hasSplatter: boolean;
-            splatterColor: string | null;
-            splatterBaseColor: string | null;
-            splatterColor2: string | null;
-            useDualSplatter: boolean;
-        };
-        laces: {
-            color: string;
-        };
-    };
-    bottomColor?: string;
-    topColor?: string;
-    upperHasSplatter?: boolean;
-    soleHasSplatter?: boolean;
-    upperSplatterColor?: string;
-    soleSplatterColor?: string;
-    upperSplatterColor2?: string;
-    soleSplatterColor2?: string;
-    upperSplatterBaseColor?: string;
-    soleSplatterBaseColor?: string;
-    upperUseDualSplatter?: boolean;
-    soleUseDualSplatter?: boolean;
-    upperPaintDensity?: number;
-    solePaintDensity?: number;
-    // Gradient props
-    upperHasGradient?: boolean;
-    soleHasGradient?: boolean;
-    upperGradientColor1?: string;
-    upperGradientColor2?: string;
-    soleGradientColor1?: string;
-    soleGradientColor2?: string;
-    // Texture props
-    upperTexture?: string | null;
-    soleTexture?: string | null;
-    // Lace colors (single color for both left and right)
-    laceColor?: string;
-    // Logo colors - now supporting 3 separate colors
-    logoColor1?: string; // Blue parts
-    logoColor2?: string; // Black parts
-    logoColor3?: string; // Red parts
-    // Circle logo in SVG texture
-    circleLogoUrl?: string | null;
-    // Logo props (Jibbit logos)
-    logoUrl?: string | null;
-    logoPosition?: [number, number, number];
-    logoRotation?: [number, number, number];
-    logoPlacementMode?: boolean;
-    onLogoPositionSet?: (position: [number, number, number], normal: [number, number, number]) => void;
-    // Second logo props
-    logo2Position?: [number, number, number];
-    logo2Rotation?: [number, number, number];
+interface TextureManagerProps {
+    children: (textureManager: {
+        createGradientTexture: (baseColor: string, color1: string, color2: string, isUpper: boolean) => Texture;
+        createTextureFromDataUrl: (dataUrl: string) => Texture;
+        createInnerShadowTexture: (baseColor: string) => Texture;
+        createSplatterTexture: (baseColor: string, splatterColor: string, splatterBaseColor: string | null, splatterColor2: string | null, useDualSplatter: boolean, isUpper: boolean, paintDensity: number) => Texture;
+        createLaceTexture: (baseColor: string) => Texture;
+        loadLaceTexture: () => Promise<Texture>;
+        getOrCreateAndUpdateLogoTexture: (partName: string, material: any, originalTexture: Texture | null, colors: { color1: string; color2: string; color3: string }, userLogoUrl: string | null) => void;
+        cleanup: () => void;
+    }) => React.ReactNode;
 }
 
-const MODEL_URL = 'https://1ykb2g02vo.ufs.sh/f/vZDRAlpZjEG4zYRgLNVdU2gXuRI1OWCsNc53biYrh6QpG4Ae';
-
-// Get fallback colorway from static data
-const fallbackColorway = colorwaysData.colorways[0];
-
-// Configure DRACO loader for optimized loading
-const dracoLoader = new DRACOLoader();
-dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
-
-// Global preloaded model cache to prevent stuttering
-let preloadedModel: GLTF | null = null;
-let preloadPromise: Promise<GLTF> | null = null;
-
-// Preload function that ensures model is ready before use
-const preloadModel = (): Promise<GLTF> => {
-    if (preloadedModel) {
-        return Promise.resolve(preloadedModel);
-    }
-
-    if (preloadPromise) {
-        return preloadPromise;
-    }
-
-    preloadPromise = new Promise((resolve, reject) => {
-        const loader = new GLTFLoader();
-        loader.setDRACOLoader(dracoLoader);
-
-        loader.load(
-            MODEL_URL,
-            (gltf) => {
-                // Process the model immediately upon loading
-                const box = new Box3().setFromObject(gltf.scene);
-                const center = box.getCenter(new Vector3());
-                const size = box.getSize(new Vector3());
-
-                // Scale to fit in view
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const scaleFactor = 2 / maxDim;
-
-                gltf.scene.scale.setScalar(scaleFactor);
-                gltf.scene.position.set(0, 0.2, 0);
-                gltf.scene.position.sub(center.multiplyScalar(scaleFactor));
-
-                // Enable shadows and prepare for interaction
-                gltf.scene.traverse((child) => {
-                    if (child instanceof Mesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
-                        child.userData = {
-                            name: child.name || 'shoe-part',
-                            interactive: true
-                        };
-                    }
-                });
-
-                preloadedModel = gltf;
-                resolve(gltf);
-            },
-            undefined,
-            reject
-        );
-    });
-
-    return preloadPromise;
-};
-
-export const ShoeModel: React.FC<ShoeModelProps> = ({
-    onLoad,
-    onError,
-    onPartClick,
-    scale = 1,
-    // Use defaultColorway prop or fallback to static colorway to prevent visual jump
-    defaultColorway,
-    bottomColor = defaultColorway?.sole.baseColor || fallbackColorway.sole.baseColor,
-    topColor = defaultColorway?.upper.baseColor || fallbackColorway.upper.baseColor,
-    upperHasSplatter = defaultColorway?.upper.hasSplatter || fallbackColorway.upper.hasSplatter,
-    soleHasSplatter = defaultColorway?.sole.hasSplatter || fallbackColorway.sole.hasSplatter,
-    upperSplatterColor = defaultColorway?.upper.splatterColor || fallbackColorway.upper.splatterColor || '#f8f8ff',
-    soleSplatterColor = defaultColorway?.sole.splatterColor || fallbackColorway.sole.splatterColor || '#f8f8f8ff',
-    upperSplatterColor2 = defaultColorway?.upper.splatterColor2 || fallbackColorway.upper.splatterColor2 || null,
-    soleSplatterColor2 = defaultColorway?.sole.splatterColor2 || fallbackColorway.sole.splatterColor2 || null,
-    upperSplatterBaseColor = defaultColorway?.upper.splatterBaseColor || fallbackColorway.upper.splatterBaseColor || null,
-    soleSplatterBaseColor = defaultColorway?.sole.splatterBaseColor || fallbackColorway.sole.splatterBaseColor || null,
-    upperUseDualSplatter = defaultColorway?.upper.useDualSplatter || fallbackColorway.upper.useDualSplatter,
-    soleUseDualSplatter = defaultColorway?.sole.useDualSplatter || fallbackColorway.sole.useDualSplatter,
-    upperPaintDensity = 100,
-    solePaintDensity = 100,
-    // Gradient props with defaults
-    upperHasGradient = false,
-    soleHasGradient = false,
-    upperGradientColor1 = '#4a8c2b',
-    upperGradientColor2 = '#c25d1e',
-    soleGradientColor1 = '#4a8c2b',
-    soleGradientColor2 = '#c25d1e',
-    // Texture props with defaults
-    upperTexture = null,
-    soleTexture = null,
-    // Lace and logo colors with defaults from colorway
-    laceColor = defaultColorway?.laces.color || fallbackColorway.laces.color,
-    logoColor1 = '#FFFFFF',
-    logoColor2 = '#FFFFFF',
-    logoColor3 = '#FFFFFF',
-    // Circle logo in SVG texture
-    circleLogoUrl = null,
-    // Logo props with defaults (Jibbit logos)
-    logoUrl = null,
-    logoPosition = [.8, 0.2, 0.5],
-    logoRotation = [0, -0.3, 0],
-    logoPlacementMode = false,
-    onLogoPositionSet,
-    // Second logo props with defaults
-    logo2Position = [-0.631, 0.163, -0.488],
-    logo2Rotation = [1.163, -1.905, 1.183]
-}) => {
-    const groupRef = useRef<Group>(null);
-    const mixerRef = useRef<AnimationMixer | null>(null);
-    const [gltf, setGltf] = useState<GLTF | null>(null);
-    const originalMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
-    const currentMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
+export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
     const textureCache = useRef<Map<string, Texture>>(new Map());
     const laceTextureRef = useRef<Texture | null>(null);
-    // REFACTOR: Add a ref to hold persistent, updatable canvas textures for each logo part.
-    // This is the key to preventing the flashing effect.
     const logoTexturesRef = useRef<Map<string, CanvasTexture>>(new Map());
     const logoUpdateTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
-
-    // Use preloaded model to prevent stuttering during animations
-    useEffect(() => {
-        preloadModel()
-            .then((loadedGltf) => {
-                try {
-                    // Clone the preloaded model to avoid conflicts between instances
-                    const clonedGltf = {
-                        ...loadedGltf,
-                        scene: loadedGltf.scene.clone()
-                    };
-
-                    // Store original materials and apply them immediately for color changes
-                    clonedGltf.scene.traverse((child) => {
-                        if (child instanceof Mesh && child.material && child.name) {
-                            const originalMaterial = child.material.clone();
-                            originalMaterialsRef.current.set(child.name, originalMaterial);
-
-                            // Immediately apply the original material with proper settings
-                            const material = originalMaterial.clone();
-                            child.material = material;
-                            currentMaterialsRef.current.set(child.name, material);
-                        }
-                    });
-
-                    // Setup animations if available
-                    if (loadedGltf.animations && loadedGltf.animations.length > 0) {
-                        const mixer = new AnimationMixer(clonedGltf.scene);
-                        loadedGltf.animations.forEach((clip) => {
-                            const action = mixer.clipAction(clip);
-                            action.play();
-                        });
-                        mixerRef.current = mixer;
-                    }
-
-                    setGltf(clonedGltf);
-                    onLoad?.();
-                } catch (error) {
-                    onError?.(error instanceof Error ? error : new Error('Failed to process model'));
-                }
-            })
-            .catch((error) => {
-                onError?.(error instanceof Error ? error : new Error('Failed to load model'));
-            });
-
-        return () => {
-            // Cleanup
-            if (mixerRef.current) {
-                mixerRef.current.stopAllAction();
-                mixerRef.current = null;
-            }
-
-            // Clean up current materials and textures
-            currentMaterialsRef.current.forEach((material) => {
-                if (material.map) material.map.dispose();
-                material.dispose();
-            });
-            currentMaterialsRef.current.clear();
-
-            // Clear texture cache
-            textureCache.current.forEach((texture) => texture.dispose());
-            textureCache.current.clear();
-
-            // REFACTOR: Dispose of the persistent logo textures on unmount to prevent memory leaks.
-            logoTexturesRef.current.forEach((texture) => texture.dispose());
-            logoTexturesRef.current.clear();
-
-            // Clear any pending logo update timeouts
-            logoUpdateTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
-            logoUpdateTimeoutsRef.current.clear();
-
-            // Clear lace texture
-            if (laceTextureRef.current) {
-                laceTextureRef.current.dispose();
-                laceTextureRef.current = null;
-            }
-
-            // Clear original materials
-            originalMaterialsRef.current.forEach((material) => {
-                if (material.map) material.map.dispose();
-                material.dispose();
-            });
-            originalMaterialsRef.current.clear();
-        };
-    }, [onLoad, onError]);
-
-
+    
+    const { darkenLightMaterials } = useColorProcessor();
 
     // Memoized gradient paint texture creation - like painting over the shoe
     const createGradientTexture = useCallback((baseColor: string, color1: string, color2: string, isUpper: boolean = false): Texture => {
@@ -406,7 +136,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         textureCache.current.set(cacheKey, texture);
 
         return texture;
-    }, []);
+    }, [darkenLightMaterials]);
 
     // Create texture from base64 data URL (for AI-generated textures)
     const createTextureFromDataUrl = useCallback((dataUrl: string): Texture => {
@@ -620,7 +350,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         textureCache.current.set(cacheKey, texture);
 
         return texture;
-    }, []);
+    }, [darkenLightMaterials]);
 
     // Memoized splatter texture creation with caching
     const createSplatterTexture = useCallback((baseColor: string, splatterColor: string, splatterBaseColor: string | null = null, splatterColor2: string | null = null, useDualSplatter: boolean = false, isUpper: boolean = false, paintDensity: number = 20): Texture => {
@@ -749,7 +479,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         textureCache.current.set(cacheKey, texture);
 
         return texture;
-    }, []);
+    }, [darkenLightMaterials]);
 
     // Load lace texture and cache it
     const loadLaceTexture = useCallback((): Promise<Texture> => {
@@ -783,14 +513,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         });
     }, []);
 
-
     // REFACTOR: This new function gets a persistent texture for a logo part.
     // If the texture doesn't exist, it creates it and assigns it to the material.
     // It then asynchronously updates the texture's canvas content with the latest colors.
     // This prevents re-creating texture objects, which eliminates flashing.
     const getOrCreateAndUpdateLogoTexture = useCallback((
         partName: string,
-        material: MeshStandardMaterial,
+        material: any,
         originalTexture: Texture | null,
         colors: { color1: string; color2: string; color3: string },
         userLogoUrl: string | null
@@ -1020,372 +749,38 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         return texture;
     }, [loadLaceTexture]);
 
-    // Cleanup function for materials and textures
-    const cleanupMaterials = useCallback(() => {
-        currentMaterialsRef.current.forEach((material) => {
-            if (material.map) material.map.dispose();
-            material.dispose();
-        });
-        currentMaterialsRef.current.clear();
-    }, []);
+    const cleanup = useCallback(() => {
+        // Clear texture cache
+        textureCache.current.forEach((texture) => texture.dispose());
+        textureCache.current.clear();
 
-    // Helper function to update materials with proper cleanup
-    const updateMaterialsForParts = useCallback((
-        partFilter: (child: Mesh) => boolean,
-        updateFn: (child: Mesh, material: MeshStandardMaterial, originalMaterial ? : MeshStandardMaterial) => void
-    ) => {
-        if (!gltf) return;
+        // Dispose of the persistent logo textures
+        logoTexturesRef.current.forEach((texture) => texture.dispose());
+        logoTexturesRef.current.clear();
 
-        const materialsToCleanup: MeshStandardMaterial[] = [];
+        // Clear any pending logo update timeouts
+        logoUpdateTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+        logoUpdateTimeoutsRef.current.clear();
 
-        gltf.scene.traverse((child) => {
-            if (child instanceof Mesh && child.name && partFilter(child)) {
-                const originalMaterial = originalMaterialsRef.current.get(child.name);
-
-                // Get or create material for this part
-                const existingMaterial = currentMaterialsRef.current.get(child.name);
-                let material: MeshStandardMaterial;
-
-                if (existingMaterial) {
-                    material = existingMaterial;
-                    if (child.material !== material) {
-                        materialsToCleanup.push(child.material as MeshStandardMaterial);
-                    }
-                } else {
-                    // Clone original material to preserve original textures and properties
-                    material = originalMaterial ? originalMaterial.clone() : new MeshStandardMaterial();
-                    currentMaterialsRef.current.set(child.name, material);
-                    if (child.material) {
-                        materialsToCleanup.push(child.material as MeshStandardMaterial);
-                    }
-                }
-
-                // Store the current texture before applying updates to prevent flashing
-                const previousTexture = material.map;
-
-                // Apply the specific update function
-                updateFn(child, material, originalMaterial);
-
-                // Only assign material if it's different to prevent flashing
-                if (child.material !== material) {
-                    child.material = material;
-                }
-
-                // Ensure shadow properties are maintained for consistency
-                child.castShadow = true;
-                child.receiveShadow = true;
-
-                // Force material update to ensure texture is properly applied
-                material.needsUpdate = true;
-            }
-        });
-
-        // Schedule cleanup of old materials after a longer delay to prevent flashing
-        if (materialsToCleanup.length > 0) {
-            const timeoutId = setTimeout(() => {
-                materialsToCleanup.forEach((material) => {
-                    if (material && material.map && !originalMaterialsRef.current.has(material.uuid)) {
-                        // Only dispose textures that aren't original or currently in use
-                        const isInUse = Array.from(currentMaterialsRef.current.values()).some(
-                            currentMat => currentMat.map === material.map
-                        );
-                        if (!isInUse) {
-                            material.map.dispose();
-                        }
-                    }
-                    if (material) {
-                        material.dispose();
-                    }
-                });
-            }, 200); // Increased delay to ensure rendering is complete
-
-            return () => {
-                clearTimeout(timeoutId);
-            };
-        }
-    }, [gltf]);
-
-    // Update sole/bottom parts only when sole-related props change
-    useEffect(() => {
-        const soleFilter = (child: Mesh) =>
-        child.name.includes('bottom') || child.name.includes('sole');
-
-        const soleUpdate = (child: Mesh, material: MeshStandardMaterial) => {
-            material.transparent = true;
-            material.opacity = 0.95;
-            material.roughness = 0.9;
-            material.metalness = 0.05;
-
-            const currentTexture = material.map;
-            let newTexture = currentTexture;
-
-            if (soleTexture) {
-                newTexture = createTextureFromDataUrl(soleTexture);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.4;
-                    material.metalness = 0.1;
-                    material.color.setHex(0xffffff);
-                }
-            } else if (soleHasGradient) {
-                newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.8;
-                }
-            } else if (soleHasSplatter) {
-                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, null, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.95;
-                }
-            } else {
-                newTexture = createInnerShadowTexture(bottomColor);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.9;
-                    material.metalness = 0.05;
-                    material.color.setHex(0xffffff);
-                }
-            }
-
-            if (newTexture !== currentTexture) {
-                material.needsUpdate = true;
-            }
-        };
-
-        updateMaterialsForParts(soleFilter, soleUpdate);
-    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
-
-    // Update upper/top parts only when upper-related props change
-    useEffect(() => {
-        const upperFilter = (child: Mesh) => {
-            const lowerName = child.name.toLowerCase();
-            // Exclude logo parts from upper splatter effects
-            const isLogoPart = lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
-                lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
-            return (child.name.includes('top') || child.name.includes('upper')) && !isLogoPart;
-        };
-
-        const upperUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial ? : MeshStandardMaterial) => {
-            material.roughness = 1;
-            material.metalness = 0;
-
-            const currentTexture = material.map;
-            let newTexture = currentTexture;
-
-            if (upperTexture) {
-                newTexture = createTextureFromDataUrl(upperTexture);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.4;
-                    material.metalness = 0.1;
-                    material.color.setHex(0xffffff);
-                }
-            } else if (upperHasGradient) {
-                newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.8;
-                }
-            } else if (upperHasSplatter) {
-                newTexture = createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
-                if (material.map !== newTexture) {
-                    material.map = newTexture;
-                    material.roughness = 0.95;
-                }
-            } else {
-                const originalTexture = originalMaterial?.map || null;
-                newTexture = originalTexture;
-                if (material.map !== originalTexture) {
-                    material.map = originalTexture;
-                }
-                // Apply darkening to light colors to prevent overexposure
-                const adjustedColor = darkenLightMaterials(topColor);
-                material.color.set(adjustedColor);
-                if (originalTexture) {
-                    material.roughness = originalMaterial?.roughness ?? 0.8;
-                    material.metalness = originalMaterial?.metalness ?? 0.1;
-                }
-            }
-
-            if (newTexture !== currentTexture) {
-                material.needsUpdate = true;
-            }
-        };
-
-        updateMaterialsForParts(upperFilter, upperUpdate);
-    }, [gltf, topColor, upperHasSplatter, upperSplatterColor, upperSplatterColor2, upperSplatterBaseColor, upperUseDualSplatter, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
-
-    // Update lace parts only when lace-related props change
-    useEffect(() => {
-        const laceFilter = (child: Mesh) => {
-            const lowerName = child.name.toLowerCase();
-            return lowerName.includes('lace') || lowerName.includes('string') || lowerName.includes('shoelace') ||
-                lowerName.includes('cord') || lowerName.includes('tie') || lowerName.includes('eyelet');
-        };
-
-        const laceUpdate = (child: Mesh, material: MeshStandardMaterial) => {
-            material.roughness = 0.9;
-            material.metalness = 0;
-
-            const laceTexture = createLaceTexture(laceColor);
-            if (material.map !== laceTexture) {
-                material.map = laceTexture;
-                material.color.setHex(0xffffff);
-            }
-        };
-
-        updateMaterialsForParts(laceFilter, laceUpdate);
-    }, [gltf, laceColor, createLaceTexture, updateMaterialsForParts]);
-
-    // REFACTOR: This effect now uses the new texture update system to avoid flashes.
-    useEffect(() => {
-        const logoFilter = (child: Mesh) => {
-            const lowerName = child.name.toLowerCase();
-            return lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
-                lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
-        };
-
-        const logoUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial ? : MeshStandardMaterial) => {
-            if (!child.name) return;
-
-            material.roughness = 0.4;
-            material.metalness = 0.1;
-
-            // This function now handles everything, preventing the flash.
-            getOrCreateAndUpdateLogoTexture(
-                child.name,
-                material,
-                originalMaterial?.map || null, {
-                    color1: logoColor1,
-                    color2: logoColor2,
-                    color3: logoColor3
-                },
-                circleLogoUrl
-            );
-        };
-
-        updateMaterialsForParts(logoFilter, logoUpdate);
-    }, [gltf, logoColor1, logoColor2, logoColor3, circleLogoUrl, getOrCreateAndUpdateLogoTexture, updateMaterialsForParts, topColor, upperHasSplatter, upperTexture, upperHasGradient]);
-
-    // Secondary logo effect to ensure logos are restored after any material changes
-    useEffect(() => {
-        if (!gltf || !circleLogoUrl) return;
-
-        // Small delay to run after other material effects
-        const timeoutId = setTimeout(() => {
-            const logoFilter = (child: Mesh) => {
-                const lowerName = child.name.toLowerCase();
-                return lowerName.includes('logo') || lowerName.includes('brand') || lowerName.includes('emblem') ||
-                    lowerName.includes('swoosh') || lowerName.includes('mark') || lowerName.includes('badge');
-            };
-
-            const logoRestoreUpdate = (child: Mesh, material: MeshStandardMaterial, originalMaterial?: MeshStandardMaterial) => {
-                if (!child.name) return;
-
-                // Force restore the logo texture
-                getOrCreateAndUpdateLogoTexture(
-                    child.name,
-                    material,
-                    originalMaterial?.map || null,
-                    {
-                        color1: logoColor1,
-                        color2: logoColor2,
-                        color3: logoColor3
-                    },
-                    circleLogoUrl
-                );
-            };
-
-            updateMaterialsForParts(logoFilter, logoRestoreUpdate);
-        }, 100); // Small delay to ensure it runs after other effects
-
-        return () => clearTimeout(timeoutId);
-    }, [gltf, circleLogoUrl, logoColor1, logoColor2, logoColor3, getOrCreateAndUpdateLogoTexture, updateMaterialsForParts, topColor, upperHasSplatter, upperTexture]);
-
-    // Animation frame loop
-    useFrame((_state, delta) => {
-        if (mixerRef.current) {
-            mixerRef.current.update(delta);
-        }
-
-        if (groupRef.current) {
-            // Apply scale
-            groupRef.current.scale.setScalar(scale);
-        }
-    });
-
-    // Helper function to darken white/light materials to prevent overexposure
-    const darkenLightMaterials = useCallback((color: string): string => {
-        const hex = color.replace('#', '');
-        const r = parseInt(hex.substr(0, 2), 16);
-        const g = parseInt(hex.substr(2, 2), 16);
-        const b = parseInt(hex.substr(4, 2), 16);
-        
-        // Calculate brightness (0-255)
-        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-        
-        // If brightness is above 200 (very light), apply darkening
-        if (brightness > 200) {
-            const darkenFactor = 0.85; // Darken by 15%
-            const newR = Math.floor(r * darkenFactor);
-            const newG = Math.floor(g * darkenFactor);
-            const newB = Math.floor(b * darkenFactor);
-            
-            return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-        }
-        
-        return color;
-    }, []);
-
-    // Helper function to clone material for unique interaction
-    const makeMaterialUnique = useCallback((object: Mesh) => {
-        if (object.userData.isMaterialCloned) {
-            return;
-        }
-
-        const material = object.material as MeshStandardMaterial;
-        if (material && object.name) {
-            const newMaterial = material.clone();
-            object.material = newMaterial;
-            currentMaterialsRef.current.set(object.name, newMaterial);
-            object.userData.isMaterialCloned = true;
+        // Clear lace texture
+        if (laceTextureRef.current) {
+            laceTextureRef.current.dispose();
+            laceTextureRef.current = null;
         }
     }, []);
-
-
-    if (!gltf) {
-        return null;
-    }
 
     return (
-        <group
-            ref={groupRef}
-            position={[0, 0.15, 0]}
-        >
-            <primitive
-                object={gltf.scene}
-                dispose={null}
-            />
-            <JibbitLogo
-                logoUrl={logoUrl}
-                position={logoPosition}
-                rotation={logoRotation}
-                scale={0.15}
-                visible={!!logoUrl}
-            />
-            <JibbitLogo
-                logoUrl={logoUrl}
-                position={logo2Position}
-                rotation={logo2Rotation}
-                scale={0.15}
-                visible={!!logoUrl}
-            />
-        </group>
+        <>
+            {children({
+                createGradientTexture,
+                createTextureFromDataUrl,
+                createInnerShadowTexture,
+                createSplatterTexture,
+                createLaceTexture,
+                loadLaceTexture,
+                getOrCreateAndUpdateLogoTexture,
+                cleanup
+            })}
+        </>
     );
 };
-
-// Preload the model for better performance
-useGLTF.preload(MODEL_URL);
-preloadModel().catch(console.error);
