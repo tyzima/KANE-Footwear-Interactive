@@ -767,7 +767,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:right-4 md:h-[calc(100vh-2rem)] md:rounded-2xl ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:right-4 md:h-[calc(100vh-2rem)] md:rounded-2xl border border-gray-200/50 backdrop-blur-sm ${isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}>
         {/* Header */}
         <div className="flex items-center justify-center pl-6 pt-3 pb-2 bg-transparent flex-shrink-0">
@@ -933,7 +933,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
                   {/* Simplified Size Grid: 2 per row, all data on one row per size */}
                   <div className="pt-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[45vh] overflow-y-auto">
                       {getAvailableSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
                         const available = getAvailableQuantity(size);
