@@ -767,8 +767,10 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'
-        }`}>
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`} style={{
+          boxShadow: isOpen ? '0 0 40px rgba(0, 0, 0, 0.15), 0 0 20px rgba(0, 0, 0, 0.1), 0 0 10px rgba(0, 0, 0, 0.05), inset 0 -20px 20px -10px rgba(0, 0, 0, 0.1)' : 'none'
+        }}>
         {/* Header */}
         <div className="flex items-center justify-center pl-6 pt-3 pb-2 bg-transparent flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -1294,7 +1296,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border border-slate-400/20 mx-3 my-5 bg-gradient-to-r from-slate-400/10 to-slate-400/0 rounded-full p-4">
+          <div className="border border-slate-400/20 mx-3 mb-7 my-5 bg-gradient-to-r from-slate-400/10 to-slate-400/0 rounded-full p-4">
             <div className="flex justify-between gap-3">
               <Button
                 type="button"
