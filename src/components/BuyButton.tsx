@@ -262,12 +262,24 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     return getAvailableQuantity(size) > 0;
   };
 
-  const steps = [
-    { title: 'Sizes', icon: ShoppingCart },
-    { title: 'Order Type', icon: CreditCard },
-    { title: 'Contact', icon: User },
-    { title: 'Review', icon: MessageSquare },
-  ];
+  // Dynamic steps based on order type
+  const getSteps = () => {
+    const baseSteps = [
+      { title: 'Sizes', icon: ShoppingCart },
+      { title: 'Order', icon: CreditCard },
+    ];
+    
+    // Only include contact step for order_request
+    if (orderType === 'order_request') {
+      baseSteps.push({ title: 'Contact', icon: User });
+    }
+    
+    baseSteps.push({ title: 'Review', icon: MessageSquare });
+    
+    return baseSteps;
+  };
+  
+  const steps = getSteps();
 
 
   const captureScreenshot = () => {
@@ -378,17 +390,18 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     if (stepIndex > currentStep) {
       return false;
     }
+    
+    const steps = getSteps();
+    const stepTitle = steps[stepIndex]?.title;
+    
     // For current step
-    switch (stepIndex) {
-      case 0:
+    switch (stepTitle) {
+      case 'Sizes':
         return getTotalPairs() >= 8;
-      case 1:
+      case 'Order':
         return orderType !== null;
-      case 2:
-        // For buy_now, no contact info needed. For order_request, all contact fields required
-        if (orderType === 'buy_now') {
-          return true;
-        }
+      case 'Contact':
+        // Only show contact step for order_request
         return formData.firstName.trim() !== '' &&
           formData.lastName.trim() !== '' &&
           formData.email.trim() !== '' &&
@@ -397,7 +410,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           formData.state.trim() !== '' &&
           formData.zip.trim() !== '' &&
           formData.country.trim() !== '';
-      case 3:
+      case 'Review':
         return true; // Optional step
       default:
         return false;
@@ -410,7 +423,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   const handleNext = () => {
     if (isStepComplete(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+      const nextStep = currentStep + 1;
+      setCurrentStep(Math.min(nextStep, steps.length - 1));
     } else {
       toast({
         title: "Incomplete Step",
@@ -421,7 +435,8 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   };
 
   const handlePrev = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 0));
+    const prevStep = currentStep - 1;
+    setCurrentStep(Math.max(prevStep, 0));
   };
 
   // Address validation using Nominatim (OpenStreetMap) - Free service
@@ -499,6 +514,16 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
     return () => clearTimeout(timer);
   }, [formData.addressLine1, formData.city, formData.state, formData.zip, formData.country, validateAddress]);
+
+  // Reset step when order type changes to ensure proper step flow
+  useEffect(() => {
+    if (orderType && currentStep === 1) {
+      // If we're on the order type step and an order type is selected, move to next step
+      // The dynamic steps will handle whether to show contact or go to review
+      const nextStep = currentStep + 1;
+      setCurrentStep(Math.min(nextStep, steps.length - 1));
+    }
+  }, [orderType, currentStep, steps.length]);
 
   const applySuggestion = (suggestion: {
     display_name: string;
@@ -996,7 +1021,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
             {/* Step Content */}
             <form onSubmit={(e) => { if (currentStep === steps.length - 1) handleSubmit(e); else e.preventDefault(); }} className="space-y-6">
-              {currentStep === 0 && (
+              {steps[currentStep]?.title === 'Sizes' && (
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     {/* Inventory Status */}
@@ -1098,7 +1123,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 </div>
               )}
 
-              {currentStep === 1 && (
+              {steps[currentStep]?.title === 'Order' && (
                 <div className="space-y-6">
                   <div className="text-center space-y-2">
                     <h3 className="font-semibold text-lg">Choose Your Order Type</h3>
@@ -1198,7 +1223,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 </div>
               )}
 
-              {currentStep === 2 && orderType === 'order_request' && (
+              {steps[currentStep]?.title === 'Contact' && (
                 <div className="space-y-4">
 
                   <div className="space-y-4">
@@ -1403,13 +1428,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 </div>
               )}
 
-              {currentStep === 2 && orderType === 'order_request' && (
-                <div className="space-y-4">
-                  {/* Contact form content - already handled above */}
-                </div>
-              )}
-
-              {currentStep === 3 && (
+              {steps[currentStep]?.title === 'Review' && (
                 <div className="space-y-4">
                   {/* Screenshot Preview - Made larger for better visibility */}
                   {screenshot && (
