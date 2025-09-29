@@ -767,7 +767,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       )}
 
       {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-[#F8F9FA] rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:h-[calc(100vh-2rem)] md:rounded-2xl border border-gray-200/50 backdrop-blur-sm ${isOpen ? 'translate-x-0 md:right-4' : 'translate-x-full md:right-0'
+      <div className={`fixed top-0 right-0 h-screen w-full max-w-lg bg-white rounded-bl-[40px] rounded-r-none z-50 transform transition-transform duration-300 ease-in-out md:top-4 md:h-[calc(100vh-2rem)] md:rounded-2xl border border-gray-200/50 backdrop-blur-sm ${isOpen ? 'translate-x-0 md:right-4' : 'translate-x-full md:right-0'
         }`}>
         {/* Floating X Button */}
         <Button
@@ -780,7 +780,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         </Button>
 
         {/* Progress Indicator - Sticky at top */}
-        <div className="sticky rounded-2xl top-0 z-10 bg-[#F8F9FA] border-b border-gray-200 px-6 py-4">
+        <div className="sticky rounded-t-2xl top-0 z-10 bg-white border-b border-gray-200 px-6 py-4">
           <nav>
             <ol
               className="flex items-center justify-between w-full relative"
