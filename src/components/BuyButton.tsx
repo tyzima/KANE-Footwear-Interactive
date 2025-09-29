@@ -784,121 +784,124 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           </Button>
         </div>
 
+        {/* Progress Indicator - Sticky at top */}
+        <div className="sticky top-0 z-10 bg-[#F8F9FA] border-b border-gray-200 px-6 py-4">
+          <nav>
+            <ol
+              className="flex items-center justify-between w-full relative"
+              style={{ minHeight: 50 }}
+            >
+              {steps.map((step, index) => {
+                const isCompleted = isStepComplete(index);
+                const isActive = currentStep === index;
+                // For the "liquid fill" effect: bars fill only after step is completed (i.e., after clicking "Next")
+                // So, bar before step 1 is never filled, after step 1 is completed, first bar fills, etc.
+                return (
+                  <React.Fragment key={index}>
+                    <li className="flex flex-col items-center flex-1 min-w-0 z-10">
+                      <div
+                        className={`
+                          flex items-center justify-center
+                          w-8 h-8
+                          rounded-full
+                          border-2
+                          transition-all
+                          duration-200
+                          relative
+                          ${isCompleted
+                            ? 'bg-green-500 border-green-500 shadow-lg text-white'
+                            : isActive
+                              ? 'bg-primary border-primary shadow text-white'
+                              : 'bg-white border-gray-300 text-gray-400'
+                          }
+                        `}
+                        style={{
+                          boxShadow: isActive
+                            ? '0 0 0 4px rgba(59,130,246,0.10)'
+                            : isCompleted
+                              ? '0 0 0 4px rgba(34,197,94,0.10)'
+                              : undefined
+                        }}
+                      >
+                        {isCompleted ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <span className="font-semibold text-sm">{index + 1}</span>
+                        )}
+                      </div>
+                      <span
+                        className={`
+                          mt-1 text-xs font-semibold text-center transition-colors
+                          ${isActive
+                            ? 'text-primary'
+                            : isCompleted
+                              ? 'text-green-600'
+                              : 'text-gray-500'
+                          }
+                        `}
+                        style={{
+                          maxWidth: 60,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                      >
+                        {step.title}
+                      </span>
+                    </li>
+                    {index < steps.length - 1 && (
+                      <div
+                        className="relative flex-1 flex items-center"
+                        style={{
+                          // Move the lines up so they're closer to the middle of the circle
+                          marginTop: '0.2rem',
+                          marginBottom: 0,
+                          minWidth: 24,
+                          height: 8,
+                        }}
+                      >
+                        {/* Track */}
+                        <div
+                          className="absolute w-full h-1.5 rounded-full bg-gray-200"
+                          style={{
+                            // Move the bar up to align with the center of the step circle
+                            top: '-0.4rem',
+                            left: 0,
+                            zIndex: 0,
+                          }}
+                        />
+                        {/* "Liquid fill" bar: only fills after step is completed */}
+                        <div
+                          className={`
+                            absolute h-1.5 rounded-full transition-all duration-700
+                            ${isStepComplete(index + 1)
+                              ? 'bg-green-500'
+                              : 'bg-primary/30'
+                            }
+                          `}
+                          style={{
+                            width: isStepComplete(index + 1) ? '100%' : '0%',
+                            left: 0,
+                            top: '-0.4rem',
+                            zIndex: 1,
+                            transitionTimingFunction: 'cubic-bezier(.4,1.6,.6,1)',
+                            boxShadow: isStepComplete(index + 1)
+                              ? '0 1px 4px 0 rgba(34,197,94,0.10)'
+                              : undefined,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </ol>
+          </nav>
+        </div>
+
         {/* Content */}
-        <div className="flex flex-col" style={{ height: 'calc(100vh - 9px)' }}>
+        <div className="flex flex-col" style={{ height: 'calc(100vh - 9px - 80px)' }}>
           <div className="flex-1 overflow-y-auto p-6 space-y-8">
-            {/* Stepper - Simplified titles for less text */}
-            <nav className="mb-2">
-              <ol
-                className="flex items-center justify-between w-full relative"
-                style={{ marginTop: '-20px', minHeight: 70 }}
-              >
-                {steps.map((step, index) => {
-                  const isCompleted = isStepComplete(index);
-                  const isActive = currentStep === index;
-                  // For the "liquid fill" effect: bars fill only after step is completed (i.e., after clicking "Next")
-                  // So, bar before step 1 is never filled, after step 1 is completed, first bar fills, etc.
-                  return (
-                    <React.Fragment key={index}>
-                      <li className="flex flex-col items-center flex-1 min-w-0 z-10">
-                        <div
-                          className={`
-                            flex items-center justify-center
-                            w-11 h-11
-                            rounded-full
-                            border-2
-                            transition-all
-                            duration-200
-                            relative
-                            ${isCompleted
-                              ? 'bg-green-500 border-green-500 shadow-lg text-white'
-                              : isActive
-                                ? 'bg-primary border-primary shadow text-white'
-                                : 'bg-white border-gray-300 text-gray-400'
-                            }
-                          `}
-                          style={{
-                            boxShadow: isActive
-                              ? '0 0 0 6px rgba(59,130,246,0.10)'
-                              : isCompleted
-                                ? '0 0 0 6px rgba(34,197,94,0.10)'
-                                : undefined
-                          }}
-                        >
-                          {isCompleted ? (
-                            <Check className="w-5 h-5" />
-                          ) : (
-                            <span className="font-semibold">{index + 1}</span>
-                          )}
-                        </div>
-                        <span
-                          className={`
-                            mt-2 text-xs font-semibold text-center transition-colors
-                            ${isActive
-                              ? 'text-primary'
-                              : isCompleted
-                                ? 'text-green-600'
-                                : 'text-gray-500'
-                            }
-                          `}
-                          style={{
-                            maxWidth: 80,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
-                          }}
-                        >
-                          {step.title}
-                        </span>
-                      </li>
-                      {index < steps.length - 1 && (
-                        <div
-                          className="relative flex-1 flex items-center"
-                          style={{
-                            // Move the lines up so they're closer to the middle of the circle
-                            marginTop: '0.4rem',
-                            marginBottom: 0,
-                            minWidth: 32,
-                            height: 10,
-                          }}
-                        >
-                          {/* Track */}
-                          <div
-                            className="absolute w-full h-2 rounded-full bg-gray-200"
-                            style={{
-                              // Move the bar up to align with the center of the step circle
-                              top: '-0.65rem',
-                              left: 0,
-                              zIndex: 0,
-                            }}
-                          />
-                          {/* "Liquid fill" bar: only fills after step is completed */}
-                          <div
-                            className={`
-                              absolute h-2 rounded-full transition-all duration-700
-                              ${isStepComplete(index + 1)
-                                ? 'bg-green-500'
-                                : 'bg-primary/30'
-                              }
-                            `}
-                            style={{
-                              width: isStepComplete(index + 1) ? '100%' : '0%',
-                              left: 0,
-                              top: '-0.65rem',
-                              zIndex: 1,
-                              transitionTimingFunction: 'cubic-bezier(.4,1.6,.6,1)',
-                              boxShadow: isStepComplete(index + 1)
-                                ? '0 2px 8px 0 rgba(34,197,94,0.10)'
-                                : undefined,
-                            }}
-                          />
-                        </div>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </ol>
-            </nav>
 
             {/* Step Content */}
             <form onSubmit={(e) => { if (currentStep === steps.length - 1) handleSubmit(e); else e.preventDefault(); }} className="space-y-6">
