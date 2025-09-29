@@ -780,7 +780,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
         </Button>
 
         {/* Progress Indicator - Sticky at top */}
-        <div className="sticky top-0 z-10 bg-[#F8F9FA] border-b border-gray-200 px-6 py-4">
+        <div className="sticky rounded-2xl top-0 z-10 bg-[#F8F9FA] border-b border-gray-200 px-6 py-4">
           <nav>
             <ol
               className="flex items-center justify-between w-full relative"
