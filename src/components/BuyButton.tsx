@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ShoppingCart, Send, Plus, Minus, X, User, MessageSquare, Check, MapPin, Info, AlertCircle, CheckCircle } from 'lucide-react';
+import { ShoppingCart, Send, Plus, Minus, X, User, MessageSquare, Check, MapPin, Info, AlertCircle, CheckCircle, CreditCard, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { ExpandingButton } from '@/components/ExpandingButton';
 import { useShopify } from '@/hooks/useShopify';
 import { useShopifyCustomer } from '@/hooks/useShopifyCustomer';
 import { buildCartAddUrl, extractVariantMapping, validateCartUrl, type DesignData, type ColorwayVariants } from '@/lib/shopify-cart';
+import { supabase } from '@/lib/supabase';
 
 interface BuyButtonProps {
   canvasRef?: React.RefObject<HTMLCanvasElement>;
@@ -92,6 +93,8 @@ interface FormData {
   website: string; // Honeypot field
 }
 
+type OrderType = 'buy_now' | 'order_request';
+
 interface AddressValidation {
   isValidating: boolean;
   isValid: boolean | null;
@@ -136,6 +139,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   const [inventoryData, setInventoryData] = useState<Record<string, number>>({});
   const [isLoadingInventory, setIsLoadingInventory] = useState(false);
   const [variantMapping, setVariantMapping] = useState<ColorwayVariants>({});
+  const [orderType, setOrderType] = useState<OrderType | null>(null);
   const [addressValidation, setAddressValidation] = useState<AddressValidation>({
     isValidating: false,
     isValid: null,
@@ -260,6 +264,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
   const steps = [
     { title: 'Sizes', icon: ShoppingCart },
+    { title: 'Order Type', icon: CreditCard },
     { title: 'Contact', icon: User },
     { title: 'Review', icon: MessageSquare },
   ];
@@ -313,6 +318,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       });
       setScreenshot('');
       setCurrentStep(0);
+      setOrderType(null);
     }
   };
 
@@ -377,6 +383,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       case 0:
         return getTotalPairs() >= 8;
       case 1:
+        return orderType !== null;
+      case 2:
+        // For buy_now, no contact info needed. For order_request, all contact fields required
+        if (orderType === 'buy_now') {
+          return true;
+        }
         return formData.firstName.trim() !== '' &&
           formData.lastName.trim() !== '' &&
           formData.email.trim() !== '' &&
@@ -385,7 +397,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
           formData.state.trim() !== '' &&
           formData.zip.trim() !== '' &&
           formData.country.trim() !== '';
-      case 2:
+      case 3:
         return true; // Optional step
       default:
         return false;
@@ -598,6 +610,87 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     };
   };
 
+  // Save order request to Supabase
+  const saveOrderRequest = async () => {
+    if (!currentProduct || !currentColorway) {
+      toast({
+        title: "Error",
+        description: "Missing product or colorway information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const colorConfig = getColorInfo();
+      const designData = buildDesignData();
+
+      const orderRequestData = {
+        order_type: 'order_request',
+        status: 'pending',
+        customer_info: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: {
+            line1: formData.addressLine1,
+            line2: formData.addressLine2,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+            country: formData.country
+          },
+          notes: formData.notes
+        },
+        product_info: {
+          productId: currentProduct.id,
+          productTitle: currentProduct.title,
+          colorwayId: currentColorway.id,
+          colorwayName: currentColorway.name,
+          sizeQuantities: formData.sizeQuantities,
+          totalPairs: getTotalPairs(),
+          pricePerPair: PRICE_PER_PAIR,
+          totalPrice: getTotalPrice()
+        },
+        design_config: colorConfig,
+        metadata: {
+          screenshot: screenshot,
+          userAgent: navigator.userAgent,
+          referrer: document.referrer,
+          shopDomain: shopDomain,
+          isCustomerContext: isCustomerContext,
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      const { data, error } = await supabase
+        .from('order_requests')
+        .insert([orderRequestData])
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Order request saved:', data);
+      
+      toast({
+        title: "Order Request Submitted!",
+        description: `Thank you for your order request of ${getTotalPairs()} pairs! We'll contact you within 24 hours to confirm availability and process your order.`,
+      });
+
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Error saving order request:', error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your order request. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Add items to Shopify cart using cart/add URL with line item properties
   const redirectToCart = async () => {
     if (!shopDomain) {
@@ -674,64 +767,67 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
       return;
     }
 
-    // For customer contexts, redirect to Shopify cart instead of webhook
-    if (isCustomerContext && shopDomain) {
-      await redirectToCart();
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // Prepare the data to send to n8n webhook
-      const webhookData = {
-        customerInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          address: {
-            line1: formData.addressLine1,
-            line2: formData.addressLine2,
-            city: formData.city,
-            state: formData.state,
-            zip: formData.zip,
-            country: formData.country
-          },
-          notes: formData.notes
-        },
-        orderDetails: {
-          sizeQuantities: formData.sizeQuantities,
-          totalPairs: getTotalPairs(),
-          totalPrice: getTotalPrice(),
-          pricePerPair: PRICE_PER_PAIR,
-          timestamp: new Date().toISOString(),
-          modelScreenshot: screenshot,
-          colorConfiguration: getColorInfo()
+      if (orderType === 'order_request') {
+        // Save order request to Supabase
+        await saveOrderRequest();
+      } else if (orderType === 'buy_now') {
+        // For customer contexts, redirect to Shopify cart
+        if (isCustomerContext && shopDomain) {
+          await redirectToCart();
+        } else {
+          // Fallback to webhook for non-customer contexts
+          const webhookData = {
+            customerInfo: {
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              address: {
+                line1: formData.addressLine1,
+                line2: formData.addressLine2,
+                city: formData.city,
+                state: formData.state,
+                zip: formData.zip,
+                country: formData.country
+              },
+              notes: formData.notes
+            },
+            orderDetails: {
+              sizeQuantities: formData.sizeQuantities,
+              totalPairs: getTotalPairs(),
+              totalPrice: getTotalPrice(),
+              pricePerPair: PRICE_PER_PAIR,
+              timestamp: new Date().toISOString(),
+              modelScreenshot: screenshot,
+              colorConfiguration: getColorInfo()
+            }
+          };
+
+          const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
+
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(webhookData),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to submit order');
+          }
+
+          toast({
+            title: "Order Submitted!",
+            description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
+          });
+
+          setIsOpen(false);
         }
-      };
-
-      // Replace with your actual n8n webhook URL
-      const webhookUrl = process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/shoe-order';
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(webhookData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit order');
       }
-
-      toast({
-        title: "Order Submitted!",
-        description: `Thank you for your order of ${getTotalPairs()} pairs! We'll contact you soon with more details.`,
-      });
-
-      setIsOpen(false);
     } catch (error) {
       console.error('Error submitting order:', error);
       toast({
@@ -1003,6 +1099,106 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
               )}
 
               {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 className="font-semibold text-lg">Choose Your Order Type</h3>
+                    <p className="text-sm text-gray-600">
+                      Select how you'd like to proceed with your custom shoe order
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {/* Buy Now Option */}
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('buy_now')}
+                      className={`p-4 border-2 rounded-lg text-left transition-all duration-200 ${
+                        orderType === 'buy_now'
+                          ? 'border-primary bg-primary/5 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          orderType === 'buy_now' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-base mb-1">Buy Now</h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Proceed directly to checkout with current inventory
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-green-600">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Immediate purchase</span>
+                          </div>
+                        </div>
+                        {orderType === 'buy_now' && (
+                          <Check className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Order Request Option */}
+                    <button
+                      type="button"
+                      onClick={() => setOrderType('order_request')}
+                      className={`p-4 border-2 rounded-lg text-left transition-all duration-200 ${
+                        orderType === 'order_request'
+                          ? 'border-primary bg-primary/5 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          orderType === 'order_request' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-base mb-1">Order Request</h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Request your design even if sizes might be sold out
+                          </p>
+                          <div className="flex items-center gap-2 text-xs text-blue-600">
+                            <Info className="w-3 h-3" />
+                            <span>We'll confirm availability within 24 hours</span>
+                          </div>
+                        </div>
+                        {orderType === 'order_request' && (
+                          <Check className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Order Type Info */}
+                  {orderType && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800">
+                          {orderType === 'buy_now' ? (
+                            <p>
+                              <strong>Buy Now:</strong> You'll proceed directly to checkout with your selected sizes. 
+                              Only sizes currently in stock will be available for immediate purchase.
+                            </p>
+                          ) : (
+                            <p>
+                              <strong>Order Request:</strong> We'll save your design and contact you within 24 hours 
+                              to confirm availability and process your order. This option is great if your preferred 
+                              sizes might be temporarily out of stock.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {currentStep === 2 && orderType === 'order_request' && (
                 <div className="space-y-4">
 
                   <div className="space-y-4">
@@ -1207,7 +1403,13 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 </div>
               )}
 
-              {currentStep === 2 && (
+              {currentStep === 2 && orderType === 'order_request' && (
+                <div className="space-y-4">
+                  {/* Contact form content - already handled above */}
+                </div>
+              )}
+
+              {currentStep === 3 && (
                 <div className="space-y-4">
                   {/* Screenshot Preview - Made larger for better visibility */}
                   {screenshot && (
@@ -1227,6 +1429,14 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   <div className="space-y-1">
                     <h3 className="font-semibold text-lg -mt-2">Order Summary</h3>
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="flex-1 text-gray-700 text-sm">Order Type</span>
+                        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ml-2">
+                          <span className="font-bold">
+                            {orderType === 'buy_now' ? 'Buy Now' : 'Order Request'}
+                          </span>
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between">
                         <span className="flex-1 text-gray-700 text-sm">Quantity</span>
                         <span className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold flex items-center gap-1 ml-2">
@@ -1248,41 +1458,47 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     </div>
                   </div>
 
-                  {/* Info Card - Different content for customer vs admin */}
-                  <div className="bg-blue-50 border hidden border-blue-200 rounded-lg p-2">
+                  {/* Info Card - Different content based on order type */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <div className="flex items-start gap-3">
                       <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
                         <h4 className="font-medium text-blue-900">Next Steps</h4>
-                        <p className="text-xs text-blue-800">
-                          {isCustomerContext && shopDomain ? (
-                            "Your items will be added to your Shopify cart."
+                        <p className="text-sm text-blue-800">
+                          {orderType === 'buy_now' ? (
+                            isCustomerContext && shopDomain ? (
+                              "Your items will be added to your Shopify cart for immediate checkout."
+                            ) : (
+                              "We'll process your order and contact you with payment details within 24 hours."
+                            )
                           ) : (
-                            "We'll reach out to you with an official invoice within 24 hours."
+                            "We'll save your design and contact you within 24 hours to confirm availability and process your order."
                           )}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Additional Notes - Expanding Button */}
-                  <div className="space-y-2">
-                    <ExpandingButton
-                      buttonText="Add Special Notes"
-                      placeholder="Any special instructions or requests..."
-                      value={formData.notes}
-                      onChange={(text) => setFormData(prev => ({ ...prev, notes: text }))}
-                      onSubmit={(text) => {
-                        setFormData(prev => ({ ...prev, notes: text }));
-                        toast({
-                          title: "Notes Added",
-                          description: "Your special notes have been saved.",
-                        });
-                      }}
-                      onCancel={() => setFormData(prev => ({ ...prev, notes: '' }))}
-                      rows={2}
-                    />
-                  </div>
+                  {/* Additional Notes - Only show for order requests */}
+                  {orderType === 'order_request' && (
+                    <div className="space-y-2">
+                      <ExpandingButton
+                        buttonText="Add Special Notes"
+                        placeholder="Any special instructions or requests..."
+                        value={formData.notes}
+                        onChange={(text) => setFormData(prev => ({ ...prev, notes: text }))}
+                        onSubmit={(text) => {
+                          setFormData(prev => ({ ...prev, notes: text }));
+                          toast({
+                            title: "Notes Added",
+                            description: "Your special notes have been saved.",
+                          });
+                        }}
+                        onCancel={() => setFormData(prev => ({ ...prev, notes: '' }))}
+                        rows={2}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </form>
@@ -1324,15 +1540,22 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                     </>
                   ) : (
                     <>
-                      {isCustomerContext && shopDomain ? (
-                        <>
-                          <ShoppingCart className="w-4 h-4" />
-                          Add to Cart
-                        </>
+                      {orderType === 'buy_now' ? (
+                        isCustomerContext && shopDomain ? (
+                          <>
+                            <ShoppingCart className="w-4 h-4" />
+                            Add to Cart
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="w-4 h-4" />
+                            Buy Now
+                          </>
+                        )
                       ) : (
                         <>
-                          <Send className="w-4 h-4" />
-                          Submit Order
+                          <FileText className="w-4 h-4" />
+                          Submit Request
                         </>
                       )}
                     </>
