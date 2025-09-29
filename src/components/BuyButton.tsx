@@ -987,7 +987,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
 
                   {/* Quick Summary - Moved to bottom, simplified */}
                   {getTotalPairs() > 0 && (
-                    <div className="bg-gray-50 py-2 px-4 rounded-lg border border-gray-200">
+                    <div className="bg-gray-50 py-2 px-4 pt-4 rounded-lg border border-gray-200">
                       <div className="flex justify-between items-center font-medium">
                         <span>Total Pairs</span>
                         <span className="text-primary">{getTotalPairs()}</span>
