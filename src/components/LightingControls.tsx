@@ -26,8 +26,8 @@ export const LightingControls: React.FC<LightingControlsProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [preset, setPreset] = useState<LightingPreset>(isDarkMode ? 'dark_optimized' : 'photorealistic');
   // Internal state with mode-aware defaults
-  const [localIntensity, setLocalIntensity] = useState(isDarkMode ? 2.0 : 1.0);
-  const [localShadowIntensity, setLocalShadowIntensity] = useState(0.5);
+  const [localIntensity, setLocalIntensity] = useState(isDarkMode ? 2.0 : 1.8);
+  const [localShadowIntensity, setLocalShadowIntensity] = useState(0.2);
 
   // Auto-switch preset when dark mode changes
   useEffect(() => {
@@ -36,8 +36,8 @@ export const LightingControls: React.FC<LightingControlsProps> = ({
 
   // Sync props to local state if provided, and adjust for preset/mode
   useEffect(() => {
-    const defaultIntensity = isDarkMode ? 2.0 : 1.0;
-    const defaultShadow = 0.5;
+    const defaultIntensity = isDarkMode ? 2.0 : 1.8;
+    const defaultShadow = 0.2;
     setLocalIntensity(propIntensity ?? defaultIntensity);
     setLocalShadowIntensity(propShadowIntensity ?? defaultShadow);
   }, [propIntensity, propShadowIntensity, isDarkMode]);
@@ -46,10 +46,10 @@ export const LightingControls: React.FC<LightingControlsProps> = ({
   useEffect(() => {
     if (preset === 'dark_optimized') {
       setLocalIntensity(2.2); // Brighter for black BG
-      setLocalShadowIntensity(0.8); // Stronger shadows for contrast
+      setLocalShadowIntensity(0.3); // Softer shadows
     } else {
-      setLocalIntensity(1.0);
-      setLocalShadowIntensity(0.5);
+      setLocalIntensity(1.8);
+      setLocalShadowIntensity(0.2);
     }
     
     // Notify parent of preset change

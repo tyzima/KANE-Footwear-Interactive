@@ -252,8 +252,26 @@ const Index = () => {
   }, [isDark]);
   const [showInfo, setShowInfo] = useState(false);
   
+  // Helper function to determine if a color is dark
+  const isColorDark = (color: string): boolean => {
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Convert to RGB
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return true if luminance is less than 0.5 (dark)
+    return luminance < 0.5;
+  };
+
   // Helper to determine if current background should use dark mode styling
-  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf';
+  const isDarkMode = backgroundType === 'dark' || backgroundType === 'turf' || 
+    (backgroundType === 'light' && selectedColorway && isColorDark(selectedColorway.upper.baseColor));
 
   // Convert selected colorway to product format for BuyButton
   const getCurrentProduct = () => {
@@ -390,9 +408,10 @@ const Index = () => {
   <div className="max-w-[280px]">
     <div className="flex md:ml-0 items-center gap-3 sm:gap-3">
       <h1 className={`text-3xl mt-2 font-bold transition-colors uppercase duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
-      <span className={`px-2 py-[2px] md:py-1 mt-2 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${isDarkMode
-        ? 'bg-transparent border border-white/20 text-white/90'
-        : 'bg-accent/20 text-accent'
+      <span className={`px-2 py-[2px] md:py-1 mt-2 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${
+        selectedColorway && selectedColorway.upper.baseColor === '#ffffff' || selectedColorway && selectedColorway.upper.baseColor === '#FFFFFF'
+          ? 'bg-accent/20 text-accent'
+          : 'bg-transparent border border-white/20 text-white/90'
         }`}>
         CUSTOM
       </span>
@@ -416,7 +435,7 @@ const Index = () => {
       </p>
   
     </div>
-    <FeatureIconsBar isDarkMode={isDarkMode}/>
+    <FeatureIconsBar isDarkMode={false}/>
   </div>
 </div>
 

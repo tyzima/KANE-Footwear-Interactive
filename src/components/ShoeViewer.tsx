@@ -347,8 +347,8 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
     }
   }, [externalColorConfiguration]);
 
-  const [lightingIntensity, setLightingIntensity] = useState(1.0);
-  const [shadowIntensity, setShadowIntensity] = useState(0.5);
+  const [lightingIntensity, setLightingIntensity] = useState(1.8);
+  const [shadowIntensity, setShadowIntensity] = useState(0.2);
   const [lightingPreset, setLightingPreset] = useState<LightingPreset>('photorealistic');
   const [debugVisible, setDebugVisible] = useState(false);
   const [hotspots, setHotspots] = useState<any[]>([]);
@@ -698,6 +698,7 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               onError={handleModelError}
               onPartClick={handlePartClick}
               scale={zoom}
+              backgroundType={backgroundType}
               // Pass first available colorway as default to prevent visual jump on initial load
               defaultColorway={availableColorways[0]}
               bottomColor={getColorForSpeckle(bottomColor, soleHasSplatter)}

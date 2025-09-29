@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Group, AnimationMixer } from 'three';
+import { Group, AnimationMixer, PlaneGeometry, MeshLambertMaterial, CylinderGeometry, MeshStandardMaterial, CircleGeometry } from 'three';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { JibbitLogo } from '../JibbitLogo';
 import { ModelLoader } from './ModelLoader';
@@ -15,6 +15,7 @@ interface ShoeModelProps {
     onError?: (error: Error) => void;
     onPartClick?: (partType: 'upper' | 'sole' | 'laces' | 'logos') => void;
     scale?: number;
+    backgroundType?: 'light' | 'dark';
     // Add defaultColorway prop to handle both static and dynamic colorways
     defaultColorway?: {
         upper: {
@@ -88,6 +89,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
     onError,
     onPartClick,
     scale = 1,
+    backgroundType = 'light',
     // Use defaultColorway prop or fallback to static colorway to prevent visual jump
     defaultColorway,
     bottomColor = defaultColorway?.sole.baseColor || fallbackColorway.sole.baseColor,
@@ -210,7 +212,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                 material.transparent = true;
                                 material.opacity = 0.95;
                                 material.roughness = 0.9;
-                                material.metalness = 0.05;
+                                material.metalness = 0.02;
 
                                 const currentTexture = material.map;
                                 let newTexture = currentTexture;
@@ -219,21 +221,21 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     newTexture = textureManager.createTextureFromDataUrl(soleTexture);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.4;
-                                        material.metalness = 0.1;
+                                        material.roughness = 0.9;
+                                        material.metalness = 0.05;
                                         material.color.setHex(0xffffff);
                                     }
                                 } else if (soleHasGradient) {
                                     newTexture = textureManager.createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.8;
+                                        material.roughness = 0.9;
                                     }
                                 } else if (soleHasSplatter) {
                                     newTexture = textureManager.createSplatterTexture(bottomColor, soleSplatterColor, soleSplatterBaseColor, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.95;
+                                        material.roughness = 0.9;
                                         material.color.setHex(0xffffff);
                                     }
                                 } else {
@@ -241,7 +243,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
                                         material.roughness = 0.9;
-                                        material.metalness = 0.05;
+                                        material.metalness = 0.02;
                                         material.color.setHex(0xffffff);
                                     }
                                 }
@@ -265,8 +267,8 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                             };
 
                             const upperUpdate = (child: any, material: any, originalMaterial?: any) => {
-                                material.roughness = 1;
-                                material.metalness = 0;
+                                material.roughness = 0.9;
+                                material.metalness = 0.02;
 
                                 const currentTexture = material.map;
                                 let newTexture = currentTexture;
@@ -275,21 +277,21 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     newTexture = textureManager.createTextureFromDataUrl(upperTexture);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.4;
-                                        material.metalness = 0.1;
+                                        material.roughness = 0.9;
+                                        material.metalness = 0.05;
                                         material.color.setHex(0xffffff);
                                     }
                                 } else if (upperHasGradient) {
                                     newTexture = textureManager.createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.8;
+                                        material.roughness = 0.9;
                                     }
                                 } else if (upperHasSplatter) {
                                     newTexture = textureManager.createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.95;
+                                        material.roughness = 0.9;
                                         material.color.setHex(0xffffff);
                                     }
                                 } else {
@@ -302,8 +304,8 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     const adjustedColor = darkenLightMaterials(topColor);
                                     material.color.set(adjustedColor);
                                     if (originalTexture) {
-                                        material.roughness = originalMaterial?.roughness ?? 0.8;
-                                        material.metalness = originalMaterial?.metalness ?? 0.1;
+                                        material.roughness = originalMaterial?.roughness ?? 0.9;
+                                        material.metalness = originalMaterial?.metalness ?? 0.02;
                                     }
                                 }
 
@@ -325,7 +327,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
 
                             const laceUpdate = (child: any, material: any) => {
                                 material.roughness = 0.9;
-                                material.metalness = 0;
+                                material.metalness = 0.02;
 
                                 const laceTexture = textureManager.createLaceTexture(laceColor);
                                 if (material.map !== laceTexture) {
@@ -348,8 +350,8 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                             const logoUpdate = (child: any, material: any, originalMaterial?: any) => {
                                 if (!child.name) return;
 
-                                material.roughness = 0.4;
-                                material.metalness = 0.1;
+                                material.roughness = 0.9;
+                                material.metalness = 0.05;
 
                                 // This function now handles everything, preventing the flash.
                                 textureManager.getOrCreateAndUpdateLogoTexture(
@@ -411,6 +413,8 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                 <primitive
                                     object={gltf.scene}
                                     dispose={null}
+                                    castShadow
+                                    receiveShadow
                                 />
                                 <JibbitLogo
                                     logoUrl={logoUrl}
@@ -418,6 +422,7 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     rotation={logoRotation}
                                     scale={0.15}
                                     visible={!!logoUrl}
+                                    castShadow
                                 />
                                 <JibbitLogo
                                     logoUrl={logoUrl}
@@ -425,7 +430,54 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     rotation={logo2Rotation}
                                     scale={0.15}
                                     visible={!!logoUrl}
+                                    castShadow
                                 />
+                                
+                                {/* Infinity Studio Background */}
+                                <group>
+                                    {/* Main infinity backdrop - taller to hide top edge */}
+                                    <mesh
+                                        position={[0, 0, -3]}
+                                        rotation={[0, 0, 0]}
+                                        receiveShadow
+                                    >
+                                        <cylinderGeometry args={[12, 12, 12, 64, 1, true]} />
+                                        <meshStandardMaterial
+                                            color={backgroundType === 'dark' ? '#000000' : topColor}
+                                            roughness={0.9}
+                                            metalness={0.0}
+                                            side={2} // DoubleSide
+                                        />
+                                    </mesh>
+                                    
+                                    {/* Ground plane for shadows - circular */}
+                                    <mesh
+                                        position={[0, -0.5, 0]}
+                                        rotation={[-Math.PI / 2, 0, 0]}
+                                        receiveShadow
+                                    >
+                                        <circleGeometry args={[7.5, 32]} />
+                                        <meshStandardMaterial
+                                            color={backgroundType === 'dark' ? '#000000' : '#ffffff'}
+                                            roughness={0.95}
+                                            metalness={0.0}
+                                        />
+                                    </mesh>
+                                    
+                                    {/* Shadow gradient overlay for more focused shadows - circular */}
+                                    <mesh
+                                        position={[0, -0.49, 0]}
+                                        rotation={[-Math.PI / 2, 0, 0]}
+                                    >
+                                        <circleGeometry args={[4, 32]} />
+                                        <meshStandardMaterial
+                                            color={backgroundType === 'dark' ? '#000000' : '#f5f5f5'}
+                                            transparent
+                                            opacity={backgroundType === 'dark' ? 0.4 : 0.1}
+                                            side={2}
+                                        />
+                                    </mesh>
+                                </group>
                             </group>
                         );
                     }}

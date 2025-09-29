@@ -143,8 +143,8 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
           {/* Main Key Light - Professional product photography positioning */}
           <directionalLight
             position={[5, 7, 4]}
-            intensity={0.8 * intensity}
-            color="#fff8f0" // Slightly warm daylight
+            intensity={1.2 * intensity}
+            color="#ffffff" // Pure white for accurate color reproduction
             castShadow
             shadow-mapSize={[4096, 4096]}
             shadow-camera-far={50}
@@ -154,14 +154,14 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
             shadow-camera-bottom={-12}
             shadow-bias={-0.0005}
             shadow-normalBias={0.02}
-            shadow-radius={4}
+            shadow-radius={2}
           />
 
           {/* Fill Light - Soft, cool fill to reduce harsh shadows */}
           <directionalLight
             position={[-4, 5, 3]}
-            intensity={0.25 * intensity}
-            color="#f0f8ff" // Cool daylight fill
+            intensity={0.6 * intensity}
+            color="#ffffff" // Pure white fill
           />
 
           {/* Rim Light - Subtle edge definition for depth */}
@@ -174,7 +174,7 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
           {/* Top Light - Soft overhead illumination */}
           <directionalLight
             position={[0, 8, 1]}
-            intensity={0.15 * intensity}
+            intensity={0.4 * intensity}
             color="#ffffff"
           />
 
@@ -188,14 +188,14 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
           {/* Soft fill lights for more realistic shadows */}
           <directionalLight
             position={[3, 4, 2]}
-            intensity={0.3 * intensity}
-            color="#fff8f0"
+            intensity={0.5 * intensity}
+            color="#ffffff"
           />
 
           <directionalLight
             position={[-2, 3, 1]}
-            intensity={0.2 * intensity}
-            color="#f0f8ff"
+            intensity={0.4 * intensity}
+            color="#ffffff"
           />
 
           {/* Subtle accent lights for material definition */}
@@ -241,11 +241,11 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
           />
 
           {/* Realistic ambient lighting - balanced warm/cool */}
-          <ambientLight intensity={0.08 * intensity} color="#f8f8ff" />
+          <ambientLight intensity={0.25 * intensity} color="#ffffff" />
 
           {/* Additional realistic lighting for material definition */}
           <hemisphereLight
-            args={["#f0f8ff", "#fff8f0", 0.05 * intensity]}
+            args={["#ffffff", "#ffffff", 0.15 * intensity]}
           />
         </>
       );
@@ -260,12 +260,12 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
       {isLightingReady && (
         <ContactShadows
           position={[0, -0.06, 0]}
-          opacity={shadowIntensity * 0.9}
-          scale={5}
-          blur={1.2}
-          far={3}
-          color="#0a0a0a"
-          resolution={2048}
+          opacity={shadowIntensity * 0.8}
+          scale={3}
+          blur={1.0}
+          far={2}
+          color="#000000"
+          resolution={1024}
           frames={1}
         />
       )}
