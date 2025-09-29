@@ -517,9 +517,9 @@
         "useDualSplatter": true
       },
       "sole": {
-        "baseColor": "#FFFFFF",
-        "hasSplatter": false,
-        "splatterColor": null,
+        "baseColor": "#FF0000",
+        "hasSplatter": true,
+        "splatterColor": "#ffffff",
         "splatterBaseColor": null,
         "splatterColor2": null,
         "useDualSplatter": false

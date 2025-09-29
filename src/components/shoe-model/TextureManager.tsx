@@ -360,11 +360,13 @@ export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
         const adjustedSplatterBaseColor = splatterBaseColor ? darkenLightMaterials(splatterBaseColor) : null;
         const adjustedSplatterColor2 = splatterColor2 ? darkenLightMaterials(splatterColor2) : null;
         
-        // For dual splatter, use the original baseColor as the background if no splatterBaseColor is provided
-        // This ensures the base color shows through properly instead of being darkened
-        const textureBaseColor = useDualSplatter && !splatterBaseColor 
-            ? baseColor 
-            : (adjustedSplatterBaseColor || adjustedBaseColor);
+        // For sole parts, always use the original baseColor to prevent black base
+        // For upper parts, use the original baseColor for dual splatter, otherwise use adjusted
+        const textureBaseColor = !isUpper 
+            ? baseColor  // Sole always uses original base color
+            : (useDualSplatter && !splatterBaseColor 
+                ? baseColor 
+                : (adjustedSplatterBaseColor || adjustedBaseColor));
         
         // Create cache key
         const cacheKey = `${textureBaseColor}-${adjustedSplatterColor}-${adjustedSplatterColor2 || 'none'}-${useDualSplatter}-${isUpper}-${paintDensity}`;
