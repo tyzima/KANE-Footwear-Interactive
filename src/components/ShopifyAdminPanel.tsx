@@ -1434,14 +1434,14 @@ const OrderCard: React.FC<{
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <h4 className="font-medium">
-                {order.customer_info.firstName} {order.customer_info.lastName}
+                {order.customer_info?.firstName || 'Unknown'} {order.customer_info?.lastName || 'Customer'}
               </h4>
               <Badge className={getStatusColor(order.status)}>
                 {order.status}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {order.customer_info.email} • {new Date(order.created_at).toLocaleDateString()}
+              {order.customer_info?.email || 'No email'} • {new Date(order.created_at).toLocaleDateString()}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1475,19 +1475,19 @@ const OrderCard: React.FC<{
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span className="font-medium">Product: </span>
-            <span className="text-muted-foreground">{order.product_info.productTitle}</span>
+            <span className="text-muted-foreground">{order.product_info?.productTitle || 'Unknown Product'}</span>
           </div>
           <div>
             <span className="font-medium">Total Pairs: </span>
-            <span className="text-muted-foreground">{order.product_info.totalPairs}</span>
+            <span className="text-muted-foreground">{order.product_info?.totalPairs || 0}</span>
           </div>
           <div>
             <span className="font-medium">Total Price: </span>
-            <span className="text-muted-foreground">${order.product_info.totalPrice}</span>
+            <span className="text-muted-foreground">${order.product_info?.totalPrice || 0}</span>
           </div>
           <div>
             <span className="font-medium">Order Type: </span>
-            <span className="text-muted-foreground capitalize">{order.order_type.replace('_', ' ')}</span>
+            <span className="text-muted-foreground capitalize">{order.order_type?.replace('_', ' ') || 'Unknown'}</span>
           </div>
         </div>
 
@@ -1495,16 +1495,18 @@ const OrderCard: React.FC<{
         <div className="mt-3 p-2 bg-gray-50 rounded">
           <p className="text-xs font-medium mb-1">Size Quantities:</p>
           <div className="flex flex-wrap gap-1">
-            {Object.entries(order.product_info.sizeQuantities).map(([size, qty]) => (
+            {order.product_info?.sizeQuantities ? Object.entries(order.product_info.sizeQuantities).map(([size, qty]) => (
               <span key={size} className="text-xs bg-white px-2 py-1 rounded border">
                 {size}: {qty}
               </span>
-            ))}
+            )) : (
+              <span className="text-xs text-gray-500">No size data available</span>
+            )}
           </div>
         </div>
 
         {/* Customer Notes */}
-        {order.customer_info.notes && (
+        {order.customer_info?.notes && (
           <div className="mt-3 p-2 bg-blue-50 rounded">
             <p className="text-xs font-medium mb-1">Customer Notes:</p>
             <p className="text-xs text-blue-800">{order.customer_info.notes}</p>
@@ -1512,7 +1514,7 @@ const OrderCard: React.FC<{
         )}
 
         {/* Design Preview */}
-        {order.metadata.screenshot && (
+        {order.metadata?.screenshot && (
           <div className="mt-3">
             <p className="text-xs font-medium mb-1">Design Preview:</p>
             <img
@@ -1535,7 +1537,7 @@ const DesignCard: React.FC<{ design: any }> = ({ design }) => {
         <div className="flex items-start gap-3 mb-3">
           {/* Design Preview */}
           <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-            {design.metadata.screenshot ? (
+            {design.metadata?.screenshot ? (
               <img
                 src={design.metadata.screenshot}
                 alt={design.name}
@@ -1549,12 +1551,12 @@ const DesignCard: React.FC<{ design: any }> = ({ design }) => {
           </div>
           
           <div className="flex-1">
-            <h4 className="font-medium">{design.name}</h4>
+            <h4 className="font-medium">{design.name || 'Unnamed Design'}</h4>
             {design.description && (
               <p className="text-sm text-muted-foreground mt-1">{design.description}</p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              {design.product_info.productTitle} • {new Date(design.created_at).toLocaleDateString()}
+              {design.product_info?.productTitle || 'Unknown Product'} • {new Date(design.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -1564,23 +1566,23 @@ const DesignCard: React.FC<{ design: any }> = ({ design }) => {
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded border"
-              style={{ backgroundColor: design.design_config.upper.baseColor }}
+              style={{ backgroundColor: design.design_config?.upper?.baseColor || '#000000' }}
             />
-            <span className="text-xs">Upper: {design.design_config.upper.baseColor}</span>
+            <span className="text-xs">Upper: {design.design_config?.upper?.baseColor || '#000000'}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded border"
-              style={{ backgroundColor: design.design_config.sole.baseColor }}
+              style={{ backgroundColor: design.design_config?.sole?.baseColor || '#000000' }}
             />
-            <span className="text-xs">Sole: {design.design_config.sole.baseColor}</span>
+            <span className="text-xs">Sole: {design.design_config?.sole?.baseColor || '#000000'}</span>
           </div>
           <div className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded border"
-              style={{ backgroundColor: design.design_config.laces.color }}
+              style={{ backgroundColor: design.design_config?.laces?.color || '#000000' }}
             />
-            <span className="text-xs">Laces: {design.design_config.laces.color}</span>
+            <span className="text-xs">Laces: {design.design_config?.laces?.color || '#000000'}</span>
           </div>
         </div>
 
