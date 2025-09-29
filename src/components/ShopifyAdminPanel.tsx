@@ -20,6 +20,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useShopify } from '@/hooks/useShopify';
+import { useSupabaseOrders } from '@/hooks/useSupabaseOrders';
 import { ShopifyConnection } from './ShopifyConnection';
 import { toast } from './ui/use-toast';
 import type { ShopifyProduct } from '@/lib/shopify';
@@ -31,6 +32,16 @@ import { Suspense } from 'react';
 
 export const ShopifyAdminPanel: React.FC = () => {
   const { isConnected, getProducts, shop, connectViaOAuth, updateProductMetafields } = useShopify();
+  const { 
+    orders, 
+    savedDesigns, 
+    isLoadingOrders, 
+    isLoadingDesigns, 
+    loadOrders, 
+    loadSavedDesigns, 
+    updateOrderStatus, 
+    deleteOrder 
+  } = useSupabaseOrders();
   
   // Check for credentials in URL parameters and store them
   useEffect(() => {
@@ -320,6 +331,20 @@ export const ShopifyAdminPanel: React.FC = () => {
     }
   }, [isConnected, activeTab]);
 
+  // Load orders when orders tab is accessed
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      loadOrders();
+    }
+  }, [activeTab, loadOrders]);
+
+  // Load saved designs when designs tab is accessed
+  useEffect(() => {
+    if (activeTab === 'designs') {
+      loadSavedDesigns();
+    }
+  }, [activeTab, loadSavedDesigns]);
+
   const openConfigurator = () => {
     const configUrl = `https://kaneconfig.netlify.app/`;
     window.open(configUrl, '_blank');
@@ -529,10 +554,12 @@ export const ShopifyAdminPanel: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="products">Products ({products.length})</TabsTrigger>
           <TabsTrigger value="colorways">Colorways</TabsTrigger>
+          <TabsTrigger value="orders">Orders ({orders.length})</TabsTrigger>
+          <TabsTrigger value="designs">Designs ({savedDesigns.length})</TabsTrigger>
           <TabsTrigger value="storefront">API Tokens</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
@@ -828,6 +855,96 @@ export const ShopifyAdminPanel: React.FC = () => {
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Orders Tab */}
+        <TabsContent value="orders" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Order Requests ({orders.length})</h3>
+            <div className="flex gap-2">
+              <Button onClick={loadOrders} disabled={isLoadingOrders} size="sm">
+                {isLoadingOrders ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {isLoadingOrders ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <RefreshCw className="h-8 w-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+                <p className="text-muted-foreground">Loading orders...</p>
+              </CardContent>
+            </Card>
+          ) : orders.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No orders found</p>
+                <p className="text-sm text-muted-foreground">Orders will appear here when customers submit requests</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <OrderCard key={order.id} order={order} onUpdateStatus={updateOrderStatus} onDelete={deleteOrder} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Saved Designs Tab */}
+        <TabsContent value="designs" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Saved Designs ({savedDesigns.length})</h3>
+            <div className="flex gap-2">
+              <Button onClick={loadSavedDesigns} disabled={isLoadingDesigns} size="sm">
+                {isLoadingDesigns ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {isLoadingDesigns ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <RefreshCw className="h-8 w-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+                <p className="text-muted-foreground">Loading designs...</p>
+              </CardContent>
+            </Card>
+          ) : savedDesigns.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No saved designs found</p>
+                <p className="text-sm text-muted-foreground">Designs will appear here when customers save their creations</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savedDesigns.map((design) => (
+                <DesignCard key={design.id} design={design} />
+              ))}
             </div>
           )}
         </TabsContent>
@@ -1255,6 +1372,228 @@ const ColorwayEditor: React.FC<{ product: ShopifyProduct; onUpdate: (productId: 
           </div>
         </CardContent>
       )}
+    </Card>
+  );
+};
+
+// Order Card Component
+const OrderCard: React.FC<{
+  order: any;
+  onUpdateStatus: (orderId: string, status: string) => Promise<boolean>;
+  onDelete: (orderId: string) => Promise<boolean>;
+}> = ({ order, onUpdateStatus, onDelete }) => {
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const success = await onUpdateStatus(order.id, newStatus);
+      if (success) {
+        toast({
+          title: "Status Updated",
+          description: `Order status changed to ${newStatus}`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this order?')) {
+      const success = await onDelete(order.id);
+      if (success) {
+        toast({
+          title: "Order Deleted",
+          description: "Order has been removed",
+        });
+      }
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'fulfilled': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className="font-medium">
+                {order.customer_info.firstName} {order.customer_info.lastName}
+              </h4>
+              <Badge className={getStatusColor(order.status)}>
+                {order.status}
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {order.customer_info.email} • {new Date(order.created_at).toLocaleDateString()}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleStatusUpdate('processing')}
+              disabled={isUpdating || order.status === 'processing'}
+            >
+              Process
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleStatusUpdate('fulfilled')}
+              disabled={isUpdating || order.status === 'fulfilled'}
+            >
+              Fulfill
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isUpdating}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="font-medium">Product: </span>
+            <span className="text-muted-foreground">{order.product_info.productTitle}</span>
+          </div>
+          <div>
+            <span className="font-medium">Total Pairs: </span>
+            <span className="text-muted-foreground">{order.product_info.totalPairs}</span>
+          </div>
+          <div>
+            <span className="font-medium">Total Price: </span>
+            <span className="text-muted-foreground">${order.product_info.totalPrice}</span>
+          </div>
+          <div>
+            <span className="font-medium">Order Type: </span>
+            <span className="text-muted-foreground capitalize">{order.order_type.replace('_', ' ')}</span>
+          </div>
+        </div>
+
+        {/* Size Quantities */}
+        <div className="mt-3 p-2 bg-gray-50 rounded">
+          <p className="text-xs font-medium mb-1">Size Quantities:</p>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(order.product_info.sizeQuantities).map(([size, qty]) => (
+              <span key={size} className="text-xs bg-white px-2 py-1 rounded border">
+                {size}: {qty}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Customer Notes */}
+        {order.customer_info.notes && (
+          <div className="mt-3 p-2 bg-blue-50 rounded">
+            <p className="text-xs font-medium mb-1">Customer Notes:</p>
+            <p className="text-xs text-blue-800">{order.customer_info.notes}</p>
+          </div>
+        )}
+
+        {/* Design Preview */}
+        {order.metadata.screenshot && (
+          <div className="mt-3">
+            <p className="text-xs font-medium mb-1">Design Preview:</p>
+            <img
+              src={order.metadata.screenshot}
+              alt="Design preview"
+              className="w-24 h-16 object-contain border rounded"
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+// Design Card Component
+const DesignCard: React.FC<{ design: any }> = ({ design }) => {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3 mb-3">
+          {/* Design Preview */}
+          <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+            {design.metadata.screenshot ? (
+              <img
+                src={design.metadata.screenshot}
+                alt={design.name}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Palette className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1">
+            <h4 className="font-medium">{design.name}</h4>
+            {design.description && (
+              <p className="text-sm text-muted-foreground mt-1">{design.description}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              {design.product_info.productTitle} • {new Date(design.created_at).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Design Colors Summary */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-4 h-4 rounded border"
+              style={{ backgroundColor: design.design_config.upper.baseColor }}
+            />
+            <span className="text-xs">Upper: {design.design_config.upper.baseColor}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-4 h-4 rounded border"
+              style={{ backgroundColor: design.design_config.sole.baseColor }}
+            />
+            <span className="text-xs">Sole: {design.design_config.sole.baseColor}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-4 h-4 rounded border"
+              style={{ backgroundColor: design.design_config.laces.color }}
+            />
+            <span className="text-xs">Laces: {design.design_config.laces.color}</span>
+          </div>
+        </div>
+
+        {/* Public/Private Badge */}
+        <div className="mt-3 flex items-center justify-between">
+          <Badge variant={design.is_public ? 'default' : 'secondary'}>
+            {design.is_public ? 'Public' : 'Private'}
+          </Badge>
+          <Button size="sm" variant="outline">
+            View Details
+          </Button>
+        </div>
+      </CardContent>
     </Card>
   );
 };
