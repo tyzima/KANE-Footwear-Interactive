@@ -1254,14 +1254,14 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   </div>
 
                   {/* Info Card - Different content for customer vs admin */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  <div className="bg-blue-50 border hidden border-blue-200 rounded-lg p-2">
                     <div className="flex items-start gap-3">
                       <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
                         <h4 className="font-medium text-blue-900">Next Steps</h4>
                         <p className="text-xs text-blue-800">
                           {isCustomerContext && shopDomain ? (
-                            "Your items will be added to your Shopify cart where you can complete checkout with your preferred payment method."
+                            "Your items will be added to your Shopify cart."
                           ) : (
                             "We'll reach out to you with an official invoice within 24 hours."
                           )}
