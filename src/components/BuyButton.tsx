@@ -927,7 +927,7 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                 
 
                   {/* Simplified Size Grid: 2 per row, all data on one row per size */}
-                  <div className="pt-3">
+                  <div className="pt-3 pb-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[45vh] overflow-y-auto">
                       {getAvailableSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
