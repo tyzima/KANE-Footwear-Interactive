@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, TreePine, X, Camera } from 'lucide-react';
+import { RotateCcw, ZoomIn, ZoomOut, Play, Pause, RotateCw, Sun, Moon, X, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { HotspotControls } from './HotspotControls';
@@ -14,8 +14,8 @@ interface ViewerControlsProps {
   activeHotspot: string | null;
   disabled?: boolean;
   onCameraMove?: (position: [number, number, number], target: [number, number, number], zoom?: number) => void;
-  backgroundType?: 'light' | 'dark' | 'wireframe';
-  onBackgroundToggle?: (type: 'light' | 'dark' | 'wireframe') => void;
+  backgroundType?: 'light' | 'dark';
+  onBackgroundToggle?: (type: 'light' | 'dark') => void;
 }
 
 export const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -63,8 +63,7 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
   const handleBackgroundToggle = () => {
     if (!onBackgroundToggle) return;
     
-    const nextType = backgroundType === 'light' ? 'dark' : 
-                     backgroundType === 'dark' ? 'wireframe' : 'light';
+    const nextType = backgroundType === 'light' ? 'dark' : 'light';
     onBackgroundToggle(nextType);
   };
 
@@ -73,8 +72,6 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
     switch (backgroundType) {
       case 'dark':
         return <Moon className="h-4 w-4" />;
-      case 'wireframe':
-        return <TreePine className="h-4 w-4" />;
       case 'light':
       default:
         return <Sun className="h-4 w-4" />;
@@ -86,8 +83,6 @@ export const ViewerControls: React.FC<ViewerControlsProps> = ({
       case 'light':
         return "Switch to dark background";
       case 'dark':
-        return "Switch to wireframe mode";
-      case 'wireframe':
         return "Switch to light background";
       default:
         return "Switch background";

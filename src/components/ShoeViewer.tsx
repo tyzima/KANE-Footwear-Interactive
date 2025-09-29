@@ -45,7 +45,7 @@ const getColorForSpeckle = (baseColor: string, hasSpeckle: boolean): string => {
 };
 
 // Background component to reactively update scene background
-const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'wireframe' }> = ({ backgroundType }) => {
+const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' }> = ({ backgroundType }) => {
   const { scene } = useThree();
 
   React.useEffect(() => {
@@ -58,9 +58,6 @@ const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'wireframe'
     // Set solid color background
     let backgroundColor: string;
     switch (backgroundType) {
-      case 'wireframe':
-        backgroundColor = '#f0f8ff'; // Light blue for wireframe mode
-        break;
       case 'dark':
         backgroundColor = '#1a1a1a';
         break;
@@ -77,8 +74,8 @@ const SceneBackground: React.FC<{ backgroundType: 'light' | 'dark' | 'wireframe'
 
 interface ShoeViewerProps {
   className?: string;
-  backgroundType?: 'light' | 'dark' | 'wireframe';
-  onBackgroundTypeChange?: (type: 'light' | 'dark' | 'wireframe') => void;
+  backgroundType?: 'light' | 'dark';
+  onBackgroundTypeChange?: (type: 'light' | 'dark') => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
   onColorConfigurationChange?: (config: any) => void;
   colorConfiguration?: any;
@@ -743,8 +740,6 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               // Second logo props
               logo2Position={logo2Position}
               logo2Rotation={logo2Rotation}
-              // Wireframe mode
-              wireframeMode={backgroundType === 'wireframe'}
             />
           </Suspense>
 

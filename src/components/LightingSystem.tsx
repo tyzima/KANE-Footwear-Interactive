@@ -67,60 +67,62 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
     }
     
     if (preset === 'dark_optimized') {
-      // Dark background optimized lighting - brighter but smoother
+      // Realistic lighting for dark backgrounds with subtle shadows
       return (
         <>
           <Environment preset="night" />
 
-          {/* Main Key Light - Moderate increase for dark backgrounds */}
+          {/* Main Key Light - Realistic positioning with soft shadows */}
           <directionalLight
             position={[4, 8, 6]}
-            intensity={1.5 * intensity}
+            intensity={1.0 * intensity}
             color="#ffffff"
             castShadow
+            shadow-mapSize={[2048, 2048]}
+            shadow-bias={-0.0001}
+            shadow-radius={2}
           />
 
-          {/* Strong Fill Light to reduce harsh shadows */}
+          {/* Fill Light - Soft fill to reduce harsh shadows */}
           <directionalLight
             position={[-3, 6, 4]}
-            intensity={1.0 * intensity}
-            color="#f8f8ff"
-          />
-
-          {/* Moderate Rim Light for edge definition */}
-          <directionalLight
-            position={[-2, 4, -6]}
-            intensity={1.0 * intensity}
-            color="#fff8dc"
-          />
-
-          {/* Soft Top Light for even illumination */}
-          <directionalLight
-            position={[0, 10, 2]}
-            intensity={0.6 * intensity}
-            color="#ffffff"
-          />
-
-          {/* Additional fill lights to smooth transitions */}
-          <directionalLight
-            position={[2, 4, -2]}
             intensity={0.4 * intensity}
             color="#f0f8ff"
           />
-          
+
+          {/* Additional fill from right side */}
           <directionalLight
-            position={[-2, 4, 2]}
-            intensity={0.4 * intensity}
+            position={[3, 6, 4]}
+            intensity={0.3 * intensity}
             color="#fff8f0"
           />
 
-          {/* Softer accent lights */}
-          <pointLight position={[3, 3, 3]} intensity={0.5 * intensity} color="#ffffff" distance={12} decay={2} />
-          <pointLight position={[-3, 3, 3]} intensity={0.4 * intensity} color="#f8f8ff" distance={12} decay={2} />
-          <pointLight position={[0, 2, 5]} intensity={0.4 * intensity} color="#ffffff" distance={10} decay={2} />
+          {/* Top fill light for even illumination */}
+          <directionalLight
+            position={[0, 10, 2]}
+            intensity={0.3 * intensity}
+            color="#ffffff"
+          />
 
-          {/* Higher ambient to fill in shadows smoothly */}
-          <ambientLight intensity={0.5 * intensity} color="#f8f8ff" />
+          {/* Rim light for edge definition */}
+          <directionalLight
+            position={[-2, 4, -4]}
+            intensity={0.2 * intensity}
+            color="#fff8dc"
+          />
+
+          {/* Soft accent lights for realistic illumination */}
+          <pointLight position={[3, 3, 3]} intensity={0.2 * intensity} color="#ffffff" distance={12} decay={2} />
+          <pointLight position={[-3, 3, 3]} intensity={0.15 * intensity} color="#f8f8ff" distance={12} decay={2} />
+          <pointLight position={[0, 2, 5]} intensity={0.1 * intensity} color="#ffffff" distance={10} decay={2} />
+
+          {/* Realistic ambient lighting */}
+          <ambientLight intensity={0.2 * intensity} color="#f0f8ff" />
+
+          {/* Hemisphere light for natural fill */}
+          <hemisphereLight
+            args={["#f0f8ff", "#fff8f0", 0.1 * intensity]}
+          />
         </>
       );
     } else {
