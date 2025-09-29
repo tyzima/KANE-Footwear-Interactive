@@ -389,7 +389,7 @@ const Index = () => {
   )}
   <div className="max-w-[280px]">
     <div className="flex md:ml-0 items-center gap-3 sm:gap-3">
-      <h1 className={`text-3xl mt-2 font-bold transition-colors duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
+      <h1 className={`text-3xl mt-2 font-bold transition-colors uppercase duration-300 ${isDarkMode ? 'text-white' : 'text-foreground'}`}>Revive</h1>
       <span className={`px-2 py-[2px] md:py-1 mt-2 md:mt-0 ml-0 sm:ml-0 tracking-wider text-[8px] sm:text-[9px] font-medium rounded-full transition-colors duration-300 ${isDarkMode
         ? 'bg-transparent border border-white/20 text-white/90'
         : 'bg-accent/20 text-accent'
