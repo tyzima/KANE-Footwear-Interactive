@@ -32,7 +32,7 @@ const NATIONAL_PARK_COLORS = [
 
 // Define breakpoints for responsive design
 const DESKTOP_BREAKPOINT = 768;
-const DESKTOP_ZOOM = 0.8;
+const DESKTOP_ZOOM = 1.0;
 const MOBILE_ZOOM = 0.5;
 
 
