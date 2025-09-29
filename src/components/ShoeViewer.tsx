@@ -753,9 +753,6 @@ export const ShoeViewer: React.FC<ShoeViewerProps> = ({
               scale={zoom}
               bottomColor={getColorForSpeckle(bottomColor, soleHasSplatter)}
               topColor={getColorForSpeckle(topColor, upperHasSplatter)}
-              // Dynamic colorway support
-              useDynamicColors={isUsingDynamicData}
-              dynamicColorways={availableColorways}
               upperHasSplatter={upperHasSplatter}
               soleHasSplatter={soleHasSplatter}
               upperSplatterColor={upperSplatterColor}

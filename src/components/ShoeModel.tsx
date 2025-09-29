@@ -16,9 +16,6 @@ interface ShoeModelProps {
     scale?: number;
     bottomColor?: string;
     topColor?: string;
-    // Dynamic colorway support
-    useDynamicColors?: boolean;
-    dynamicColorways?: Array<{ upper: { baseColor: string }; sole: { baseColor: string } }>;
     upperHasSplatter?: boolean;
     soleHasSplatter?: boolean;
     upperSplatterColor?: string;
@@ -130,9 +127,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     scale = 1,
     bottomColor = '#2d5016',
     topColor = '#8b4513',
-    // Dynamic colorway support
-    useDynamicColors = false,
-    dynamicColorways = [],
     upperHasSplatter = false,
     soleHasSplatter = false,
     upperSplatterColor = '#f8f8ff',
@@ -173,14 +167,6 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
     logo2Rotation = [1.163, -1.905, 1.183]
 }) => {
     const groupRef = useRef<Group>(null);
-    
-    // Use first color from dynamic colorways if available and enabled
-    const effectiveTopColor = useDynamicColors && dynamicColorways.length > 0 
-        ? dynamicColorways[0].upper.baseColor 
-        : topColor;
-    const effectiveBottomColor = useDynamicColors && dynamicColorways.length > 0 
-        ? dynamicColorways[0].sole.baseColor 
-        : bottomColor;
     const mixerRef = useRef<AnimationMixer | null>(null);
     const [gltf, setGltf] = useState<GLTF | null>(null);
     const originalMaterialsRef = useRef<Map<string, MeshStandardMaterial>>(new Map());
@@ -1113,19 +1099,19 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.color.setHex(0xffffff);
                 }
             } else if (soleHasGradient) {
-                newTexture = createGradientTexture(effectiveBottomColor, soleGradientColor1, soleGradientColor2, false);
+                newTexture = createGradientTexture(bottomColor, soleGradientColor1, soleGradientColor2, false);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.8;
                 }
             } else if (soleHasSplatter) {
-                newTexture = createSplatterTexture(effectiveBottomColor, soleSplatterColor, null, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
+                newTexture = createSplatterTexture(bottomColor, soleSplatterColor, null, soleSplatterColor2, soleUseDualSplatter, false, solePaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
                 }
             } else {
-                newTexture = createInnerShadowTexture(effectiveBottomColor);
+                newTexture = createInnerShadowTexture(bottomColor);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.9;
@@ -1140,7 +1126,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(soleFilter, soleUpdate);
-    }, [gltf, effectiveBottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
+    }, [gltf, bottomColor, soleHasSplatter, soleSplatterColor, soleSplatterColor2, soleUseDualSplatter, solePaintDensity, soleHasGradient, soleGradientColor1, soleGradientColor2, soleTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, createInnerShadowTexture, updateMaterialsForParts]);
 
     // Update upper/top parts only when upper-related props change
     useEffect(() => {
@@ -1168,13 +1154,13 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.color.setHex(0xffffff);
                 }
             } else if (upperHasGradient) {
-                newTexture = createGradientTexture(effectiveTopColor, upperGradientColor1, upperGradientColor2, true);
+                newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.8;
                 }
             } else if (upperHasSplatter) {
-                newTexture = createSplatterTexture(effectiveTopColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
+                newTexture = createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
@@ -1186,7 +1172,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.map = originalTexture;
                 }
                 // Apply darkening to light colors to prevent overexposure
-                const adjustedColor = darkenLightMaterials(effectiveTopColor);
+                const adjustedColor = darkenLightMaterials(topColor);
                 material.color.set(adjustedColor);
                 if (originalTexture) {
                     material.roughness = originalMaterial?.roughness ?? 0.8;
@@ -1200,7 +1186,7 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
         };
 
         updateMaterialsForParts(upperFilter, upperUpdate);
-    }, [gltf, effectiveTopColor, upperHasSplatter, upperSplatterColor, upperSplatterColor2, upperSplatterBaseColor, upperUseDualSplatter, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
+    }, [gltf, topColor, upperHasSplatter, upperSplatterColor, upperSplatterColor2, upperSplatterBaseColor, upperUseDualSplatter, upperPaintDensity, upperHasGradient, upperGradientColor1, upperGradientColor2, upperTexture, createSplatterTexture, createGradientTexture, createTextureFromDataUrl, updateMaterialsForParts]);
 
     // Update lace parts only when lace-related props change
     useEffect(() => {
