@@ -111,7 +111,6 @@ interface AddressValidation {
 
 // Fallback sizes when not connected to Shopify
 const FALLBACK_MENS_SIZES = ['M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18'];
-const FALLBACK_WOMENS_SIZES = ['W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17', 'W18', 'W19', 'W20'];
 
 const PRICE_PER_PAIR = 80; // Base price per pair
 
@@ -227,28 +226,22 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
     // Check if size is already provided
     if (variant.size) return variant.size;
     
-    // Try to extract from title (e.g., "Men's 10", "Women's 8", "M10", "W8")
+    // Try to extract from title (e.g., "Men's 10", "M10")
     const title = variant.title || '';
-    const sizeMatch = title.match(/(?:Men's|M)\s*(\d+(?:\.\d+)?)|(?:Women's|W)\s*(\d+(?:\.\d+)?)/i);
+    const sizeMatch = title.match(/(?:Men's|M)\s*(\d+(?:\.\d+)?)/i);
     
     if (sizeMatch) {
       const mensSize = sizeMatch[1];
-      const womensSize = sizeMatch[2];
-      
       if (mensSize) return `M${mensSize}`;
-      if (womensSize) return `W${womensSize}`;
     }
     
     // Try to extract from SKU
     const sku = variant.sku || '';
-    const skuMatch = sku.match(/(?:M|MENS?)[-_]?(\d+(?:\.\d+)?)|(?:W|WOMENS?)[-_]?(\d+(?:\.\d+)?)/i);
+    const skuMatch = sku.match(/(?:M|MENS?)[-_]?(\d+(?:\.\d+)?)/i);
     
     if (skuMatch) {
       const mensSize = skuMatch[1];
-      const womensSize = skuMatch[2];
-      
       if (mensSize) return `M${mensSize}`;
-      if (womensSize) return `W${womensSize}`;
     }
     
     console.warn('Could not extract size from variant:', variant);
@@ -357,22 +350,15 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
   const getAvailableSizes = () => {
     if (!isConnected || Object.keys(inventoryData).length === 0) {
       // Fallback to standard sizes when not connected
-      return [...FALLBACK_MENS_SIZES, ...FALLBACK_WOMENS_SIZES];
+      return FALLBACK_MENS_SIZES;
     }
     
     // Get sizes from inventory data and sort them
     const sizes = Object.keys(inventoryData);
     
-    // Sort sizes logically (M3, M4, ..., W5, W6, ...)
+    // Sort sizes logically (M3, M4, M5, ...)
     return sizes.sort((a, b) => {
-      const aIsMens = a.startsWith('M');
-      const bIsMens = b.startsWith('M');
-      
-      // Group mens first, then womens
-      if (aIsMens && !bIsMens) return -1;
-      if (!aIsMens && bIsMens) return 1;
-      
-      // Within same gender, sort by number
+      // Extract numeric part for sorting
       const aNum = parseInt(a.substring(1));
       const bNum = parseInt(b.substring(1));
       return aNum - bNum;
@@ -942,93 +928,63 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                   {/* Sizes Header */}
                 
 
-                  {/* Size Grid with fade out */}
-                  <div className="relative pt-3">
-                    <div className="grid grid-cols-3 gap-3 max-h-[50vh] pb-4 overflow-y-auto pr-2">
+                  {/* Simplified Size Grid: 2 per row, all data on one row per size */}
+                  <div className="pt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[40vh] overflow-y-auto">
                       {getAvailableSizes().map((size) => {
                         const quantity = formData.sizeQuantities[size] || 0;
                         const available = getAvailableQuantity(size);
                         const isAvailable = isSizeAvailable(size);
                         const isLoading = isLoadingInventory;
-                        
+
                         return (
-                          <div key={size} className={`relative group transition-all duration-200 ${
-                            !isAvailable && !isLoading
-                              ? 'opacity-60'
-                              : 'hover:scale-[1.02]'
-                          }`}>
-                            <div className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                              !isAvailable && !isLoading
-                                ? 'border-gray-200 bg-gray-50'
-                                : quantity > 0 
-                                  ? 'border-primary bg-primary/5 shadow-lg' 
-                                  : 'border-gray-200 bg-white hover:border-primary/40 hover:shadow-md'
-                            }`}>
-                              {/* Size and Controls on Same Row */}
-                              <div className="flex items-center justify-between">
-                                <span className={`text-base font-bold ${
-                                  !isAvailable && !isLoading ? 'text-gray-400' : 'text-gray-900'
-                                }`}>
-                                  {size}
-                                </span>
-
-                                {/* Quantity Controls - Right Side */}
-                                <div className="flex items-center gap-2">
-                                  <div className="text-center">
-                                    <span className={`text-lg font-bold ${
-                                      !isAvailable && !isLoading ? 'text-gray-300' : 'text-gray-900'
-                                    }`}>
-                                      {quantity}
-                                    </span>
-                                  </div>
-                                  
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className={`h-7 w-7 p-0 rounded-lg transition-all ${
-                                      !isAvailable || isLoading || quantity >= available
-                                        ? 'opacity-30 cursor-not-allowed'
-                                        : 'hover:bg-primary/10 hover:text-primary active:bg-primary/20'
-                                    }`}
-                                    onClick={() => updateQuantity(size, quantity + 1)}
-                                    disabled={!isAvailable || isLoading || quantity >= available}
-                                  >
-                                    <Plus className="w-3.5 h-3.5" />
-                                  </Button>
-                                </div>
-                              </div>
-
-                              {/* Stock Status - Below the main row */}
-                              <div className="mt-2">
-                                {isLoading ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-gray-300 rounded-full animate-pulse" />
-                                    <span className="text-xs text-gray-500">Loading...</span>
-                                  </div>
-                                ) : !isAvailable ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-                                    <span className="text-xs font-medium text-red-600">Out of Stock</span>
-                                  </div>
-                                ) : available < 15 ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-red-400 rounded-full" />
-                                    <span className="text-xs font-medium text-red-600">{available} left</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 bg-green-400 rounded-full" />
-                                    <span className="text-xs font-medium text-green-600">In Stock</span>
-                                  </div>
-                                )}
-                              </div>
+                          <div
+                            key={size}
+                            className={`flex items-center justify-between border rounded-lg px-3 py-2 transition-all duration-150
+                              ${!isAvailable && !isLoading ? 'bg-gray-50 border-gray-200 text-gray-400 opacity-60' : ''}
+                              ${quantity > 0 ? 'border-primary bg-primary/10' : 'border-gray-200 bg-white'}
+                            `}
+                          >
+                            {/* Size */}
+                            <span className="font-semibold text-base w-12">{size}</span>
+                            {/* Stock status */}
+                            <span className="text-xs w-20 text-center">
+                              {isLoading
+                                ? '...'
+                                : !isAvailable
+                                  ? 'Out'
+                                  : available < 10
+                                    ? `${available} left`
+                                    : 'In stock'}
+                            </span>
+                            {/* Quantity controls */}
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 p-0 rounded"
+                                onClick={() => updateQuantity(size, Math.max(0, quantity - 1))}
+                                disabled={!isAvailable || isLoading || quantity === 0}
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <span className="text-lg font-bold w-6 text-center">{quantity}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 p-0 rounded"
+                                onClick={() => updateQuantity(size, quantity + 1)}
+                                disabled={!isAvailable || isLoading || quantity >= available}
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
                   </div>
 
                   {/* Quick Summary - Moved to bottom, simplified */}
