@@ -42,7 +42,7 @@ const defaultHotspots: Hotspot[] = [
     id: 'quarter',
     label: 'Quarter',
     description: 'Three-quarter view of the shoe',
-    position: [2.451, 1.663, 1.291],
+    position: [2.451, 0.8, 1.291],
     target: [0, 0, 0],
     zoom: 1
   },
