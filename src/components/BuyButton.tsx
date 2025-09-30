@@ -1508,12 +1508,12 @@ export const BuyButton: React.FC<BuyButtonProps> = ({
                         <p className="text-sm text-blue-800">
                           {orderType === 'buy_now' ? (
                             isCustomerContext && shopDomain ? (
-                              "Your items will be added to your Shopify cart for immediate checkout."
+                              "Your items will be added to your Shopify cart."
                             ) : (
                               "We'll process your order and contact you with payment details within 24 hours."
                             )
                           ) : (
-                            "We'll save your design and contact you within 24 hours to confirm availability and process your order."
+                            "We'll save your design and contact you within 24 hours."
                           )}
                         </p>
                       </div>
