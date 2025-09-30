@@ -11,9 +11,9 @@ export const useColorProcessor = () => {
         // Calculate brightness (0-255)
         const brightness = (r * 299 + g * 587 + b * 114) / 1000;
         
-        // If brightness is above 200 (very light), apply darkening
+        // If brightness is above 200 (very light), apply minimal darkening
         if (brightness > 200) {
-            const darkenFactor = 0.85; // Darken by 15%
+            const darkenFactor = 0.95; // Darken by only 5% to keep whites bright
             const newR = Math.floor(r * darkenFactor);
             const newG = Math.floor(g * darkenFactor);
             const newB = Math.floor(b * darkenFactor);

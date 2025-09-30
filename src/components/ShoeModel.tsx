@@ -1181,18 +1181,24 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                     material.roughness = 0.4;
                     material.metalness = 0.1;
                     material.color.setHex(0xffffff);
+                    material.transparent = true;
+                    material.opacity = 0.5;
                 }
             } else if (upperHasGradient) {
                 newTexture = createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.8;
+                    material.transparent = true;
+                    material.opacity = 0.5;
                 }
             } else if (upperHasSplatter) {
                 newTexture = createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
                 if (material.map !== newTexture) {
                     material.map = newTexture;
                     material.roughness = 0.95;
+                    material.transparent = true;
+                    material.opacity = 0.5;
                 }
             } else {
                 const originalTexture = originalMaterial?.map || null;
@@ -1203,6 +1209,9 @@ export const ShoeModel: React.FC<ShoeModelProps> = ({
                 // Apply darkening to light colors to prevent overexposure
                 const adjustedColor = darkenLightMaterials(topColor);
                 material.color.set(adjustedColor);
+                // Set half opacity for the original texture
+                material.transparent = true;
+                material.opacity = 0.5;
                 if (originalTexture) {
                     material.roughness = originalMaterial?.roughness ?? 0.8;
                     material.metalness = originalMaterial?.metalness ?? 0.1;

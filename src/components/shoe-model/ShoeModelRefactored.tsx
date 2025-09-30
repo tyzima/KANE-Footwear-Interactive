@@ -267,31 +267,33 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                             };
 
                             const upperUpdate = (child: any, material: any, originalMaterial?: any) => {
-                                material.roughness = 0.9;
-                                material.metalness = 0.02;
+                                material.roughness = 1.0; // Maximum roughness to eliminate reflections
+                                material.metalness = 0.0; // No metalness to eliminate reflections
 
                                 const currentTexture = material.map;
                                 let newTexture = currentTexture;
 
                                 if (upperTexture) {
-                                    newTexture = textureManager.createTextureFromDataUrl(upperTexture);
+                                    newTexture = textureManager.createTextureFromDataUrl(upperTexture, true);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.9;
-                                        material.metalness = 0.05;
+                                        material.roughness = 1.0; // No reflections
+                                        material.metalness = 0.0; // No reflections
                                         material.color.setHex(0xffffff);
                                     }
                                 } else if (upperHasGradient) {
                                     newTexture = textureManager.createGradientTexture(topColor, upperGradientColor1, upperGradientColor2, true);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.9;
+                                        material.roughness = 1.0; // No reflections
+                                        material.metalness = 0.0; // No reflections
                                     }
                                 } else if (upperHasSplatter) {
                                     newTexture = textureManager.createSplatterTexture(topColor, upperSplatterColor, upperSplatterBaseColor, upperSplatterColor2, upperUseDualSplatter, true, upperPaintDensity);
                                     if (material.map !== newTexture) {
                                         material.map = newTexture;
-                                        material.roughness = 0.9;
+                                        material.roughness = 1.0; // No reflections
+                                        material.metalness = 0.0; // No reflections
                                         material.color.setHex(0xffffff);
                                     }
                                 } else {
@@ -299,14 +301,19 @@ export const ShoeModelRefactored: React.FC<ShoeModelProps> = ({
                                     newTexture = originalTexture;
                                     if (material.map !== originalTexture) {
                                         material.map = originalTexture;
+                                        // Set texture alpha to half opacity for original texture
+                                        if (originalTexture) {
+                                            originalTexture.alpha = 0.5;
+                                        }
                                     }
-                                    // Apply darkening to light colors to prevent overexposure
+                                    // Apply minimal darkening to light colors to keep whites bright
                                     const adjustedColor = darkenLightMaterials(topColor);
                                     material.color.set(adjustedColor);
-                                    if (originalTexture) {
-                                        material.roughness = originalMaterial?.roughness ?? 0.9;
-                                        material.metalness = originalMaterial?.metalness ?? 0.02;
-                                    }
+                                    // Force no reflections regardless of original material
+                                    material.roughness = 1.0; // No reflections
+                                    material.metalness = 0.0; // No reflections
+                                    // Increase emissive for brighter appearance
+                                    material.emissive.setHex(0x111111);
                                 }
 
                                 if (newTexture !== currentTexture) {

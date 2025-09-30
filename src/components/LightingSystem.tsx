@@ -72,10 +72,10 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
         <>
           <Environment preset="night" />
 
-          {/* Main Key Light - Realistic positioning with soft shadows */}
+          {/* Main Key Light - Increased intensity for brighter uppers */}
           <directionalLight
             position={[4, 8, 6]}
-            intensity={1.0 * intensity}
+            intensity={0.35 * intensity}
             color="#ffffff"
             castShadow
             shadow-mapSize={[2048, 2048]}
@@ -83,45 +83,45 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
             shadow-radius={2}
           />
 
-          {/* Fill Light - Soft fill to reduce harsh shadows */}
+          {/* Increased fill light for brighter uppers */}
           <directionalLight
             position={[-3, 6, 4]}
-            intensity={0.4 * intensity}
+            intensity={0.2 * intensity}
             color="#f0f8ff"
           />
 
-          {/* Additional fill from right side */}
+          {/* Increased additional fill from right side */}
           <directionalLight
             position={[3, 6, 4]}
-            intensity={0.3 * intensity}
+            intensity={0.15 * intensity}
             color="#fff8f0"
           />
 
-          {/* Top fill light for even illumination */}
+          {/* Much softer top fill light to avoid reflections */}
           <directionalLight
             position={[0, 10, 2]}
-            intensity={0.3 * intensity}
+            intensity={0.08 * intensity}
             color="#ffffff"
           />
 
-          {/* Rim light for edge definition */}
+          {/* Much softer rim light to avoid reflections */}
           <directionalLight
             position={[-2, 4, -4]}
-            intensity={0.2 * intensity}
+            intensity={0.05 * intensity}
             color="#fff8dc"
           />
 
-          {/* Soft accent lights for realistic illumination */}
-          <pointLight position={[3, 3, 3]} intensity={0.2 * intensity} color="#ffffff" distance={12} decay={2} />
-          <pointLight position={[-3, 3, 3]} intensity={0.15 * intensity} color="#f8f8ff" distance={12} decay={2} />
-          <pointLight position={[0, 2, 5]} intensity={0.1 * intensity} color="#ffffff" distance={10} decay={2} />
+          {/* Much softer accent lights to avoid reflections */}
+          <pointLight position={[3, 3, 3]} intensity={0.05 * intensity} color="#ffffff" distance={12} decay={2} />
+          <pointLight position={[-3, 3, 3]} intensity={0.04 * intensity} color="#f8f8ff" distance={12} decay={2} />
+          <pointLight position={[0, 2, 5]} intensity={0.03 * intensity} color="#ffffff" distance={10} decay={2} />
 
-          {/* Realistic ambient lighting */}
-          <ambientLight intensity={0.2 * intensity} color="#f0f8ff" />
+          {/* Increased ambient lighting for brighter uppers */}
+          <ambientLight intensity={0.12 * intensity} color="#f0f8ff" />
 
-          {/* Hemisphere light for natural fill */}
+          {/* Much softer hemisphere light to avoid reflections */}
           <hemisphereLight
-            args={["#f0f8ff", "#fff8f0", 0.1 * intensity]}
+            args={["#f0f8ff", "#fff8f0", 0.03 * intensity]}
           />
         </>
       );
@@ -140,13 +140,13 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
             }}
           />
 
-          {/* Main Key Light - Professional product photography positioning */}
+          {/* Main Key Light - Increased intensity for brighter uppers */}
           <directionalLight
             position={[5, 7, 4]}
-            intensity={1.2 * intensity}
+            intensity={0.5 * intensity}
             color="#ffffff" // Pure white for accurate color reproduction
             castShadow
-            shadow-mapSize={[4096, 4096]}
+            shadow-mapSize={[2048, 2048]}
             shadow-camera-far={50}
             shadow-camera-left={-12}
             shadow-camera-right={12}
@@ -157,24 +157,24 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
             shadow-radius={2}
           />
 
-          {/* Fill Light - Soft, cool fill to reduce harsh shadows */}
+          {/* Fill Light - Increased intensity for brighter uppers */}
           <directionalLight
             position={[-4, 5, 3]}
-            intensity={0.6 * intensity}
+            intensity={0.3 * intensity}
             color="#ffffff" // Pure white fill
           />
 
-          {/* Rim Light - Subtle edge definition for depth */}
+          {/* Rim Light - Much softer to avoid reflections */}
           <directionalLight
             position={[-2, 3, -5]}
-            intensity={0.2 * intensity}
+            intensity={0.05 * intensity}
             color="#fff8dc" // Warm rim light
           />
 
-          {/* Top Light - Soft overhead illumination */}
+          {/* Top Light - Increased intensity for brighter uppers */}
           <directionalLight
             position={[0, 8, 1]}
-            intensity={0.4 * intensity}
+            intensity={0.2 * intensity}
             color="#ffffff"
           />
 
@@ -185,23 +185,23 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
             color="#f8f8ff"
           />
 
-          {/* Soft fill lights for more realistic shadows */}
+          {/* Soft fill lights - Increased intensity for brighter uppers */}
           <directionalLight
             position={[3, 4, 2]}
-            intensity={0.5 * intensity}
+            intensity={0.25 * intensity}
             color="#ffffff"
           />
 
           <directionalLight
             position={[-2, 3, 1]}
-            intensity={0.4 * intensity}
+            intensity={0.2 * intensity}
             color="#ffffff"
           />
 
-          {/* Subtle accent lights for material definition */}
+          {/* Much softer accent lights to avoid reflections */}
           <pointLight 
             position={[2, 2, 3]} 
-            intensity={0.12 * intensity} 
+            intensity={0.03 * intensity} 
             color="#ffffff" 
             distance={8} 
             decay={2}
@@ -213,39 +213,39 @@ export const LightingSystem: React.FC<LightingSystemProps> = ({
           
           <pointLight 
             position={[-1, 1, 4]} 
-            intensity={0.08 * intensity} 
+            intensity={0.02 * intensity} 
             color="#f8f8ff" 
             distance={6} 
             decay={2}
           />
 
-          {/* Additional rim lighting for better edge definition */}
+          {/* Much softer rim lighting to avoid reflections */}
           <directionalLight
             position={[1, 2, -3]}
-            intensity={0.12 * intensity}
+            intensity={0.03 * intensity}
             color="#fff8dc"
           />
 
-          {/* Soft overhead bounce light */}
+          {/* Much softer overhead bounce light */}
           <directionalLight
             position={[0, 6, 0]}
-            intensity={0.06 * intensity}
+            intensity={0.02 * intensity}
             color="#ffffff"
           />
 
-          {/* Contrast light for white materials - helps define edges */}
+          {/* Much softer contrast light to avoid reflections */}
           <directionalLight
             position={[-3, 4, -2]}
-            intensity={0.15 * intensity}
+            intensity={0.04 * intensity}
             color="#e8e8e8"
           />
 
-          {/* Realistic ambient lighting - balanced warm/cool */}
-          <ambientLight intensity={0.25 * intensity} color="#ffffff" />
+          {/* Increased ambient lighting for brighter uppers */}
+          <ambientLight intensity={0.15 * intensity} color="#ffffff" />
 
-          {/* Additional realistic lighting for material definition */}
+          {/* Much softer hemisphere lighting to avoid reflections */}
           <hemisphereLight
-            args={["#ffffff", "#ffffff", 0.15 * intensity]}
+            args={["#ffffff", "#ffffff", 0.05 * intensity]}
           />
         </>
       );

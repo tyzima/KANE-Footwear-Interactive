@@ -6,7 +6,7 @@ import { useColorProcessor } from './ColorProcessor';
 interface TextureManagerProps {
     children: (textureManager: {
         createGradientTexture: (baseColor: string, color1: string, color2: string, isUpper: boolean) => Texture;
-        createTextureFromDataUrl: (dataUrl: string) => Texture;
+        createTextureFromDataUrl: (dataUrl: string, isUpper?: boolean) => Texture;
         createInnerShadowTexture: (baseColor: string) => Texture;
         createSplatterTexture: (baseColor: string, splatterColor: string, splatterBaseColor: string | null, splatterColor2: string | null, useDualSplatter: boolean, isUpper: boolean, paintDensity: number) => Texture;
         createLaceTexture: (baseColor: string) => Texture;
@@ -131,6 +131,11 @@ export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
         const texture = new CanvasTexture(canvas);
         texture.generateMipmaps = true;
         texture.needsUpdate = true;
+        
+        // Set half opacity for upper textures
+        if (isUpper) {
+            texture.alpha = 0.5;
+        }
 
         // Cache the texture
         textureCache.current.set(cacheKey, texture);
@@ -139,7 +144,7 @@ export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
     }, [darkenLightMaterials]);
 
     // Create texture from base64 data URL (for AI-generated textures)
-    const createTextureFromDataUrl = useCallback((dataUrl: string): Texture => {
+    const createTextureFromDataUrl = useCallback((dataUrl: string, isUpper: boolean = false): Texture => {
         const cacheKey = `ai-texture-${dataUrl.substring(0, 50)}`;
 
         // Check cache first
@@ -175,6 +180,11 @@ export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
         texture.format = THREE.RGBAFormat;
         texture.type = THREE.UnsignedByteType;
         texture.needsUpdate = true;
+        
+        // Set half opacity for upper textures
+        if (isUpper) {
+            texture.alpha = 0.5;
+        }
 
         // Load the image and update texture
         img.onload = () => {
@@ -476,6 +486,11 @@ export const TextureManager: React.FC<TextureManagerProps> = ({ children }) => {
         const texture = new CanvasTexture(canvas);
         texture.generateMipmaps = true; // Enable mipmaps for better performance
         texture.needsUpdate = true;
+        
+        // Set half opacity for upper textures
+        if (isUpper) {
+            texture.alpha = 0.5;
+        }
 
         // Cache the texture
         textureCache.current.set(cacheKey, texture);
